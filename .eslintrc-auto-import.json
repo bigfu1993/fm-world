@@ -1,0 +1,15 @@
+{
+  "globals": {
+    "useCallback": "readonly",
+    "useContext": "readonly",
+    "useEffect": "readonly",
+    "useLayoutEffect": "readonly",
+    "useLocation": "readonly",
+    "useMemo": "readonly",
+    "useNavigate": "readonly",
+    "useParams": "readonly",
+    "useRef": "readonly",
+    "useSearchParams": "readonly",
+    "useState": "readonly"
+  }
+}

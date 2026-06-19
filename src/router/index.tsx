@@ -1,13 +1,10 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import BasicLayout from '../layouts/BasicLayout'
-import Login from '../pages/Login'
-import Dashboard from '../pages/Dashboard'
-import { useAuthStore } from '../store/useAuthStore'
-
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  const token = useAuthStore((s) => s.token)
-  return token ? children : <Navigate to="/login" replace />
-}
+import BasicLayout from '@/layouts/BasicLayout'
+import Login from '@/pages/Login'
+import Dashboard from '@/pages/Dashboard'
+import AdminUserPage from '@/pages/AdminUser'
+import RolePage from '@/pages/Role'
+import RequireAuth from './RequireAuth'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
@@ -21,6 +18,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <Dashboard /> },
+      { path: 'system/admin-users', element: <AdminUserPage /> },
+      { path: 'system/roles', element: <RolePage /> },
     ],
   },
 ])

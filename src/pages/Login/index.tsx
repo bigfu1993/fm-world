@@ -1,7 +1,7 @@
 import { Button, Form, Input, Card, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../store/useAuthStore'
+import { useAuthStore } from '@/store/useAuthStore'
+import { login as loginApi } from '@/api/auth'
 
 interface LoginForm {
   username: string
@@ -11,12 +11,20 @@ interface LoginForm {
 export default function Login() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
+  const [loading, setLoading] = useState(false)
 
-  const onFinish = (values: LoginForm) => {
-    if (!values.username || !values.password) return
-    login('mock-token')
-    message.success('登录成功')
-    navigate('/dashboard')
+  const onFinish = async (values: LoginForm) => {
+    setLoading(true)
+    try {
+      const { token, user } = await loginApi(values)
+      login(token, user)
+      message.success('登录成功')
+      navigate('/dashboard')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '登录失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -30,11 +38,12 @@ export default function Login() {
             <Input.Password prefix={<LockOutlined />} placeholder="密码" />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" block>
+            <Button type="primary" htmlType="submit" block loading={loading}>
               登录
             </Button>
           </Form.Item>
         </Form>
+        <div style={{ color: '#999', fontSize: 12 }}>测试账号：admin / admin123</div>
       </Card>
     </div>
   )

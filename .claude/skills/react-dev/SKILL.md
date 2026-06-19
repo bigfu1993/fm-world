@@ -18,6 +18,17 @@ src/
   pages/      页面，每个页面一个目录，入口为 index.tsx
 ```
 
+## 路径引用
+
+- 跨目录引用统一用 `@` 别名（指向 `src/`），不要写 `../`；同目录下的 `./xxx` 保留相对路径。
+- 别名在 `vite.config.ts` 的 `resolve.alias` 和 `tsconfig.app.json` 的 `compilerOptions.paths` 两处同步配置。
+
+## 自动导入
+
+- `react` 的 `useState/useEffect/useMemo/useCallback/useRef/useContext/useLayoutEffect` 和 `react-router-dom` 的 `useNavigate/useLocation/useParams/useSearchParams` 由 `unplugin-auto-import` 自动注入，不要手写这些 import。
+- 其他 hooks/组件（如 `Outlet`、`Navigate`、`StrictMode`、antd 的所有组件）仍需手动 import。
+- 新增需要自动导入的 API，在 `vite.config.ts` 的 `AutoImport({ imports: [...] })` 里加，然后跑一次 `npm run build`（或 `npm run dev`）重新生成 `src/auto-imports.d.ts` 和 `.eslintrc-auto-import.json`，这两个文件要提交到仓库。
+
 ## 新增页面
 
 1. 在 `src/pages/<PageName>/index.tsx` 创建页面组件。

@@ -1,25 +1,51 @@
-import { useState } from 'react'
-import { Layout, Menu, Button } from 'antd'
+import { Layout, Menu, Button, Select } from 'antd'
 import {
   DashboardOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
+  SettingOutlined,
 } from '@ant-design/icons'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { useAuthStore } from '../store/useAuthStore'
+import type { MenuProps } from 'antd'
+import { Outlet } from 'react-router-dom'
+import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
+import { LANGUAGES } from '@/types/system'
+import LanguageLabel from '@/components/LanguageLabel'
 
 const { Header, Sider, Content } = Layout
-
-const menuItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: '首页' },
-]
 
 export default function BasicLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const logout = useAuthStore((s) => s.logout)
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const language = useAuthStore(selectCurrentLanguage)
+  const availableLanguages = useAuthStore((s) => s.user?.languages ?? [])
+  const setCurrentLanguage = useAuthStore((s) => s.setCurrentLanguage)
+
+  const menuItems: MenuProps['items'] = [
+    {
+      key: '/dashboard',
+      icon: <DashboardOutlined />,
+      label: <LanguageLabel langKey={language} labelKey="dashboard" />,
+    },
+    (hasPermission('admin:manage') || hasPermission('role:manage')) && {
+      key: 'system',
+      icon: <SettingOutlined />,
+      label: <LanguageLabel langKey={language} labelKey="systemManagement" />,
+      children: [
+        hasPermission('admin:manage') && {
+          key: '/system/admin-users',
+          label: <LanguageLabel langKey={language} labelKey="adminUserManagement" />,
+        },
+        hasPermission('role:manage') && {
+          key: '/system/roles',
+          label: <LanguageLabel langKey={language} labelKey="roleManagement" />,
+        },
+      ].filter(Boolean) as MenuProps['items'],
+    },
+  ].filter(Boolean) as MenuProps['items']
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -31,17 +57,30 @@ export default function BasicLayout() {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
+          defaultOpenKeys={['system']}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
         />
       </Sider>
       <Layout>
-        <Header style={{ padding: 0, background: '#fff', display: 'flex', justifyContent: 'space-between' }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-          />
+        <Header style={{ padding: 0, background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+            />
+            <Select
+              size="small"
+              value={language}
+              onChange={setCurrentLanguage}
+              style={{ width: 120 }}
+              options={availableLanguages.map((code) => ({
+                value: code,
+                label: LANGUAGES.find((l) => l.code === code)?.label ?? code,
+              }))}
+            />
+          </div>
           <Button
             type="text"
             icon={<LogoutOutlined />}
@@ -51,7 +90,7 @@ export default function BasicLayout() {
             }}
             style={{ marginRight: 16 }}
           >
-            退出登录
+            <LanguageLabel langKey={language} labelKey="logout" />
           </Button>
         </Header>
         <Content style={{ margin: 16, background: '#fff', padding: 16 }}>
