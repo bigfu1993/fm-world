@@ -1,7 +1,8 @@
-import { Select, Space, Table } from 'antd'
+import { Input, Select, Space, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { CITIES, type CityData } from '@/mock/cities'
 import { COUNTRIES } from '@/mock/countries'
+import { PROVINCES } from '@/mock/provinces'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
@@ -10,6 +11,7 @@ import { getLabel } from '@/components/LanguageLabel/LabelMap'
 export default function CityPage() {
   const language = useAuthStore(selectCurrentLanguage)
   const [countryFilter, setCountryFilter] = useState<string | undefined>(undefined)
+  const [keyword, setKeyword] = useState('')
 
   const countryOptions = Array.from(new Set(CITIES.map((c) => c.countryCode)))
     .map((code) => COUNTRIES.find((c) => c.code === code))
@@ -26,15 +28,32 @@ export default function CityPage() {
       },
     },
     {
+      title: <LanguageLabel langKey={language} labelKey="province" />,
+      dataIndex: 'provinceCode',
+      render: (provinceCode: string) => {
+        const province = PROVINCES.find((p) => p.code === provinceCode)
+        return province ? <LanguageText langKey={language} map={province} /> : provinceCode
+      },
+    },
+    {
       title: <LanguageLabel langKey={language} labelKey="cityName" />,
       dataIndex: 'code',
       render: (_, record) => <LanguageText langKey={language} map={record} />,
     },
   ]
 
-  const dataSource = countryFilter
-    ? CITIES.filter((c) => c.countryCode === countryFilter)
-    : CITIES
+  const keywordLower = keyword.trim().toLowerCase()
+  const dataSource = CITIES.filter((city) => {
+    if (countryFilter && city.countryCode !== countryFilter) return false
+    if (!keywordLower) return true
+    const country = COUNTRIES.find((c) => c.code === city.countryCode)
+    const province = PROVINCES.find((p) => p.code === city.provinceCode)
+    return [
+      ...Object.values(city),
+      ...(country ? Object.values(country) : []),
+      ...(province ? Object.values(province) : []),
+    ].some((value) => value.toLowerCase().includes(keywordLower))
+  })
 
   return (
     <>
@@ -46,6 +65,13 @@ export default function CityPage() {
           value={countryFilter}
           onChange={setCountryFilter}
           options={countryOptions}
+        />
+        <Input
+          placeholder={getLabel('searchByCityName', language)}
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          style={{ width: 240 }}
+          allowClear
         />
       </Space>
       <Table rowKey="code" columns={columns} dataSource={dataSource} scroll={{ x: 'max-content' }} />

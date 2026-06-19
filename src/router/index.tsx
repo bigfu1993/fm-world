@@ -8,6 +8,7 @@ import CountryPage from '@/pages/Country'
 import CityPage from '@/pages/City'
 import LanguagePage from '@/pages/Language'
 import ProvincePage from '@/pages/Province'
+import PublishCenterPage from '@/pages/PublishCenter'
 import GeoInfoPage from '@/pages/GeoInfo'
 import TrafficInfoPage from '@/pages/TrafficInfo'
 import CommunicationInfoPage from '@/pages/CommunicationInfo'
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <Dashboard /> },
+      { path: 'publish-center', element: <PublishCenterPage /> },
       { path: 'info-center/geo', element: <GeoInfoPage /> },
       { path: 'info-center/traffic', element: <TrafficInfoPage /> },
       { path: 'info-center/communication', element: <CommunicationInfoPage /> },

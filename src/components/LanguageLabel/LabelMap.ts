@@ -79,6 +79,7 @@ export const labelMap = {
 
   // master data nav
   masterData: { zh: '基础数据', en: 'Master Data', ja: '基礎データ', ko: '기초 데이터', th: 'ข้อมูลพื้นฐาน' },
+  publishCenter: { zh: '发布中心', en: 'Publish Center', ja: '公開センター', ko: '게시 센터', th: 'ศูนย์เผยแพร่' },
   informationCenter: { zh: '信息中心', en: 'Information Center', ja: '情報センター', ko: '정보 센터', th: 'ศูนย์ข้อมูล' },
   geoInformation: { zh: '地理信息', en: 'Geographic Information', ja: '地理情報', ko: '지리 정보', th: 'ข้อมูลภูมิศาสตร์' },
   trafficInformation: { zh: '交通信息', en: 'Traffic Information', ja: '交通情報', ko: '교통 정보', th: 'ข้อมูลการจราจร' },
@@ -97,6 +98,7 @@ export const labelMap = {
   cityName: { zh: '城市名称', en: 'City Name', ja: '都市名', ko: '도시 이름', th: 'ชื่อเมือง' },
   provinceName: { zh: '省份名称', en: 'Province Name', ja: '州・省名', ko: '주/도 이름', th: 'ชื่อจังหวัด' },
   searchByProvinceName: { zh: '按省份/国家名称搜索', en: 'Search by province or country name', ja: '州・省名/国名で検索', ko: '주/도 또는 국가명으로 검색', th: 'ค้นหาตามชื่อจังหวัดหรือประเทศ' },
+  searchByCityName: { zh: '按城市/省份/国家名称搜索', en: 'Search by city, province or country name', ja: '都市名/州・省名/国名で検索', ko: '도시/주·도/국가명으로 검색', th: 'ค้นหาตามชื่อเมือง/จังหวัด/ประเทศ' },
   geoJsonData: { zh: 'GeoJSON 数据', en: 'GeoJSON Data', ja: 'GeoJSON データ', ko: 'GeoJSON 데이터', th: 'ข้อมูล GeoJSON' },
   pleaseSelectRegionHint: { zh: '请在左侧选择国家/省份/城市', en: 'Please select a country/province/city on the left', ja: '左側で国/州・省/都市を選択してください', ko: '왼쪽에서 국가/주·도/도시를 선택하세요', th: 'กรุณาเลือกประเทศ/จังหวัด/เมืองทางด้านซ้าย' },
   submit: { zh: '提交', en: 'Submit', ja: '送信', ko: '제출', th: 'ส่ง' },

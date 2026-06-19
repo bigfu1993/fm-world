@@ -7,6 +7,7 @@ import {
   SettingOutlined,
   GlobalOutlined,
   InfoCircleOutlined,
+  SendOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Outlet } from 'react-router-dom';
@@ -31,6 +32,11 @@ export default function BasicLayout() {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: <LanguageLabel langKey={language} labelKey="dashboard" />,
+    },
+    hasPermission('publish:manage') && {
+      key: '/publish-center',
+      icon: <SendOutlined />,
+      label: <LanguageLabel langKey={language} labelKey="publishCenter" />,
     },
     (hasPermission('geo:manage') ||
       hasPermission('traffic:manage') ||

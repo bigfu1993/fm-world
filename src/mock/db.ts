@@ -3,6 +3,7 @@ import type { City, Country } from '@/types/destination'
 
 export const PERMISSIONS: Permission[] = [
   { code: 'dashboard:view', label: '查看首页', group: '仪表盘' },
+  { code: 'publish:manage', label: '发布中心', group: '发布中心' },
   { code: 'geo:manage', label: '地理信息', group: '信息中心' },
   { code: 'traffic:manage', label: '交通信息', group: '信息中心' },
   { code: 'communication:manage', label: '通讯信息', group: '信息中心' },
