@@ -230,7 +230,7 @@ export default function AdminUserPage() {
         onOk={handleSubmit}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" size="small">
           <Form.Item
             name="username"
             label={<LanguageLabel langKey={language} labelKey="username" />}
@@ -294,7 +294,7 @@ export default function AdminUserPage() {
         onOk={handleResetPassword}
         destroyOnHidden
       >
-        <Form form={resetForm} layout="vertical">
+        <Form form={resetForm} layout="vertical" size="small">
           <Form.Item
             name="password"
             label={<LanguageLabel langKey={language} labelKey="newPassword" />}

@@ -51,6 +51,7 @@ src/
 - Props 用 `interface` 定义，不用 `type`（除非是联合类型）。
 - UI 优先用 antd 组件，不另外引入其他 UI 库；图标用 `@ant-design/icons`。
 - 不写行内大段样式对象，简单样式用 `style` 内联，复杂样式用单独的 `.css` 文件。
+- Modal 内的 `<Form>` 统一加 `size="small"`，会自动级联到内部所有 Input/Select/Checkbox 等控件，不用逐个加。
 
 ## 其他
 

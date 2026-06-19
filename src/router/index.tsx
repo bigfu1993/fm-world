@@ -4,6 +4,8 @@ import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
 import AdminUserPage from '@/pages/AdminUser'
 import RolePage from '@/pages/Role'
+import CountryPage from '@/pages/Country'
+import CityPage from '@/pages/City'
 import RequireAuth from './RequireAuth'
 
 export const router = createBrowserRouter([
@@ -20,6 +22,8 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'system/admin-users', element: <AdminUserPage /> },
       { path: 'system/roles', element: <RolePage /> },
+      { path: 'master-data/countries', element: <CountryPage /> },
+      { path: 'master-data/cities', element: <CityPage /> },
     ],
   },
 ])

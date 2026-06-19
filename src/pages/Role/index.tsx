@@ -134,7 +134,7 @@ export default function RolePage() {
         onOk={handleSubmit}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" size="small">
           <Form.Item
             name="name"
             label={<LanguageLabel langKey={language} labelKey="roleName" />}

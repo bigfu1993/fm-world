@@ -5,6 +5,7 @@ import {
   MenuUnfoldOutlined,
   LogoutOutlined,
   SettingOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { Outlet } from 'react-router-dom'
@@ -29,6 +30,21 @@ export default function BasicLayout() {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: <LanguageLabel langKey={language} labelKey="dashboard" />,
+    },
+    (hasPermission('country:manage') || hasPermission('city:manage')) && {
+      key: 'master-data',
+      icon: <GlobalOutlined />,
+      label: <LanguageLabel langKey={language} labelKey="masterData" />,
+      children: [
+        hasPermission('country:manage') && {
+          key: '/master-data/countries',
+          label: <LanguageLabel langKey={language} labelKey="countryManagement" />,
+        },
+        hasPermission('city:manage') && {
+          key: '/master-data/cities',
+          label: <LanguageLabel langKey={language} labelKey="cityManagement" />,
+        },
+      ].filter(Boolean) as MenuProps['items'],
     },
     (hasPermission('admin:manage') || hasPermission('role:manage')) && {
       key: 'system',
@@ -57,7 +73,7 @@ export default function BasicLayout() {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={['system']}
+          defaultOpenKeys={['master-data', 'system']}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
         />

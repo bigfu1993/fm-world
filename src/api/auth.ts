@@ -11,6 +11,18 @@ interface LoginResult {
   user: CurrentUser
 }
 
+function buildCurrentUser(user: (typeof adminUsers)[number]): CurrentUser {
+  const userRoles = roles.filter((r) => user.roleIds.includes(r.id))
+  const permissions = Array.from(new Set(userRoles.flatMap((r) => r.permissions)))
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    permissions,
+    languages: user.languages,
+  }
+}
+
 export function login({ username, password }: LoginParams): Promise<LoginResult> {
   const user = adminUsers.find((u) => u.username === username)
   if (!user || user.password !== password) {
@@ -19,16 +31,19 @@ export function login({ username, password }: LoginParams): Promise<LoginResult>
   if (user.status === 'disabled') {
     return Promise.reject(new Error('账号已被禁用，请联系管理员'))
   }
-  const userRoles = roles.filter((r) => user.roleIds.includes(r.id))
-  const permissions = Array.from(new Set(userRoles.flatMap((r) => r.permissions)))
   return delay({
     token: `mock-token-${user.id}`,
-    user: {
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName,
-      permissions,
-      languages: user.languages,
-    },
+    user: buildCurrentUser(user),
   })
+}
+
+export function getCurrentUser(userId: string): Promise<CurrentUser> {
+  const user = adminUsers.find((u) => u.id === userId)
+  if (!user) {
+    return Promise.reject(new Error('账号不存在'))
+  }
+  if (user.status === 'disabled') {
+    return Promise.reject(new Error('账号已被禁用，请联系管理员'))
+  }
+  return delay(buildCurrentUser(user))
 }

@@ -9,6 +9,7 @@ interface AuthState {
   logout: () => void
   hasPermission: (code: string) => boolean
   setCurrentLanguage: (language: LanguageCode) => void
+  setUser: (user: CurrentUser) => void
 }
 
 function readUser(): CurrentUser | null {
@@ -46,6 +47,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
       if (!get().user?.languages.includes(language)) return
       localStorage.setItem('currentLanguage', language)
       set({ currentLanguage: language })
+    },
+    setUser: (user) => {
+      const storedLanguage = get().currentLanguage
+      const currentLanguage = user.languages.includes(storedLanguage)
+        ? storedLanguage
+        : user.languages[0] ?? 'zh'
+      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('currentLanguage', currentLanguage)
+      set({ user, currentLanguage })
     },
   }
 })
