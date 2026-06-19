@@ -28,6 +28,7 @@ import type { AdminUser, Role } from '@/types/system'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
+import { modalPopupContainer } from '@/utils/popupContainer'
 
 const PAGE_SIZE = 10
 
@@ -261,6 +262,7 @@ export default function AdminUserPage() {
               mode="multiple"
               options={roles.map((r) => ({ label: r.name, value: r.id }))}
               placeholder={getLabel('pleaseSelectRole', language)}
+              getPopupContainer={modalPopupContainer}
             />
           </Form.Item>
           <Form.Item
@@ -273,6 +275,7 @@ export default function AdminUserPage() {
               mode="multiple"
               options={LANGUAGES.map((l) => ({ label: l.label, value: l.code }))}
               placeholder={getLabel('selectLanguagePlaceholder', language)}
+              getPopupContainer={modalPopupContainer}
             />
           </Form.Item>
           {!editing && (

@@ -40,7 +40,9 @@ export default function BasicLayout() {
     },
     (hasPermission('geo:manage') ||
       hasPermission('traffic:manage') ||
-      hasPermission('communication:manage')) && {
+      hasPermission('communication:manage') ||
+      hasPermission('food:manage') ||
+      hasPermission('accommodation:manage')) && {
       key: 'info-center',
       icon: <InfoCircleOutlined />,
       label: <LanguageLabel langKey={language} labelKey="informationCenter" />,
@@ -59,12 +61,24 @@ export default function BasicLayout() {
             <LanguageLabel langKey={language} labelKey="communicationInformation" />
           ),
         },
+        hasPermission('food:manage') && {
+          key: '/info-center/food',
+          label: <LanguageLabel langKey={language} labelKey="foodRecommendation" />,
+        },
+        hasPermission('accommodation:manage') && {
+          key: '/info-center/accommodation',
+          label: (
+            <LanguageLabel langKey={language} labelKey="accommodationRecommendation" />
+          ),
+        },
       ].filter(Boolean) as MenuProps['items'],
     },
     (hasPermission('country:manage') ||
       hasPermission('city:manage') ||
       hasPermission('language:manage') ||
-      hasPermission('province:manage')) && {
+      hasPermission('province:manage') ||
+      hasPermission('attraction:manage') ||
+      hasPermission('point:manage')) && {
       key: 'master-data',
       icon: <GlobalOutlined />,
       label: <LanguageLabel langKey={language} labelKey="masterData" />,
@@ -90,6 +104,16 @@ export default function BasicLayout() {
         hasPermission('city:manage') && {
           key: '/master-data/cities',
           label: <LanguageLabel langKey={language} labelKey="cityManagement" />,
+        },
+        hasPermission('attraction:manage') && {
+          key: '/master-data/attractions',
+          label: (
+            <LanguageLabel langKey={language} labelKey="attractionManagement" />
+          ),
+        },
+        hasPermission('point:manage') && {
+          key: '/master-data/points',
+          label: <LanguageLabel langKey={language} labelKey="pointManagement" />,
         },
       ].filter(Boolean) as MenuProps['items'],
     },

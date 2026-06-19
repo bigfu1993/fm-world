@@ -31,6 +31,7 @@ function LanguageRows({ langKey, value, onChange }: LanguageRowsProps) {
           <Input
             value={value?.[code]}
             onChange={(e) => onChange?.({ ...value, [code]: e.target.value } as LocalizedText)}
+            style={{ fontSize: 12 }}
           />
         </div>
       ))}

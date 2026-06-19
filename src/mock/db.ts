@@ -1,5 +1,6 @@
 import type { AdminUser, Permission, Role } from '@/types/system'
 import type { City, Country } from '@/types/destination'
+import type { Attraction, Point } from '@/types/attraction'
 
 export const PERMISSIONS: Permission[] = [
   { code: 'dashboard:view', label: '查看首页', group: '仪表盘' },
@@ -7,13 +8,16 @@ export const PERMISSIONS: Permission[] = [
   { code: 'geo:manage', label: '地理信息', group: '信息中心' },
   { code: 'traffic:manage', label: '交通信息', group: '信息中心' },
   { code: 'communication:manage', label: '通讯信息', group: '信息中心' },
+  { code: 'food:manage', label: '美食推荐', group: '信息中心' },
+  { code: 'accommodation:manage', label: '住宿推荐', group: '信息中心' },
   { code: 'admin:manage', label: '账号管理', group: '系统管理' },
   { code: 'role:manage', label: '角色管理', group: '系统管理' },
   { code: 'country:manage', label: '国家管理', group: '基础数据' },
   { code: 'city:manage', label: '城市管理', group: '基础数据' },
   { code: 'language:manage', label: '语言管理', group: '基础数据' },
   { code: 'province:manage', label: '省份管理', group: '基础数据' },
-  { code: 'attraction:manage', label: '景点信息管理', group: '内容管理' },
+  { code: 'attraction:manage', label: '景区管理', group: '基础数据' },
+  { code: 'point:manage', label: '点位管理', group: '基础数据' },
   { code: 'transport:manage', label: '交通信息管理', group: '内容管理' },
   { code: 'culture:manage', label: '文化信息管理', group: '内容管理' },
 ]
@@ -37,6 +41,7 @@ export const roles: Role[] = [
       'country:manage',
       'city:manage',
       'attraction:manage',
+      'point:manage',
       'transport:manage',
       'culture:manage',
     ],
@@ -169,6 +174,55 @@ export const cities: City[] = [
     countryId: 'country-my',
     names: { zh: '兰卡威', en: 'Langkawi', ja: 'ランカウイ', ko: '랑카위', th: 'ลังกาวี' },
     status: 'enabled',
+    createdAt: '2026-06-01 10:00:00',
+  },
+]
+
+export const attractions: Attraction[] = [
+  {
+    id: 'attraction-tokyo-tower',
+    cityCode: 'JP-TYO',
+    name: { zh: '东京塔', en: 'Tokyo Tower', ja: '東京タワー', ko: '도쿄 타워', th: 'หอคอยโตเกียว' },
+    coordinates: [35.6586, 139.7454],
+    website: 'https://www.tokyotower.co.jp/',
+    ticketUrl: 'https://www.tokyotower.co.jp/ticket',
+    createdAt: '2026-06-01 10:00:00',
+  },
+  {
+    id: 'attraction-gyeongbokgung',
+    cityCode: 'KR-SEL',
+    name: { zh: '景福宫', en: 'Gyeongbokgung Palace', ja: '景福宮', ko: '경복궁', th: 'พระราชวังเคียงบกกุง' },
+    coordinates: [37.5796, 126.977],
+    website: 'https://www.royalpalace.go.kr/',
+    ticketUrl: 'https://www.royalpalace.go.kr/ticket',
+    createdAt: '2026-06-01 10:00:00',
+  },
+  {
+    id: 'attraction-grand-palace',
+    cityCode: 'TH-BKK',
+    name: { zh: '大皇宫', en: 'Grand Palace', ja: '王宮', ko: '왕궁', th: 'พระบรมมหาราชวัง' },
+    coordinates: [13.75, 100.4913],
+    website: 'https://www.royalgrandpalace.th/',
+    ticketUrl: 'https://www.royalgrandpalace.th/ticket',
+    createdAt: '2026-06-01 10:00:00',
+  },
+]
+
+export const points: Point[] = [
+  {
+    id: 'point-tokyo-tower-observatory',
+    attractionId: 'attraction-tokyo-tower',
+    name: '主展望台',
+    description: '位于150米高度的主展望台，可俯瞰东京市区全景。',
+    cultureExtension: '东京塔建于1958年，曾是日本最高建筑，象征战后日本的复兴。',
+    createdAt: '2026-06-01 10:00:00',
+  },
+  {
+    id: 'point-gyeongbokgung-geunjeongjeon',
+    attractionId: 'attraction-gyeongbokgung',
+    name: '勤政殿',
+    description: '景福宫的正殿，是国王举行正式仪式和接见外国使臣的场所。',
+    cultureExtension: '勤政殿名称取自“勤于政事”之意，体现儒家治国理念。',
     createdAt: '2026-06-01 10:00:00',
   },
 ]

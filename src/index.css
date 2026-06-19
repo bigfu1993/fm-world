@@ -8,3 +8,11 @@ body,
   margin: 0;
   block-size: 100%;
 }
+
+.ant-modal .ant-input,
+.ant-modal .ant-input-number-input,
+.ant-modal .ant-select-selector .ant-select-selection-item,
+.ant-modal .ant-select-selector .ant-select-selection-placeholder,
+.ant-modal .ant-select-dropdown .ant-select-item-option-content {
+  font-size: 12px;
+}
