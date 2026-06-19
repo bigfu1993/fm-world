@@ -1,9 +1,9 @@
-export interface Nation {
+export interface CountryData {
   code: string
   [languageCode: string]: string
 }
 
-export const NATIONS: Nation[] = [
+export const COUNTRIES: CountryData[] = [
   {
     code: 'AF',
     en: 'Afghanistan',

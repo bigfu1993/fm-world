@@ -6,6 +6,7 @@ import {
   LogoutOutlined,
   SettingOutlined,
   GlobalOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Outlet } from 'react-router-dom';
@@ -31,15 +32,53 @@ export default function BasicLayout() {
       icon: <DashboardOutlined />,
       label: <LanguageLabel langKey={language} labelKey="dashboard" />,
     },
-    (hasPermission('country:manage') || hasPermission('city:manage')) && {
+    (hasPermission('geo:manage') ||
+      hasPermission('traffic:manage') ||
+      hasPermission('communication:manage')) && {
+      key: 'info-center',
+      icon: <InfoCircleOutlined />,
+      label: <LanguageLabel langKey={language} labelKey="informationCenter" />,
+      children: [
+        hasPermission('geo:manage') && {
+          key: '/info-center/geo',
+          label: <LanguageLabel langKey={language} labelKey="geoInformation" />,
+        },
+        hasPermission('traffic:manage') && {
+          key: '/info-center/traffic',
+          label: <LanguageLabel langKey={language} labelKey="trafficInformation" />,
+        },
+        hasPermission('communication:manage') && {
+          key: '/info-center/communication',
+          label: (
+            <LanguageLabel langKey={language} labelKey="communicationInformation" />
+          ),
+        },
+      ].filter(Boolean) as MenuProps['items'],
+    },
+    (hasPermission('country:manage') ||
+      hasPermission('city:manage') ||
+      hasPermission('language:manage') ||
+      hasPermission('province:manage')) && {
       key: 'master-data',
       icon: <GlobalOutlined />,
       label: <LanguageLabel langKey={language} labelKey="masterData" />,
       children: [
+        hasPermission('language:manage') && {
+          key: '/master-data/languages',
+          label: (
+            <LanguageLabel langKey={language} labelKey="languageManagement" />
+          ),
+        },
         hasPermission('country:manage') && {
           key: '/master-data/countries',
           label: (
             <LanguageLabel langKey={language} labelKey="countryManagement" />
+          ),
+        },
+        hasPermission('province:manage') && {
+          key: '/master-data/provinces',
+          label: (
+            <LanguageLabel langKey={language} labelKey="provinceManagement" />
           ),
         },
         hasPermission('city:manage') && {
@@ -79,7 +118,7 @@ export default function BasicLayout() {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={['master-data', 'system']}
+          defaultOpenKeys={['info-center', 'master-data', 'system']}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
         />

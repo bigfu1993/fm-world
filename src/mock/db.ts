@@ -3,10 +3,15 @@ import type { City, Country } from '@/types/destination'
 
 export const PERMISSIONS: Permission[] = [
   { code: 'dashboard:view', label: '查看首页', group: '仪表盘' },
+  { code: 'geo:manage', label: '地理信息', group: '信息中心' },
+  { code: 'traffic:manage', label: '交通信息', group: '信息中心' },
+  { code: 'communication:manage', label: '通讯信息', group: '信息中心' },
   { code: 'admin:manage', label: '账号管理', group: '系统管理' },
   { code: 'role:manage', label: '角色管理', group: '系统管理' },
   { code: 'country:manage', label: '国家管理', group: '基础数据' },
   { code: 'city:manage', label: '城市管理', group: '基础数据' },
+  { code: 'language:manage', label: '语言管理', group: '基础数据' },
+  { code: 'province:manage', label: '省份管理', group: '基础数据' },
   { code: 'attraction:manage', label: '景点信息管理', group: '内容管理' },
   { code: 'transport:manage', label: '交通信息管理', group: '内容管理' },
   { code: 'culture:manage', label: '文化信息管理', group: '内容管理' },

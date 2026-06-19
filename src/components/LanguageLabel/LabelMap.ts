@@ -38,6 +38,7 @@ export const labelMap = {
   resetPassword: { zh: '重置密码', en: 'Reset Password', ja: 'パスワード再設定', ko: '비밀번호 재설정', th: 'รีเซ็ตรหัสผ่าน' },
   confirmDeleteAccount: { zh: '确认删除该账号？', en: 'Are you sure to delete this account?', ja: 'このアカウントを削除しますか？', ko: '이 계정을 삭제하시겠습니까?', th: 'ยืนยันการลบบัญชีนี้หรือไม่?' },
   searchByUsername: { zh: '按用户名搜索', en: 'Search by username', ja: 'ユーザー名で検索', ko: '사용자 이름으로 검색', th: 'ค้นหาตามชื่อผู้ใช้' },
+  searchByCountryName: { zh: '按国家名称搜索', en: 'Search by country name', ja: '国名で検索', ko: '국가명으로 검색', th: 'ค้นหาตามชื่อประเทศ' },
   createAccount: { zh: '新建账号', en: 'New Account', ja: '新規アカウント', ko: '신규 계정', th: 'สร้างบัญชีใหม่' },
   editAccount: { zh: '编辑账号', en: 'Edit Account', ja: 'アカウント編集', ko: '계정 편집', th: 'แก้ไขบัญชี' },
   pleaseInputUsername: { zh: '请输入用户名', en: 'Please input username', ja: 'ユーザー名を入力してください', ko: '사용자 이름을 입력하세요', th: 'กรุณากรอกชื่อผู้ใช้' },
@@ -78,15 +79,26 @@ export const labelMap = {
 
   // master data nav
   masterData: { zh: '基础数据', en: 'Master Data', ja: '基礎データ', ko: '기초 데이터', th: 'ข้อมูลพื้นฐาน' },
+  informationCenter: { zh: '信息中心', en: 'Information Center', ja: '情報センター', ko: '정보 센터', th: 'ศูนย์ข้อมูล' },
+  geoInformation: { zh: '地理信息', en: 'Geographic Information', ja: '地理情報', ko: '지리 정보', th: 'ข้อมูลภูมิศาสตร์' },
+  trafficInformation: { zh: '交通信息', en: 'Traffic Information', ja: '交通情報', ko: '교통 정보', th: 'ข้อมูลการจราจร' },
+  communicationInformation: { zh: '通讯信息', en: 'Communication Information', ja: '通信情報', ko: '통신 정보', th: 'ข้อมูลการสื่อสาร' },
   countryManagement: { zh: '国家管理', en: 'Country Management', ja: '国管理', ko: '국가 관리', th: 'การจัดการประเทศ' },
   cityManagement: { zh: '城市管理', en: 'City Management', ja: '都市管理', ko: '도시 관리', th: 'การจัดการเมือง' },
+  languageManagement: { zh: '语言管理', en: 'Language Management', ja: '言語管理', ko: '언어 관리', th: 'การจัดการภาษา' },
+  provinceManagement: { zh: '省份管理', en: 'Province Management', ja: '州・省管理', ko: '주/도 관리', th: 'การจัดการจังหวัด' },
 
   // country & city pages
   country: { zh: '国家', en: 'Country', ja: '国', ko: '국가', th: 'ประเทศ' },
+  province: { zh: '省份', en: 'Province', ja: '州・省', ko: '주/도', th: 'จังหวัด' },
   city: { zh: '城市', en: 'City', ja: '都市', ko: '도시', th: 'เมือง' },
   countryCode: { zh: '国家代码', en: 'Country Code', ja: '国コード', ko: '국가 코드', th: 'รหัสประเทศ' },
   countryName: { zh: '国家名称', en: 'Country Name', ja: '国名', ko: '국가 이름', th: 'ชื่อประเทศ' },
   cityName: { zh: '城市名称', en: 'City Name', ja: '都市名', ko: '도시 이름', th: 'ชื่อเมือง' },
+  provinceName: { zh: '省份名称', en: 'Province Name', ja: '州・省名', ko: '주/도 이름', th: 'ชื่อจังหวัด' },
+  searchByProvinceName: { zh: '按省份/国家名称搜索', en: 'Search by province or country name', ja: '州・省名/国名で検索', ko: '주/도 또는 국가명으로 검색', th: 'ค้นหาตามชื่อจังหวัดหรือประเทศ' },
+  geoJsonData: { zh: 'GeoJSON 数据', en: 'GeoJSON Data', ja: 'GeoJSON データ', ko: 'GeoJSON 데이터', th: 'ข้อมูล GeoJSON' },
+  pleaseSelectRegionHint: { zh: '请在左侧选择国家/省份/城市', en: 'Please select a country/province/city on the left', ja: '左側で国/州・省/都市を選択してください', ko: '왼쪽에서 국가/주·도/도시를 선택하세요', th: 'กรุณาเลือกประเทศ/จังหวัด/เมืองทางด้านซ้าย' },
   newCountry: { zh: '新建国家', en: 'New Country', ja: '新規国', ko: '신규 국가', th: 'สร้างประเทศใหม่' },
   editCountry: { zh: '编辑国家', en: 'Edit Country', ja: '国編集', ko: '국가 편집', th: 'แก้ไขประเทศ' },
   newCity: { zh: '新建城市', en: 'New City', ja: '新規都市', ko: '신규 도시', th: 'สร้างเมืองใหม่' },
@@ -96,6 +108,11 @@ export const labelMap = {
   pleaseInputCityName: { zh: '请输入城市名称', en: 'Please input city name', ja: '都市名を入力してください', ko: '도시 이름을 입력하세요', th: 'กรุณากรอกชื่อเมือง' },
   pleaseSelectCountry: { zh: '请选择国家', en: 'Please select country', ja: '国を選択してください', ko: '국가를 선택하세요', th: 'กรุณาเลือกประเทศ' },
   filterByCountry: { zh: '按国家筛选', en: 'Filter by country', ja: '国で絞り込み', ko: '국가로 필터링', th: 'กรองตามประเทศ' },
+
+  // language page
+  languageCode: { zh: '语言代码', en: 'Language Code', ja: '言語コード', ko: '언어 코드', th: 'รหัสภาษา' },
+  languageName: { zh: '语言名称', en: 'Language Name', ja: '言語名', ko: '언어 이름', th: 'ชื่อภาษา' },
+  searchByLanguageName: { zh: '按语言名称搜索', en: 'Search by language name', ja: '言語名で検索', ko: '언어명으로 검색', th: 'ค้นหาตามชื่อภาษา' },
   confirmDeleteCountry: { zh: '确认删除该国家？', en: 'Are you sure to delete this country?', ja: 'この国を削除しますか？', ko: '이 국가를 삭제하시겠습니까?', th: 'ยืนยันการลบประเทศนี้หรือไม่?' },
   confirmDeleteCity: { zh: '确认删除该城市？', en: 'Are you sure to delete this city?', ja: 'この都市を削除しますか？', ko: '이 도시를 삭제하시겠습니까?', th: 'ยืนยันการลบเมืองนี้หรือไม่?' },
   countryCreated: { zh: '国家已创建', en: 'Country created', ja: '国を作成しました', ko: '국가가 생성되었습니다', th: 'สร้างประเทศแล้ว' },
