@@ -1,4 +1,4 @@
-import { Layout, Menu, Button, Select } from 'antd'
+import { Layout, Menu, Button, Select } from 'antd';
 import {
   DashboardOutlined,
   MenuFoldOutlined,
@@ -6,24 +6,24 @@ import {
   LogoutOutlined,
   SettingOutlined,
   GlobalOutlined,
-} from '@ant-design/icons'
-import type { MenuProps } from 'antd'
-import { Outlet } from 'react-router-dom'
-import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
-import { LANGUAGES } from '@/types/system'
-import LanguageLabel from '@/components/LanguageLabel'
+} from '@ant-design/icons';
+import type { MenuProps } from 'antd';
+import { Outlet } from 'react-router-dom';
+import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore';
+import { LANGUAGES } from '@/types/system';
+import LanguageLabel from '@/components/LanguageLabel';
 
-const { Header, Sider, Content } = Layout
+const { Header, Sider, Content } = Layout;
 
 export default function BasicLayout() {
-  const [collapsed, setCollapsed] = useState(false)
-  const navigate = useNavigate()
-  const location = useLocation()
-  const logout = useAuthStore((s) => s.logout)
-  const hasPermission = useAuthStore((s) => s.hasPermission)
-  const language = useAuthStore(selectCurrentLanguage)
-  const availableLanguages = useAuthStore((s) => s.user?.languages ?? [])
-  const setCurrentLanguage = useAuthStore((s) => s.setCurrentLanguage)
+  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const logout = useAuthStore((s) => s.logout);
+  const hasPermission = useAuthStore((s) => s.hasPermission);
+  const language = useAuthStore(selectCurrentLanguage);
+  const availableLanguages = useAuthStore((s) => s.user?.languages ?? []);
+  const setCurrentLanguage = useAuthStore((s) => s.setCurrentLanguage);
 
   const menuItems: MenuProps['items'] = [
     {
@@ -38,7 +38,9 @@ export default function BasicLayout() {
       children: [
         hasPermission('country:manage') && {
           key: '/master-data/countries',
-          label: <LanguageLabel langKey={language} labelKey="countryManagement" />,
+          label: (
+            <LanguageLabel langKey={language} labelKey="countryManagement" />
+          ),
         },
         hasPermission('city:manage') && {
           key: '/master-data/cities',
@@ -53,7 +55,9 @@ export default function BasicLayout() {
       children: [
         hasPermission('admin:manage') && {
           key: '/system/admin-users',
-          label: <LanguageLabel langKey={language} labelKey="adminUserManagement" />,
+          label: (
+            <LanguageLabel langKey={language} labelKey="adminUserManagement" />
+          ),
         },
         hasPermission('role:manage') && {
           key: '/system/roles',
@@ -61,12 +65,14 @@ export default function BasicLayout() {
         },
       ].filter(Boolean) as MenuProps['items'],
     },
-  ].filter(Boolean) as MenuProps['items']
+  ].filter(Boolean) as MenuProps['items'];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div style={{ height: 32, margin: 16, color: '#fff', textAlign: 'center' }}>
+        <div
+          style={{ height: 32, margin: 16, color: '#fff', textAlign: 'center' }}
+        >
           finger-more
         </div>
         <Menu
@@ -79,7 +85,15 @@ export default function BasicLayout() {
         />
       </Sider>
       <Layout>
-        <Header style={{ padding: 0, background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Header
+          style={{
+            padding: 0,
+            background: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Button
               type="text"
@@ -101,8 +115,8 @@ export default function BasicLayout() {
             type="text"
             icon={<LogoutOutlined />}
             onClick={() => {
-              logout()
-              navigate('/login')
+              logout();
+              navigate('/login');
             }}
             style={{ marginRight: 16 }}
           >
@@ -114,5 +128,5 @@ export default function BasicLayout() {
         </Content>
       </Layout>
     </Layout>
-  )
+  );
 }

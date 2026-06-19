@@ -1,9 +1,17 @@
 import type { ReactNode } from 'react'
 import { Form, Input } from 'antd'
-import { LANGUAGES, type LanguageCode } from '@/types/system'
+import type { LanguageCode } from '@/types/system'
 import type { LocalizedText } from '@/types/destination'
 import LanguageLabel from '@/components/LanguageLabel'
 import { LANGUAGE_NAME_KEYS } from '@/components/LanguageLabel/LabelMap'
+import { useGlobalLanguages } from '@/context/GlobalLanguageContext'
+import { useAuthStore } from '@/store/useAuthStore'
+
+function useAvailableLanguages(): LanguageCode[] {
+  const globalLanguages = useGlobalLanguages()
+  const accountLanguages = useAuthStore((s) => s.user?.languages) ?? []
+  return accountLanguages.filter((code) => globalLanguages.some((g) => g.code === code))
+}
 
 interface LanguageRowsProps {
   langKey: LanguageCode
@@ -12,16 +20,17 @@ interface LanguageRowsProps {
 }
 
 function LanguageRows({ langKey, value, onChange }: LanguageRowsProps) {
+  const availableLanguages = useAvailableLanguages()
   return (
     <>
-      {LANGUAGES.map((l) => (
-        <div key={l.code} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      {availableLanguages.map((code) => (
+        <div key={code} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <span style={{ width: 120 }}>
-            <LanguageLabel langKey={langKey} labelKey={LANGUAGE_NAME_KEYS[l.code]} />
+            <LanguageLabel langKey={langKey} labelKey={LANGUAGE_NAME_KEYS[code]} />
           </span>
           <Input
-            value={value?.[l.code]}
-            onChange={(e) => onChange?.({ ...value, [l.code]: e.target.value } as LocalizedText)}
+            value={value?.[code]}
+            onChange={(e) => onChange?.({ ...value, [code]: e.target.value } as LocalizedText)}
           />
         </div>
       ))}
@@ -48,16 +57,18 @@ export default function LanguageFormItem({
   required,
   requiredMessage,
 }: LanguageFormItemProps) {
+  const availableLanguages = useAvailableLanguages()
+
   if (mode === 'view') {
     return (
       <>
         {label}
-        {LANGUAGES.map((l) => (
-          <div key={l.code} style={{ display: 'flex', marginBottom: 8 }}>
+        {availableLanguages.map((code) => (
+          <div key={code} style={{ display: 'flex', marginBottom: 8 }}>
             <span style={{ width: 120 }}>
-              <LanguageLabel langKey={langKey} labelKey={LANGUAGE_NAME_KEYS[l.code]} />
+              <LanguageLabel langKey={langKey} labelKey={LANGUAGE_NAME_KEYS[code]} />
             </span>
-            <div>{value?.[l.code]}</div>
+            <div>{value?.[code]}</div>
           </div>
         ))}
       </>
