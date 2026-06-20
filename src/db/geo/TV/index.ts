@@ -1,5 +1,6 @@
-import { node } from '../types'
+import { node } from '@/db/geo/types'
+import c_TV_X01_ from './TV-X01~'
 
 const TV_COORDS: number[][][][] = [[[[179.2137,-8.5242],[179.2006,-8.535],[179.1957,-8.5348],[179.2009,-8.5121],[179.1979,-8.4887],[179.1985,-8.47],[179.203,-8.4663],[179.2116,-8.4881],[179.2166,-8.5148],[179.2137,-8.5242]]]]
 
-export default node('TV', '图瓦卢', TV_COORDS)
+export default node('TV', '图瓦卢', TV_COORDS, [c_TV_X01_])

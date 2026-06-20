@@ -1,5 +1,25 @@
-import { node } from '../types'
+import { node } from '@/db/geo/types'
+import c_MV_01 from './MV-01'
+import c_MV_29 from './MV-29'
+import c_MV_28 from './MV-28'
+import c_MV_27 from './MV-27'
+import c_MV_00 from './MV-00'
+import c_MV_26 from './MV-26'
+import c_MV_02 from './MV-02'
+import c_MV_20 from './MV-20'
+import c_MV_03 from './MV-03'
+import c_MV_13 from './MV-13'
+import c_MV_24 from './MV-24'
+import c_MV_05 from './MV-05'
+import c_MV_08 from './MV-08'
+import c_MV_17 from './MV-17'
+import c_MV_12 from './MV-12'
+import c_MV_14 from './MV-14'
+import c_MV_04 from './MV-04'
+import c_MV_25 from './MV-25'
+import c_MV_23 from './MV-23'
+import c_MV_07 from './MV-07'
 
 const MV_COORDS: number[][][][] = [[[[73.4166,3.2313],[73.3953,3.2294],[73.382,3.2465],[73.385,3.2714],[73.4016,3.2888],[73.4277,3.2898],[73.4428,3.2743],[73.435,3.2501],[73.4166,3.2313]]],[[[73.5122,4.1646],[73.4948,4.1552],[73.4786,4.1589],[73.473,4.1707],[73.4812,4.1881],[73.4947,4.2104],[73.5041,4.2346],[73.5178,4.2477],[73.5283,4.2433],[73.5271,4.2297],[73.5222,4.211],[73.519,4.1869],[73.5122,4.1646]]]]
 
-export default node('MV', '马尔代夫', MV_COORDS)
+export default node('MV', '马尔代夫', MV_COORDS, [c_MV_01, c_MV_29, c_MV_28, c_MV_27, c_MV_00, c_MV_26, c_MV_02, c_MV_20, c_MV_03, c_MV_13, c_MV_24, c_MV_05, c_MV_08, c_MV_17, c_MV_12, c_MV_14, c_MV_04, c_MV_25, c_MV_23, c_MV_07])

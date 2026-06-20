@@ -1,4 +1,4 @@
-import { node } from '../../types'
+import { node } from '@/db/geo/types'
 import c_CN_81_0001 from './CN-81-0001'
 import c_CN_81_0002 from './CN-81-0002'
 import c_CN_81_0003 from './CN-81-0003'

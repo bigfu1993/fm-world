@@ -1,5 +1,12 @@
-import { node } from '../types'
+import { node } from '@/db/geo/types'
+import c_AD_05 from './AD-05'
+import c_AD_02 from './AD-02'
+import c_AD_03 from './AD-03'
+import c_AD_04 from './AD-04'
+import c_AD_06 from './AD-06'
+import c_AD_08 from './AD-08'
+import c_AD_07 from './AD-07'
 
 const AD_COORDS: number[][][][] = [[[[1.7061,42.5033],[1.6785,42.4967],[1.5864,42.456],[1.5341,42.4417],[1.4862,42.4345],[1.4488,42.4375],[1.4281,42.4613],[1.4303,42.4979],[1.422,42.5308],[1.4148,42.5484],[1.4283,42.5959],[1.4589,42.6217],[1.5014,42.6427],[1.5682,42.635],[1.7099,42.6044],[1.7395,42.5759],[1.7402,42.5567],[1.714,42.5256],[1.7061,42.5033]]]]
 
-export default node('AD', '安道尔', AD_COORDS)
+export default node('AD', '安道尔', AD_COORDS, [c_AD_05, c_AD_02, c_AD_03, c_AD_04, c_AD_06, c_AD_08, c_AD_07])

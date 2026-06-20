@@ -1,5 +1,31 @@
-import { node } from '../types'
+import { node } from '@/db/geo/types'
+import c_SC_X02_ from './SC-X02~'
+import c_SC_15 from './SC-15'
+import c_SC_13 from './SC-13'
+import c_SC_02 from './SC-02'
+import c_SC_06 from './SC-06'
+import c_SC_23 from './SC-23'
+import c_SC_05 from './SC-05'
+import c_SC_04 from './SC-04'
+import c_SC_01 from './SC-01'
+import c_SC_20 from './SC-20'
+import c_SC_11 from './SC-11'
+import c_SC_25 from './SC-25'
+import c_SC_19 from './SC-19'
+import c_SC_18 from './SC-18'
+import c_SC_09 from './SC-09'
+import c_SC_16 from './SC-16'
+import c_SC_03 from './SC-03'
+import c_SC_12 from './SC-12'
+import c_SC_08 from './SC-08'
+import c_SC_10 from './SC-10'
+import c_SC_21 from './SC-21'
+import c_SC_07 from './SC-07'
+import c_SC_14 from './SC-14'
+import c_SC_17 from './SC-17'
+import c_SC_22 from './SC-22'
+import c_SC_24 from './SC-24'
 
 const SC_COORDS: number[][][][] = [[[[55.5403,-4.6931],[55.543,-4.7855],[55.4947,-4.7546],[55.4813,-4.6948],[55.4168,-4.6503],[55.3834,-4.6093],[55.4558,-4.5588],[55.5403,-4.6931]]]]
 
-export default node('SC', '塞舌尔', SC_COORDS)
+export default node('SC', '塞舌尔', SC_COORDS, [c_SC_X02_, c_SC_15, c_SC_13, c_SC_02, c_SC_06, c_SC_23, c_SC_05, c_SC_04, c_SC_01, c_SC_20, c_SC_11, c_SC_25, c_SC_19, c_SC_18, c_SC_09, c_SC_16, c_SC_03, c_SC_12, c_SC_08, c_SC_10, c_SC_21, c_SC_07, c_SC_14, c_SC_17, c_SC_22, c_SC_24])
