@@ -1,6 +1,6 @@
 import { Breadcrumb, Button, Input, Tag, message } from 'antd'
-import { COUNTRIES } from '@/mock/countries'
-import { PROVINCES, type Province } from '@/mock/provinces'
+import { COUNTRIES } from '@/db/countries'
+import { PROVINCES, type Province } from '@/db/provinces'
 import { CITIES, type CityData } from '@/mock/cities'
 import { GEO_LIST } from '@/mock/geoSample'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
@@ -9,7 +9,7 @@ import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
 import { getLabel, type LabelKey } from '@/components/LanguageLabel/LabelMap'
 
-const countryCodes = Array.from(new Set(PROVINCES.map((p) => p.countryCode)))
+const countryCodes = Array.from(new Set(PROVINCES.map((p) => p.belongTo)))
 const countryOptions = countryCodes
   .map((code) => COUNTRIES.find((c) => c.code === code))
   .filter((c): c is NonNullable<typeof c> => !!c)
@@ -21,7 +21,7 @@ function countryGeoCode(countryCode: string): string {
 }
 
 function provinceGeoCode(province: Province): string {
-  return `${province.countryCode}*${province.code}`
+  return `${province.belongTo}*${province.code}`
 }
 
 function cityGeoCode(city: CityData): string {
@@ -126,7 +126,7 @@ export default function GeoInfoPage() {
   const [provinceKeyword, setProvinceKeyword] = useState('')
   const [cityKeyword, setCityKeyword] = useState('')
 
-  const provinces = countryCode ? PROVINCES.filter((p) => p.countryCode === countryCode) : []
+  const provinces = countryCode ? PROVINCES.filter((p) => p.belongTo === countryCode) : []
   const cities = provinceCode ? CITIES.filter((c) => c.provinceCode === provinceCode) : []
 
   const filteredCountries = countryOptions.filter((c) =>
@@ -145,7 +145,7 @@ export default function GeoInfoPage() {
   }
 
   const countryHasMissingChild = (country: { code: string }) => {
-    const provincesOf = PROVINCES.filter((p) => p.countryCode === country.code)
+    const provincesOf = PROVINCES.filter((p) => p.belongTo === country.code)
     return (
       provincesOf.length > 0 &&
       provincesOf.some((p) => !hasData(provinceGeoCode(p)) || provinceHasMissingChild(p))

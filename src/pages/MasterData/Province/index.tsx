@@ -1,7 +1,7 @@
 import { Input, Space, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { PROVINCES, type Province } from '@/mock/provinces'
-import { COUNTRIES } from '@/mock/countries'
+import { PROVINCES, type Province } from '@/db/provinces'
+import { COUNTRIES } from '@/db/countries'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
@@ -14,10 +14,10 @@ export default function ProvincePage() {
   const columns: ColumnsType<Province> = [
     {
       title: <LanguageLabel langKey={language} labelKey="countryName" />,
-      dataIndex: 'countryCode',
-      render: (countryCode: string) => {
-        const country = COUNTRIES.find((c) => c.code === countryCode)
-        return country ? <LanguageText langKey={language} map={country} /> : countryCode
+      dataIndex: 'belongTo',
+      render: (belongTo: string) => {
+        const country = COUNTRIES.find((c) => c.code === belongTo)
+        return country ? <LanguageText langKey={language} map={country} /> : belongTo
       },
     },
     {
@@ -30,7 +30,7 @@ export default function ProvincePage() {
   const keywordLower = keyword.trim().toLowerCase()
   const dataSource = keywordLower
     ? PROVINCES.filter((province) => {
-        const country = COUNTRIES.find((c) => c.code === province.countryCode)
+        const country = COUNTRIES.find((c) => c.code === province.belongTo)
         return [...Object.values(province), ...(country ? Object.values(country) : [])].some(
           (value) => value.toLowerCase().includes(keywordLower),
         )

@@ -1,10 +1,10 @@
 import { Button, Input, Tag, message } from 'antd'
-import { COUNTRIES } from '@/mock/countries'
-import { PROVINCES, type Province } from '@/mock/provinces'
+import { COUNTRIES } from '@/db/countries'
+import { PROVINCES, type Province } from '@/db/provinces'
 import { CITIES, type CityData } from '@/mock/cities'
 import { points, landmarks } from '@/mock/db'
 import { GEO_LIST } from '@/mock/geoSample'
-import { GEO_TREE } from '@/mock/geo'
+import { GEO_TREE } from '@/db/geo'
 import type { Point, Landmark } from '@/types/point'
 import { getPublishStatus, requestPublish, requestUnpublish } from '@/api/publish'
 import type { PublishStatus } from '@/mock/publishStatus'
@@ -29,10 +29,8 @@ const STATUS_TAG_COLOR: Record<PublishStatus, string> = {
   'pending-unpublish': 'orange',
 }
 
-const countryCodes = Array.from(new Set(PROVINCES.map((p) => p.countryCode)))
-const countryOptions = countryCodes
-  .map((code) => COUNTRIES.find((c) => c.code === code))
-  .filter((c): c is NonNullable<typeof c> => !!c)
+const countryCodes = Array.from(new Set(PROVINCES.map((p) => p.belongTo)))
+const countryOptions = COUNTRIES
 
 const geoLookup = new Map(GEO_LIST.map((g) => [g.code, g.geo]))
 const worldRegions: GeoMapRegion[] = GEO_TREE.map((n) => ({ code: n.code, geo: n.geo }))
@@ -46,7 +44,7 @@ const worldCityRegions: GeoMapRegion[] = GEO_TREE.flatMap((n) =>
 )
 
 function provinceGeoCode(province: Province): string {
-  return `${province.countryCode}*${province.code}`
+  return `${province.belongTo}*${province.code}`
 }
 
 function cityGeoCode(city: CityData): string {
@@ -149,10 +147,30 @@ export default function PublishCenterPage() {
   const [pointKeyword, setPointKeyword] = useState('')
   const [landmarkKeyword, setLandmarkKeyword] = useState('')
 
-  const provincesOfCountry = countryCode ? PROVINCES.filter((p) => p.countryCode === countryCode) : []
-  const citiesOfProvince = provinceCode ? CITIES.filter((c) => c.provinceCode === provinceCode) : []
-  const pointsOfCity = cityCode ? points.filter((p) => p.cityCode === cityCode) : []
-  const landmarksOfPoint = pointId ? landmarks.filter((l) => l.pointId === pointId) : []
+  // 级联规则：选中某一层级后，再往下的层级强依赖"上一层级是否有具体选中值"；
+  // 只有当上一层级及其更上层都没有任何选中（即一直没有被"锁住"）时，才独立展示全量数据，否则展示为空
+  const provincesOfCountry = countryCode ? PROVINCES.filter((p) => p.belongTo === countryCode) : PROVINCES
+  const provinceFree = !countryCode
+
+  const citiesOfProvince = provinceCode
+    ? CITIES.filter((c) => c.provinceCode === provinceCode)
+    : provinceFree
+      ? CITIES
+      : []
+  const cityFree = !provinceCode && provinceFree
+
+  const pointsOfCity = cityCode
+    ? points.filter((p) => p.cityCode === cityCode)
+    : cityFree
+      ? points
+      : []
+  const pointFree = !cityCode && cityFree
+
+  const landmarksOfPoint = pointId
+    ? landmarks.filter((l) => l.pointId === pointId)
+    : pointFree
+      ? landmarks
+      : []
 
   const filteredCountries = countryOptions.filter((c) =>
     matchesKeyword(Object.values(c), countryKeyword.trim().toLowerCase()),
@@ -178,7 +196,7 @@ export default function PublishCenterPage() {
   }
 
   const countryHasMissingChild = (country: { code: string }) => {
-    const provincesOf = PROVINCES.filter((p) => p.countryCode === country.code)
+    const provincesOf = PROVINCES.filter((p) => p.belongTo === country.code)
     return (
       provincesOf.length > 0 &&
       provincesOf.some((p) => !hasGeoData(provinceGeoCode(p)) || provinceHasMissingChild(p))
@@ -221,7 +239,7 @@ export default function PublishCenterPage() {
   }
 
   const handleSelectCountry = (code: string) => {
-    setCountryCode(code)
+    setCountryCode((prev) => (prev === code ? undefined : code))
     setProvinceCode(undefined)
     setCityCode(undefined)
     setPointId(undefined)
@@ -229,21 +247,25 @@ export default function PublishCenterPage() {
   }
 
   const handleSelectProvince = (code: string) => {
-    setProvinceCode(code)
+    setProvinceCode((prev) => (prev === code ? undefined : code))
     setCityCode(undefined)
     setPointId(undefined)
     setLandmarkId(undefined)
   }
 
   const handleSelectCity = (code: string) => {
-    setCityCode(code)
+    setCityCode((prev) => (prev === code ? undefined : code))
     setPointId(undefined)
     setLandmarkId(undefined)
   }
 
   const handleSelectPoint = (id: string) => {
-    setPointId(id)
+    setPointId((prev) => (prev === id ? undefined : id))
     setLandmarkId(undefined)
+  }
+
+  const handleSelectLandmark = (id: string) => {
+    setLandmarkId((prev) => (prev === id ? undefined : id))
   }
 
   const pointMarker = selectedPoint
@@ -381,7 +403,7 @@ export default function PublishCenterPage() {
           titleKey="landmark"
           items={filteredLandmarks}
           selectedKey={landmarkId}
-          onSelect={setLandmarkId}
+          onSelect={handleSelectLandmark}
           langKey={language}
           keyword={landmarkKeyword}
           onKeywordChange={setLandmarkKeyword}

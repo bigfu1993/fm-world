@@ -1,6 +1,6 @@
 import { Input, Space, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { COUNTRIES, type CountryData } from '@/mock/countries'
+import { COUNTRIES, type CountryData } from '@/db/countries'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'

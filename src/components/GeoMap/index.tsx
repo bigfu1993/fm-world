@@ -1,7 +1,8 @@
 import { Button } from 'antd'
 import { UndoOutlined } from '@ant-design/icons'
 import LanguageText from '@/components/LanguageText'
-import { getLabel } from '@/components/LanguageLabel/LabelMap'
+import LanguageLabel from '@/components/LanguageLabel'
+import { getLabel, type LabelKey } from '@/components/LanguageLabel/LabelMap'
 import type { LanguageCode } from '@/types/system'
 
 export interface GeoMapGeometry {
@@ -38,15 +39,13 @@ interface GeoMapProps {
   oceanColor?: string
   fillColor?: string
   strokeColor?: string
-  publishedFillColor?: string
   publishedStrokeColor?: string
-  activeFillColor?: string
   activeStrokeColor?: string
-  provinceFillColor?: string
   provinceStrokeColor?: string
+  provincePublishedStrokeColor?: string
   provinceZoomThreshold?: number
-  cityFillColor?: string
   cityStrokeColor?: string
+  cityPublishedStrokeColor?: string
   cityZoomThreshold?: number
   strokeWidth?: number
 }
@@ -83,15 +82,13 @@ export default function GeoMap({
   oceanColor = '#dceefc',
   fillColor = 'rgba(250, 248, 240, 0.92)',
   strokeColor = 'rgba(180, 180, 180, 0.6)',
-  publishedFillColor = 'rgba(64, 150, 255, 0.15)',
-  publishedStrokeColor = '#4096ff',
-  activeFillColor = 'rgba(250, 140, 22, 0.2)',
-  activeStrokeColor = '#fa8c16',
-  provinceFillColor = 'rgba(120, 120, 120, 0.04)',
+  publishedStrokeColor = 'rgba(82, 196, 26, 0.7)',
+  activeStrokeColor = 'rgba(255, 77, 79, 0.75)',
   provinceStrokeColor = 'rgba(100, 100, 100, 0.4)',
+  provincePublishedStrokeColor = 'rgba(149, 222, 100, 0.5)',
   provinceZoomThreshold = 4,
-  cityFillColor = 'rgba(80, 80, 80, 0.03)',
   cityStrokeColor = 'rgba(60, 60, 60, 0.2)',
+  cityPublishedStrokeColor = 'rgba(149, 222, 100, 0.3)',
   cityZoomThreshold = 10,
   strokeWidth = 1,
 }: GeoMapProps) {
@@ -120,8 +117,8 @@ export default function GeoMap({
     if (!canvas) return
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
-      const sensitivity = 0.001
-      setZoom((z) => Math.min(50, Math.max(0.5, z - e.deltaY * sensitivity)))
+      const sensitivity = 0.005
+      setZoom((z) => Math.min(100, Math.max(0.8, z - e.deltaY * sensitivity)))
     }
 
     let dragging = false
@@ -250,19 +247,26 @@ export default function GeoMap({
     )
     drawRegions(
       regions.filter((r) => publishedSet.has(r.code) && !activeSet.has(r.code)),
-      publishedFillColor,
+      fillColor,
       publishedStrokeColor,
     )
-    drawRegions(regions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
+    drawRegions(regions.filter((r) => activeSet.has(r.code)), fillColor, activeStrokeColor)
 
     const provinceLineWidth = strokeWidth * 0.7
     const cityLineWidth = strokeWidth * 0.5
 
     if (showProvinces) {
       drawRegions(
-        provinceRegions.filter((r) => !activeSet.has(r.code)),
+        provinceRegions.filter((r) => !publishedSet.has(r.code) && !activeSet.has(r.code)),
         'transparent',
         provinceStrokeColor,
+        [6, 4],
+        provinceLineWidth,
+      )
+      drawRegions(
+        provinceRegions.filter((r) => publishedSet.has(r.code) && !activeSet.has(r.code)),
+        'transparent',
+        provincePublishedStrokeColor,
         [6, 4],
         provinceLineWidth,
       )
@@ -277,9 +281,16 @@ export default function GeoMap({
 
     if (showCities) {
       drawRegions(
-        cityRegions.filter((r) => !activeSet.has(r.code)),
+        cityRegions.filter((r) => !publishedSet.has(r.code) && !activeSet.has(r.code)),
         'transparent',
         cityStrokeColor,
+        [1, 4],
+        cityLineWidth,
+      )
+      drawRegions(
+        cityRegions.filter((r) => publishedSet.has(r.code) && !activeSet.has(r.code)),
+        'transparent',
+        cityPublishedStrokeColor,
         [1, 4],
         cityLineWidth,
       )
@@ -349,15 +360,13 @@ export default function GeoMap({
     oceanColor,
     fillColor,
     strokeColor,
-    publishedFillColor,
     publishedStrokeColor,
-    activeFillColor,
     activeStrokeColor,
-    provinceFillColor,
     provinceStrokeColor,
+    provincePublishedStrokeColor,
     provinceZoomThreshold,
-    cityFillColor,
     cityStrokeColor,
+    cityPublishedStrokeColor,
     cityZoomThreshold,
     strokeWidth,
   ])
@@ -366,6 +375,12 @@ export default function GeoMap({
     setZoom(1)
     setCenter(null)
   }
+
+  const legendItems: { color: string; labelKey: LabelKey }[] = [
+    { color: publishedStrokeColor, labelKey: 'publishedCountryLegend' },
+    { color: provincePublishedStrokeColor, labelKey: 'publishedProvinceLegend' },
+    { color: cityPublishedStrokeColor, labelKey: 'publishedCityLegend' },
+  ]
 
   return (
     <div style={{ position: 'relative', width, height }}>
@@ -380,6 +395,34 @@ export default function GeoMap({
           <LanguageText langKey={langKey} map={{ [langKey]: activeRegionName, en: activeRegionName }} />
         </div>
       )}
+      <div
+        style={{
+          position: 'absolute',
+          right: 8,
+          top: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          background: 'rgba(255, 255, 255, 0.85)',
+          padding: '6px 8px',
+          borderRadius: 4,
+        }}
+      >
+        {legendItems.map((item) => (
+          <div key={item.labelKey} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 12,
+                height: 2,
+                background: item.color,
+                flexShrink: 0,
+              }}
+            />
+            <LanguageLabel langKey={langKey} labelKey={item.labelKey} fontSize={10} />
+          </div>
+        ))}
+      </div>
       <Button
         size="small"
         icon={<UndoOutlined />}
