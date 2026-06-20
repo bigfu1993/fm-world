@@ -46,6 +46,17 @@ function toPolygons(geo?: GeoMapFeature): number[][][][] {
   return []
 }
 
+const KM_PER_DEGREE = 111
+const NICE_SCALE_STEPS_KM = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+
+function pickNiceScaleKm(maxKm: number): number {
+  let chosen = NICE_SCALE_STEPS_KM[0]
+  for (const step of NICE_SCALE_STEPS_KM) {
+    if (step <= maxKm) chosen = step
+  }
+  return chosen
+}
+
 export default function GeoMap({
   regions,
   publishedCodes = [],
@@ -63,6 +74,21 @@ export default function GeoMap({
   strokeWidth = 1,
 }: GeoMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [zoom, setZoom] = useState(1)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      setZoom((z) => {
+        const next = z * (e.deltaY > 0 ? 0.9 : 1.1)
+        return Math.min(8, Math.max(0.5, next))
+      })
+    }
+    canvas.addEventListener('wheel', handleWheel, { passive: false })
+    return () => canvas.removeEventListener('wheel', handleWheel)
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -93,7 +119,8 @@ export default function GeoMap({
     const padding = 16
     const lngRange = maxLng - minLng || 1
     const latRange = maxLat - minLat || 1
-    const scale = Math.min((width - padding * 2) / lngRange, (height - padding * 2) / latRange)
+    const baseScale = Math.min((width - padding * 2) / lngRange, (height - padding * 2) / latRange)
+    const scale = baseScale * zoom
     const offsetX = (width - lngRange * scale) / 2
     const offsetY = (height - latRange * scale) / 2
 
@@ -150,6 +177,31 @@ export default function GeoMap({
       ctx.font = '12px sans-serif'
       ctx.fillText(marker.label, x + 8, y - 8)
     }
+
+    const centerLat = (minLat + maxLat) / 2
+    const kmPerLngDegree = KM_PER_DEGREE * Math.cos((centerLat * Math.PI) / 180)
+    const pxPerKm = scale / kmPerLngDegree
+    const maxBarPx = 100
+    const niceKm = pickNiceScaleKm(maxBarPx / pxPerKm)
+    const barPx = niceKm * pxPerKm
+    const barLeft = 16
+    const barBottom = height - 16
+
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.65)'
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    ctx.moveTo(barLeft, barBottom)
+    ctx.lineTo(barLeft + barPx, barBottom)
+    ctx.moveTo(barLeft, barBottom - 4)
+    ctx.lineTo(barLeft, barBottom + 4)
+    ctx.moveTo(barLeft + barPx, barBottom - 4)
+    ctx.lineTo(barLeft + barPx, barBottom + 4)
+    ctx.stroke()
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'
+    ctx.font = '11px sans-serif'
+    ctx.fillText(`${niceKm} km`, barLeft, barBottom - 8)
+    ctx.fillText(`${zoom.toFixed(1)}x`, barLeft, barBottom - 22)
   }, [
     regions,
     publishedCodes,
@@ -158,6 +210,7 @@ export default function GeoMap({
     langKey,
     width,
     height,
+    zoom,
     fillColor,
     strokeColor,
     publishedFillColor,
