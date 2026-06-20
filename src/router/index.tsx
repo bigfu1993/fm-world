@@ -14,8 +14,9 @@ import PublishCenterPage from '@/pages/PublishCenter'
 import GeoInfoPage from '@/pages/InfoCenter/Geo'
 import TrafficInfoPage from '@/pages/InfoCenter/Traffic'
 import CommunicationInfoPage from '@/pages/InfoCenter/Communication'
-import FoodRecommendationPage from '@/pages/InfoCenter/Food'
-import AccommodationRecommendationPage from '@/pages/InfoCenter/Accommodation'
+import PointTypePage from '@/pages/InfoCenter/PointType'
+import LandmarkTypePage from '@/pages/InfoCenter/LandmarkType'
+import NotFoundPage from '@/pages/NotFound'
 import RequireAuth from './RequireAuth'
 
 export const router = createBrowserRouter([
@@ -34,8 +35,8 @@ export const router = createBrowserRouter([
       { path: 'info-center/geo', element: <GeoInfoPage /> },
       { path: 'info-center/traffic', element: <TrafficInfoPage /> },
       { path: 'info-center/communication', element: <CommunicationInfoPage /> },
-      { path: 'info-center/food', element: <FoodRecommendationPage /> },
-      { path: 'info-center/accommodation', element: <AccommodationRecommendationPage /> },
+      { path: 'info-center/point-types', element: <PointTypePage /> },
+      { path: 'info-center/landmark-types', element: <LandmarkTypePage /> },
       { path: 'system/admin-users', element: <AdminUserPage /> },
       { path: 'system/roles', element: <RolePage /> },
       { path: 'master-data/countries', element: <CountryPage /> },
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
       { path: 'master-data/provinces', element: <ProvincePage /> },
       { path: 'master-data/points', element: <PointPage /> },
       { path: 'master-data/landmarks', element: <LandmarkPage /> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ])

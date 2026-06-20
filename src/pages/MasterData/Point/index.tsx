@@ -1,5 +1,5 @@
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table, message } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Button, Form, Input, InputNumber, Modal, Popconfirm, Row, Col, Select, Space, Switch, Table, message } from 'antd'
+import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
   createPoint,
@@ -44,6 +44,132 @@ function CoordinatesInput({
   )
 }
 
+function BusinessHoursField({ language }: { language: Parameters<typeof getLabel>[1] }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <Form.List name="businessHours">
+        {(fields, { add, remove }) => (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <LanguageLabel langKey={language} labelKey="businessHours" />
+              <Button type="dashed" size="small" onClick={() => add()} icon={<PlusOutlined />}>
+                <LanguageLabel langKey={language} labelKey="addTimeRange" fontSize={10} />
+              </Button>
+            </div>
+            {fields.map((field) => (
+              <Space key={field.key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                <Form.Item
+                  {...field}
+                  name={[field.name, 'start']}
+                  rules={[{ required: true, message: getLabel('pleaseInputBusinessHoursRange', language) }]}
+                  noStyle
+                >
+                  <Input placeholder="09:00" style={{ width: 90 }} />
+                </Form.Item>
+                <span>-</span>
+                <Form.Item
+                  {...field}
+                  name={[field.name, 'end']}
+                  rules={[{ required: true, message: getLabel('pleaseInputBusinessHoursRange', language) }]}
+                  noStyle
+                >
+                  <Input placeholder="22:00" style={{ width: 90 }} />
+                </Form.Item>
+                <MinusCircleOutlined onClick={() => remove(field.name)} />
+              </Space>
+            ))}
+          </>
+        )}
+      </Form.List>
+    </div>
+  )
+}
+
+function AttractionFields({ language }: { language: Parameters<typeof getLabel>[1] }) {
+  return (
+    <>
+      <Form.Item name="website" label={<LanguageLabel langKey={language} labelKey="website" />}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="ticketUrl" label={<LanguageLabel langKey={language} labelKey="ticketUrl" />}>
+        <Input />
+      </Form.Item>
+    </>
+  )
+}
+
+function StayFields({ language }: { language: Parameters<typeof getLabel>[1] }) {
+  return (
+    <>
+      <Form.Item name="checkInTime" label={<LanguageLabel langKey={language} labelKey="checkInTime" />}>
+        <Input placeholder="14:00" />
+      </Form.Item>
+      <Form.Item name="checkOutTime" label={<LanguageLabel langKey={language} labelKey="checkOutTime" />}>
+        <Input placeholder="12:00" />
+      </Form.Item>
+      <Form.Item name="starRating" label={<LanguageLabel langKey={language} labelKey="starRating" />}>
+        <InputNumber min={1} max={5} style={{ width: '100%' }} />
+      </Form.Item>
+    </>
+  )
+}
+
+function TransportFields({ language }: { language: Parameters<typeof getLabel>[1] }) {
+  return (
+    <>
+      <Form.Item name="scheduleInfo" label={<LanguageLabel langKey={language} labelKey="scheduleInfo" />}>
+        <Input.TextArea rows={2} />
+      </Form.Item>
+      <Form.Item name="routeInfo" label={<LanguageLabel langKey={language} labelKey="routeInfo" />}>
+        <Input.TextArea rows={2} />
+      </Form.Item>
+    </>
+  )
+}
+
+function FoodFields({ language }: { language: Parameters<typeof getLabel>[1] }) {
+  return (
+    <>
+      <Form.Item name="avgCost" label={<LanguageLabel langKey={language} labelKey="avgCost" />}>
+        <InputNumber min={0} style={{ width: '100%' }} />
+      </Form.Item>
+    </>
+  )
+}
+
+function ShoppingFields({ language }: { language: Parameters<typeof getLabel>[1] }) {
+  return (
+    <>
+      <Form.Item name="brandIntro" label={<LanguageLabel langKey={language} labelKey="brandIntro" />}>
+        <Input.TextArea rows={2} />
+      </Form.Item>
+    </>
+  )
+}
+
+function PointTypeFields({
+  pointType,
+  language,
+}: {
+  pointType?: string
+  language: Parameters<typeof getLabel>[1]
+}) {
+  switch (pointType) {
+    case 'stay':
+      return <StayFields language={language} />
+    case 'transport':
+      return <TransportFields language={language} />
+    case 'food':
+      return <FoodFields language={language} />
+    case 'shopping':
+      return <ShoppingFields language={language} />
+    case 'attraction':
+      return <AttractionFields language={language} />
+    default:
+      return null
+  }
+}
+
 export default function PointPage() {
   const language = useAuthStore(selectCurrentLanguage)
   const [points, setPoints] = useState<Point[]>([])
@@ -52,6 +178,7 @@ export default function PointPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Point | null>(null)
   const [form] = Form.useForm<PointFormData>()
+  const pointType = Form.useWatch('pointType', form)
 
   const fetchData = async () => {
     setLoading(true)
@@ -79,6 +206,7 @@ export default function PointPage() {
   const openCreate = () => {
     setEditing(null)
     form.resetFields()
+    form.setFieldsValue({ businessHours: [{ start: '', end: '' }] })
     setModalOpen(true)
   }
 
@@ -133,9 +261,9 @@ export default function PointPage() {
     {
       title: <LanguageLabel langKey={language} labelKey="pointType" />,
       dataIndex: 'pointType',
-      render: (pointType: string) => {
-        const type = POINT_TYPES.find((t) => t.code === pointType)
-        return type ? <LanguageText langKey={language} map={type} /> : pointType
+      render: (pointTypeCode: string) => {
+        const type = POINT_TYPES.find((t) => t.code === pointTypeCode)
+        return type ? <LanguageText langKey={language} map={type} /> : pointTypeCode
       },
     },
     {
@@ -143,8 +271,6 @@ export default function PointPage() {
       dataIndex: 'coordinates',
       render: (coordinates: Point['coordinates']) => coordinates.join(', '),
     },
-    { title: <LanguageLabel langKey={language} labelKey="website" />, dataIndex: 'website' },
-    { title: <LanguageLabel langKey={language} labelKey="ticketUrl" />, dataIndex: 'ticketUrl' },
     {
       title: <LanguageLabel langKey={language} labelKey="actions" />,
       fixed: 'right',
@@ -196,42 +322,57 @@ export default function PointPage() {
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
         destroyOnHidden
+        width={720}
       >
         <Form form={form} layout="vertical" size="small">
-          <Form.Item
-            name="cityCode"
-            label={<LanguageLabel langKey={language} labelKey="city" />}
-            rules={[{ required: true, message: getLabel('pleaseSelectCity', language) }]}
-          >
-            <Select options={cityOptions} getPopupContainer={modalPopupContainer} />
-          </Form.Item>
-          <LanguageFormItem
-            langKey={language}
-            name="name"
-            label={<LanguageLabel langKey={language} labelKey="pointName" />}
-            required
-            requiredMessage={getLabel('pleaseInputPointName', language)}
-          />
-          <Form.Item
-            name="pointType"
-            label={<LanguageLabel langKey={language} labelKey="pointType" />}
-            rules={[{ required: true, message: getLabel('pleaseSelectPointType', language) }]}
-          >
-            <Select options={pointTypeOptions} getPopupContainer={modalPopupContainer} />
-          </Form.Item>
-          <Form.Item
-            name="coordinates"
-            label={<LanguageLabel langKey={language} labelKey="coordinates" />}
-            rules={[{ required: true, message: getLabel('pleaseInputCoordinates', language) }]}
-          >
-            <CoordinatesInput langKey={language} />
-          </Form.Item>
-          <Form.Item name="website" label={<LanguageLabel langKey={language} labelKey="website" />}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="ticketUrl" label={<LanguageLabel langKey={language} labelKey="ticketUrl" />}>
-            <Input />
-          </Form.Item>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                name="cityCode"
+                label={<LanguageLabel langKey={language} labelKey="city" />}
+                rules={[{ required: true, message: getLabel('pleaseSelectCity', language) }]}
+              >
+                <Select options={cityOptions} getPopupContainer={modalPopupContainer} />
+              </Form.Item>
+              <LanguageFormItem
+                langKey={language}
+                name="name"
+                label={<LanguageLabel langKey={language} labelKey="pointName" />}
+                required
+                requiredMessage={getLabel('pleaseInputPointName', language)}
+              />
+              <Form.Item
+                name="coordinates"
+                label={<LanguageLabel langKey={language} labelKey="coordinates" />}
+                rules={[{ required: true, message: getLabel('pleaseInputCoordinates', language) }]}
+              >
+                <CoordinatesInput langKey={language} />
+              </Form.Item>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <LanguageLabel langKey={language} labelKey="supportsService" />
+                <Form.Item name="supportsService" valuePropName="checked" initialValue={false} noStyle>
+                  <Switch />
+                </Form.Item>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <LanguageLabel langKey={language} labelKey="needsReservation" />
+                <Form.Item name="needsReservation" valuePropName="checked" initialValue={false} noStyle>
+                  <Switch />
+                </Form.Item>
+              </div>
+              <BusinessHoursField language={language} />
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="pointType"
+                label={<LanguageLabel langKey={language} labelKey="pointType" />}
+                rules={[{ required: true, message: getLabel('pleaseSelectPointType', language) }]}
+              >
+                <Select options={pointTypeOptions} getPopupContainer={modalPopupContainer} />
+              </Form.Item>
+              <PointTypeFields pointType={pointType} language={language} />
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </>

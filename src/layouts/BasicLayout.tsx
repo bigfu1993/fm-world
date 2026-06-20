@@ -12,8 +12,9 @@ import {
 import type { MenuProps } from 'antd';
 import { Outlet } from 'react-router-dom';
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore';
-import { LANGUAGES } from '@/types/system';
+import { GLOBAL_LANGUAGES } from '@/mock/languages';
 import LanguageLabel from '@/components/LanguageLabel';
+import LanguageText from '@/components/LanguageText';
 
 const { Header, Sider, Content } = Layout;
 
@@ -41,8 +42,8 @@ export default function BasicLayout() {
     (hasPermission('geo:manage') ||
       hasPermission('traffic:manage') ||
       hasPermission('communication:manage') ||
-      hasPermission('food:manage') ||
-      hasPermission('accommodation:manage')) && {
+      hasPermission('pointType:manage') ||
+      hasPermission('landmarkType:manage')) && {
       key: 'info-center',
       icon: <InfoCircleOutlined />,
       label: <LanguageLabel langKey={language} labelKey="informationCenter" />,
@@ -61,14 +62,16 @@ export default function BasicLayout() {
             <LanguageLabel langKey={language} labelKey="communicationInformation" />
           ),
         },
-        hasPermission('food:manage') && {
-          key: '/info-center/food',
-          label: <LanguageLabel langKey={language} labelKey="foodRecommendation" />,
-        },
-        hasPermission('accommodation:manage') && {
-          key: '/info-center/accommodation',
+        hasPermission('pointType:manage') && {
+          key: '/info-center/point-types',
           label: (
-            <LanguageLabel langKey={language} labelKey="accommodationRecommendation" />
+            <LanguageLabel langKey={language} labelKey="pointTypeManagement" />
+          ),
+        },
+        hasPermission('landmarkType:manage') && {
+          key: '/info-center/landmark-types',
+          label: (
+            <LanguageLabel langKey={language} labelKey="landmarkTypeManagement" />
           ),
         },
       ].filter(Boolean) as MenuProps['items'],
@@ -179,10 +182,10 @@ export default function BasicLayout() {
               value={language}
               onChange={setCurrentLanguage}
               style={{ width: 120 }}
-              options={availableLanguages.map((code) => ({
-                value: code,
-                label: LANGUAGES.find((l) => l.code === code)?.label ?? code,
-              }))}
+              options={availableLanguages.map((code) => {
+                const lang = GLOBAL_LANGUAGES.find((l) => l.code === code)
+                return { value: code, label: lang ? <LanguageText langKey={language} map={lang} /> : code }
+              })}
             />
           </div>
           <Button

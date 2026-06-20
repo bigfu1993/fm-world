@@ -1,6 +1,6 @@
-import type { AdminUser, Permission, Role } from '@/types/system'
-import type { City, Country } from '@/types/destination'
-import type { Point, Landmark } from '@/types/point'
+import type { AdminUser, Permission, Role } from '@/types/system';
+import type { City, Country } from '@/types/destination';
+import type { Point, Landmark } from '@/types/point';
 
 export const PERMISSIONS: Permission[] = [
   { code: 'dashboard:view', label: '查看首页', group: '仪表盘' },
@@ -8,8 +8,8 @@ export const PERMISSIONS: Permission[] = [
   { code: 'geo:manage', label: '地理信息', group: '信息中心' },
   { code: 'traffic:manage', label: '交通信息', group: '信息中心' },
   { code: 'communication:manage', label: '通讯信息', group: '信息中心' },
-  { code: 'food:manage', label: '美食推荐', group: '信息中心' },
-  { code: 'accommodation:manage', label: '住宿推荐', group: '信息中心' },
+  { code: 'pointType:manage', label: '点位类型管理', group: '信息中心' },
+  { code: 'landmarkType:manage', label: '地标类型管理', group: '信息中心' },
   { code: 'admin:manage', label: '账号管理', group: '系统管理' },
   { code: 'role:manage', label: '角色管理', group: '系统管理' },
   { code: 'country:manage', label: '国家管理', group: '基础数据' },
@@ -20,7 +20,7 @@ export const PERMISSIONS: Permission[] = [
   { code: 'landmark:manage', label: '地标管理', group: '基础数据' },
   { code: 'transport:manage', label: '交通信息管理', group: '内容管理' },
   { code: 'culture:manage', label: '文化信息管理', group: '内容管理' },
-]
+];
 
 export const roles: Role[] = [
   {
@@ -47,7 +47,7 @@ export const roles: Role[] = [
     ],
     createdAt: '2026-06-01 10:00:00',
   },
-]
+];
 
 export const adminUsers: (AdminUser & { password: string })[] = [
   {
@@ -57,7 +57,7 @@ export const adminUsers: (AdminUser & { password: string })[] = [
     displayName: '系统管理员',
     email: 'admin@finger-more.com',
     roleIds: ['role-super'],
-    languages: ['zh', 'en', 'ja', 'ko', 'th'],
+    languages: ['zh', 'en', 'ja', 'ko'],
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
@@ -72,7 +72,7 @@ export const adminUsers: (AdminUser & { password: string })[] = [
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
-]
+];
 
 export const countries: Country[] = [
   {
@@ -85,32 +85,56 @@ export const countries: Country[] = [
   {
     id: 'country-kr',
     code: 'KR',
-    names: { zh: '韩国', en: 'South Korea', ja: '韓国', ko: '대한민국', th: 'เกาหลีใต้' },
+    names: {
+      zh: '韩国',
+      en: 'South Korea',
+      ja: '韓国',
+      ko: '대한민국',
+      th: 'เกาหลีใต้',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
   {
     id: 'country-th',
     code: 'TH',
-    names: { zh: '泰国', en: 'Thailand', ja: 'タイ', ko: '태국', th: 'ประเทศไทย' },
+    names: {
+      zh: '泰国',
+      en: 'Thailand',
+      ja: 'タイ',
+      ko: '태국',
+      th: 'ประเทศไทย',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
   {
     id: 'country-sg',
     code: 'SG',
-    names: { zh: '新加坡', en: 'Singapore', ja: 'シンガポール', ko: '싱가포르', th: 'สิงคโปร์' },
+    names: {
+      zh: '新加坡',
+      en: 'Singapore',
+      ja: 'シンガポール',
+      ko: '싱가포르',
+      th: 'สิงคโปร์',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
   {
     id: 'country-my',
     code: 'MY',
-    names: { zh: '马来西亚', en: 'Malaysia', ja: 'マレーシア', ko: '말레이시아', th: 'มาเลเซีย' },
+    names: {
+      zh: '马来西亚',
+      en: 'Malaysia',
+      ja: 'マレーシア',
+      ko: '말레이시아',
+      th: 'มาเลเซีย',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
-]
+];
 
 export const cities: City[] = [
   {
@@ -144,47 +168,86 @@ export const cities: City[] = [
   {
     id: 'city-bangkok',
     countryId: 'country-th',
-    names: { zh: '曼谷', en: 'Bangkok', ja: 'バンコク', ko: '방콕', th: 'กรุงเทพมหานคร' },
+    names: {
+      zh: '曼谷',
+      en: 'Bangkok',
+      ja: 'バンコク',
+      ko: '방콕',
+      th: 'กรุงเทพมหานคร',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
   {
     id: 'city-phuket',
     countryId: 'country-th',
-    names: { zh: '普吉', en: 'Phuket', ja: 'プーケット', ko: '푸켓', th: 'ภูเก็ต' },
+    names: {
+      zh: '普吉',
+      en: 'Phuket',
+      ja: 'プーケット',
+      ko: '푸켓',
+      th: 'ภูเก็ต',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
   {
     id: 'city-singapore',
     countryId: 'country-sg',
-    names: { zh: '新加坡', en: 'Singapore', ja: 'シンガポール', ko: '싱가포르', th: 'สิงคโปร์' },
+    names: {
+      zh: '新加坡',
+      en: 'Singapore',
+      ja: 'シンガポール',
+      ko: '싱가포르',
+      th: 'สิงคโปร์',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
   {
     id: 'city-kualalumpur',
     countryId: 'country-my',
-    names: { zh: '吉隆坡', en: 'Kuala Lumpur', ja: 'クアラルンプール', ko: '쿠알라룸푸르', th: 'กัวลาลัมเปอร์' },
+    names: {
+      zh: '吉隆坡',
+      en: 'Kuala Lumpur',
+      ja: 'クアラルンプール',
+      ko: '쿠알라룸푸르',
+      th: 'กัวลาลัมเปอร์',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
   {
     id: 'city-langkawi',
     countryId: 'country-my',
-    names: { zh: '兰卡威', en: 'Langkawi', ja: 'ランカウイ', ko: '랑카위', th: 'ลังกาวี' },
+    names: {
+      zh: '兰卡威',
+      en: 'Langkawi',
+      ja: 'ランカウイ',
+      ko: '랑카위',
+      th: 'ลังกาวี',
+    },
     status: 'enabled',
     createdAt: '2026-06-01 10:00:00',
   },
-]
+];
 
 export const points: Point[] = [
   {
     id: 'point-tokyo-tower',
     cityCode: 'JP-TYO',
-    name: { zh: '东京塔', en: 'Tokyo Tower', ja: '東京タワー', ko: '도쿄 타워', th: 'หอคอยโตเกียว' },
+    name: {
+      zh: '东京塔',
+      en: 'Tokyo Tower',
+      ja: '東京タワー',
+      ko: '도쿄 타워',
+      th: 'หอคอยโตเกียว',
+    },
     pointType: 'attraction',
     coordinates: [35.6586, 139.7454],
+    businessHours: [{ start: '09:00', end: '23:00' }],
+    supportsService: true,
+    needsReservation: false,
     website: 'https://www.tokyotower.co.jp/',
     ticketUrl: 'https://www.tokyotower.co.jp/ticket',
     createdAt: '2026-06-01 10:00:00',
@@ -192,9 +255,18 @@ export const points: Point[] = [
   {
     id: 'point-gyeongbokgung',
     cityCode: 'KR-SEL',
-    name: { zh: '景福宫', en: 'Gyeongbokgung Palace', ja: '景福宮', ko: '경복궁', th: 'พระราชวังเคียงบกกุง' },
+    name: {
+      zh: '景福宫',
+      en: 'Gyeongbokgung Palace',
+      ja: '景福宮',
+      ko: '경복궁',
+      th: 'พระราชวังเคียงบกกุง',
+    },
     pointType: 'attraction',
     coordinates: [37.5796, 126.977],
+    businessHours: [{ start: '09:00', end: '18:00' }],
+    supportsService: true,
+    needsReservation: false,
     website: 'https://www.royalpalace.go.kr/',
     ticketUrl: 'https://www.royalpalace.go.kr/ticket',
     createdAt: '2026-06-01 10:00:00',
@@ -202,40 +274,65 @@ export const points: Point[] = [
   {
     id: 'point-grand-palace',
     cityCode: 'TH-BKK',
-    name: { zh: '大皇宫', en: 'Grand Palace', ja: '王宮', ko: '왕궁', th: 'พระบรมมหาราชวัง' },
+    name: {
+      zh: '大皇宫',
+      en: 'Grand Palace',
+      ja: '王宮',
+      ko: '왕궁',
+      th: 'พระบรมมหาราชวัง',
+    },
     pointType: 'attraction',
     coordinates: [13.75, 100.4913],
+    businessHours: [
+      { start: '08:30', end: '11:30' },
+      { start: '13:00', end: '15:30' },
+    ],
+    supportsService: true,
+    needsReservation: true,
     website: 'https://www.royalgrandpalace.th/',
     ticketUrl: 'https://www.royalgrandpalace.th/ticket',
     createdAt: '2026-06-01 10:00:00',
   },
-]
+];
 
 export const landmarks: Landmark[] = [
   {
     id: 'landmark-tokyo-tower-observatory',
     pointId: 'point-tokyo-tower',
-    name: { zh: '主展望台', en: 'Main Observatory', ja: 'メインデッキ', ko: '메인 전망대', th: 'จุดชมวิวหลัก' },
+    name: {
+      zh: '主展望台',
+      en: 'Main Observatory',
+      ja: 'メインデッキ',
+      ko: '메인 전망대',
+      th: 'จุดชมวิวหลัก',
+    },
     landmarkType: 'viewpoint',
     description: '位于150米高度的主展望台，可俯瞰东京市区全景。',
-    cultureExtension: '东京塔建于1958年，曾是日本最高建筑，象征战后日本的复兴。',
+    cultureExtension:
+      '东京塔建于1958年，曾是日本最高建筑，象征战后日本的复兴。',
     createdAt: '2026-06-01 10:00:00',
   },
   {
     id: 'landmark-gyeongbokgung-geunjeongjeon',
     pointId: 'point-gyeongbokgung',
-    name: { zh: '勤政殿', en: 'Geunjeongjeon Hall', ja: '勤政殿', ko: '근정전', th: 'พระที่นั่งกึนจองจอน' },
+    name: {
+      zh: '勤政殿',
+      en: 'Geunjeongjeon Hall',
+      ja: '勤政殿',
+      ko: '근정전',
+      th: 'พระที่นั่งกึนจองจอน',
+    },
     landmarkType: 'landmark',
     description: '景福宫的正殿，是国王举行正式仪式和接见外国使臣的场所。',
     cultureExtension: '勤政殿名称取自“勤于政事”之意，体现儒家治国理念。',
     createdAt: '2026-06-01 10:00:00',
   },
-]
+];
 
 export function delay<T>(data: T, ms = 300): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(data), ms))
+  return new Promise((resolve) => setTimeout(() => resolve(data), ms));
 }
 
 export function genId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }

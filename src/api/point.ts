@@ -1,5 +1,5 @@
 import { points, delay, genId } from '@/mock/db'
-import type { Point } from '@/types/point'
+import type { Point, BusinessHoursRange } from '@/types/point'
 import type { LocalizedText } from '@/types/destination'
 
 export function listPoints(): Promise<Point[]> {
@@ -11,9 +11,31 @@ export interface PointFormData {
   name: LocalizedText
   pointType: string
   coordinates: [number, number]
-  website: string
-  ticketUrl: string
+  businessHours?: BusinessHoursRange[]
+  supportsService: boolean
+  needsReservation: boolean
+  website?: string
+  ticketUrl?: string
+  checkInTime?: string
+  checkOutTime?: string
+  starRating?: number
+  scheduleInfo?: string
+  routeInfo?: string
+  avgCost?: number
+  brandIntro?: string
 }
+
+const TYPE_SPECIFIC_FIELDS = [
+  'website',
+  'ticketUrl',
+  'checkInTime',
+  'checkOutTime',
+  'starRating',
+  'scheduleInfo',
+  'routeInfo',
+  'avgCost',
+  'brandIntro',
+] as const
 
 export function createPoint(data: PointFormData): Promise<Point> {
   const point: Point = {
@@ -28,6 +50,7 @@ export function createPoint(data: PointFormData): Promise<Point> {
 export function updatePoint(id: string, data: PointFormData): Promise<Point> {
   const point = points.find((p) => p.id === id)
   if (!point) return Promise.reject(new Error('点位不存在'))
+  TYPE_SPECIFIC_FIELDS.forEach((field) => delete point[field])
   Object.assign(point, data)
   return delay(point)
 }
