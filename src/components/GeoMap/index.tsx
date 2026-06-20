@@ -1,5 +1,6 @@
 import { Button } from 'antd'
 import { UndoOutlined } from '@ant-design/icons'
+import LanguageText from '@/components/LanguageText'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
 import type { LanguageCode } from '@/types/system'
 
@@ -10,6 +11,7 @@ export interface GeoMapGeometry {
 
 export interface GeoMapFeature {
   geometry: GeoMapGeometry
+  properties?: { name: string }
 }
 
 export interface GeoMapRegion {
@@ -33,6 +35,7 @@ interface GeoMapProps {
   langKey: LanguageCode
   width?: number
   height?: number
+  oceanColor?: string
   fillColor?: string
   strokeColor?: string
   publishedFillColor?: string
@@ -56,13 +59,6 @@ function toPolygons(geo?: GeoMapFeature): number[][][][] {
   return []
 }
 
-// 把 rgba(...)/rgb(...) 颜色的透明度强制设为 0，用于隐藏非当前层级的背景填充
-function transparentize(color: string): string {
-  if (color.startsWith('rgba')) return color.replace(/[\d.]+\)\s*$/, '0)')
-  if (color.startsWith('rgb(')) return color.replace('rgb(', 'rgba(').replace(')', ', 0)')
-  return 'transparent'
-}
-
 const KM_PER_DEGREE = 111
 const NICE_SCALE_STEPS_KM = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 
@@ -84,22 +80,31 @@ export default function GeoMap({
   langKey,
   width = 480,
   height = 420,
-  fillColor = 'rgba(180, 180, 180, 0.06)',
-  strokeColor = 'rgba(180, 180, 180, 0.45)',
+  oceanColor = '#dceefc',
+  fillColor = 'rgba(250, 248, 240, 0.92)',
+  strokeColor = 'rgba(180, 180, 180, 0.6)',
   publishedFillColor = 'rgba(64, 150, 255, 0.15)',
   publishedStrokeColor = '#4096ff',
   activeFillColor = 'rgba(250, 140, 22, 0.2)',
   activeStrokeColor = '#fa8c16',
   provinceFillColor = 'rgba(120, 120, 120, 0.04)',
-  provinceStrokeColor = 'rgba(100, 100, 100, 0.5)',
-  provinceZoomThreshold = 8,
+  provinceStrokeColor = 'rgba(100, 100, 100, 0.4)',
+  provinceZoomThreshold = 4,
   cityFillColor = 'rgba(80, 80, 80, 0.03)',
-  cityStrokeColor = 'rgba(60, 60, 60, 0.5)',
-  cityZoomThreshold = 20,
+  cityStrokeColor = 'rgba(60, 60, 60, 0.2)',
+  cityZoomThreshold = 10,
   strokeWidth = 1,
 }: GeoMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [zoom, setZoom] = useState(1)
+  const showProvinces = zoom >= provinceZoomThreshold && provinceRegions.length > 0
+  const showCities = zoom >= cityZoomThreshold && cityRegions.length > 0
+  const activeSetForName = new Set(activeCodes)
+  // 由深到浅依次查找：当前层级没有匹配的选中项时，回退到更粗的层级（比如放大到省份层级但选中的是没有省份数据的国家时，仍应显示国家名）
+  const activeRegionName =
+    (showCities ? cityRegions.find((r) => activeSetForName.has(r.code))?.geo.properties?.name : undefined) ??
+    (showProvinces ? provinceRegions.find((r) => activeSetForName.has(r.code))?.geo.properties?.name : undefined) ??
+    regions.find((r) => activeSetForName.has(r.code))?.geo.properties?.name
   // 当前画布中心对应的地理坐标（拖拽时更新），null 表示使用数据范围的几何中心
   const [center, setCenter] = useState<{ lng: number; lat: number } | null>(null)
   const centerRef = useRef(center)
@@ -160,6 +165,8 @@ export default function GeoMap({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     ctx.clearRect(0, 0, width, height)
+    ctx.fillStyle = oceanColor
+    ctx.fillRect(0, 0, width, height)
 
     const allPolygons = regions.flatMap((region) => toPolygons(region.geo))
 
@@ -201,10 +208,16 @@ export default function GeoMap({
       height / 2 - (lat - effectiveCenter.lat) * scale,
     ]
 
-    const drawRegions = (list: GeoMapRegion[], fill: string, stroke: string, lineDash: number[] = []) => {
+    const drawRegions = (
+      list: GeoMapRegion[],
+      fill: string,
+      stroke: string,
+      lineDash: number[] = [],
+      lineWidth: number = strokeWidth,
+    ) => {
       ctx.fillStyle = fill
       ctx.strokeStyle = stroke
-      ctx.lineWidth = strokeWidth
+      ctx.lineWidth = lineWidth
       ctx.setLineDash(lineDash)
       ctx.lineCap = lineDash.length > 0 ? 'round' : 'butt'
       tileOffsets.forEach((tileOffsetX) => {
@@ -226,50 +239,57 @@ export default function GeoMap({
       })
     }
 
-    const showProvinces = zoom >= provinceZoomThreshold && provinceRegions.length > 0
-    const showCities = zoom >= cityZoomThreshold && cityRegions.length > 0
-    // 当前最细的层级才显示背景填充色，更粗的层级只保留边界线（透明填充）
-    const currentLevel: 'country' | 'province' | 'city' = showCities
-      ? 'city'
-      : showProvinces
-        ? 'province'
-        : 'country'
-
+    // showProvinces/showCities 在组件顶层计算，这里直接复用
+    // 国家层级始终保留填充；省份/城市只画边界线，不画填充
     const publishedSet = new Set(publishedCodes)
     const activeSet = new Set(activeCodes)
-    const countryFill = currentLevel === 'country' ? fillColor : transparentize(fillColor)
-    const countryPublishedFill = currentLevel === 'country' ? publishedFillColor : transparentize(publishedFillColor)
     drawRegions(
       regions.filter((r) => !publishedSet.has(r.code) && !activeSet.has(r.code)),
-      countryFill,
+      fillColor,
       strokeColor,
     )
     drawRegions(
       regions.filter((r) => publishedSet.has(r.code) && !activeSet.has(r.code)),
-      countryPublishedFill,
+      publishedFillColor,
       publishedStrokeColor,
     )
     drawRegions(regions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
 
+    const provinceLineWidth = strokeWidth * 0.7
+    const cityLineWidth = strokeWidth * 0.5
+
     if (showProvinces) {
-      const provinceFill = currentLevel === 'province' ? provinceFillColor : transparentize(provinceFillColor)
       drawRegions(
         provinceRegions.filter((r) => !activeSet.has(r.code)),
-        provinceFill,
+        'transparent',
         provinceStrokeColor,
         [6, 4],
+        provinceLineWidth,
       )
       drawRegions(
         provinceRegions.filter((r) => activeSet.has(r.code)),
-        activeFillColor,
+        'transparent',
         activeStrokeColor,
         [6, 4],
+        provinceLineWidth,
       )
     }
 
     if (showCities) {
-      drawRegions(cityRegions.filter((r) => !activeSet.has(r.code)), cityFillColor, cityStrokeColor, [1, 4])
-      drawRegions(cityRegions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor, [1, 4])
+      drawRegions(
+        cityRegions.filter((r) => !activeSet.has(r.code)),
+        'transparent',
+        cityStrokeColor,
+        [1, 4],
+        cityLineWidth,
+      )
+      drawRegions(
+        cityRegions.filter((r) => activeSet.has(r.code)),
+        'transparent',
+        activeStrokeColor,
+        [1, 4],
+        cityLineWidth,
+      )
     }
 
     ctx.setLineDash([])
@@ -326,6 +346,7 @@ export default function GeoMap({
     height,
     zoom,
     center,
+    oceanColor,
     fillColor,
     strokeColor,
     publishedFillColor,
@@ -352,8 +373,13 @@ export default function GeoMap({
         ref={canvasRef}
         width={width}
         height={height}
-        style={{ border: '1px solid #f0f0f0', background: '#fff' }}
+        style={{ border: '1px solid #f0f0f0', background: oceanColor }}
       />
+      {activeRegionName && (
+        <div style={{ position: 'absolute', left: 16, top: 16, background: 'rgba(255, 255, 255, 0.85)', padding: '2px 8px', borderRadius: 4 }}>
+          <LanguageText langKey={langKey} map={{ [langKey]: activeRegionName, en: activeRegionName }} />
+        </div>
+      )}
       <Button
         size="small"
         icon={<UndoOutlined />}
