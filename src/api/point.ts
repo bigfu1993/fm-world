@@ -1,15 +1,18 @@
 import { points, delay, genId } from '@/mock/db'
-import type { Point } from '@/types/attraction'
+import type { Point } from '@/types/point'
+import type { LocalizedText } from '@/types/destination'
 
 export function listPoints(): Promise<Point[]> {
   return delay([...points])
 }
 
 export interface PointFormData {
-  attractionId: string
-  name: string
-  description: string
-  cultureExtension: string
+  cityCode: string
+  name: LocalizedText
+  pointType: string
+  coordinates: [number, number]
+  website: string
+  ticketUrl: string
 }
 
 export function createPoint(data: PointFormData): Promise<Point> {

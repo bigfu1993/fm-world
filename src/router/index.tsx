@@ -8,8 +8,8 @@ import CountryPage from '@/pages/MasterData/Country'
 import CityPage from '@/pages/MasterData/City'
 import LanguagePage from '@/pages/MasterData/Language'
 import ProvincePage from '@/pages/MasterData/Province'
-import AttractionPage from '@/pages/MasterData/Attraction'
 import PointPage from '@/pages/MasterData/Point'
+import LandmarkPage from '@/pages/MasterData/Landmark'
 import PublishCenterPage from '@/pages/PublishCenter'
 import GeoInfoPage from '@/pages/InfoCenter/Geo'
 import TrafficInfoPage from '@/pages/InfoCenter/Traffic'
@@ -42,8 +42,8 @@ export const router = createBrowserRouter([
       { path: 'master-data/cities', element: <CityPage /> },
       { path: 'master-data/languages', element: <LanguagePage /> },
       { path: 'master-data/provinces', element: <ProvincePage /> },
-      { path: 'master-data/attractions', element: <AttractionPage /> },
       { path: 'master-data/points', element: <PointPage /> },
+      { path: 'master-data/landmarks', element: <LandmarkPage /> },
     ],
   },
 ])

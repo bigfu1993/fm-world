@@ -1,19 +1,21 @@
 import type { LocalizedText } from './destination'
 
-export interface Attraction {
+export interface Point {
   id: string
   cityCode: string
   name: LocalizedText
+  pointType: string
   coordinates: [number, number]
   website: string
   ticketUrl: string
   createdAt: string
 }
 
-export interface Point {
+export interface Landmark {
   id: string
-  attractionId: string
-  name: string
+  pointId: string
+  name: LocalizedText
+  landmarkType: string
   description: string
   cultureExtension: string
   createdAt: string

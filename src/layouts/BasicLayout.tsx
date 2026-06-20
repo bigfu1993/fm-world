@@ -77,8 +77,8 @@ export default function BasicLayout() {
       hasPermission('city:manage') ||
       hasPermission('language:manage') ||
       hasPermission('province:manage') ||
-      hasPermission('attraction:manage') ||
-      hasPermission('point:manage')) && {
+      hasPermission('point:manage') ||
+      hasPermission('landmark:manage')) && {
       key: 'master-data',
       icon: <GlobalOutlined />,
       label: <LanguageLabel langKey={language} labelKey="masterData" />,
@@ -105,15 +105,15 @@ export default function BasicLayout() {
           key: '/master-data/cities',
           label: <LanguageLabel langKey={language} labelKey="cityManagement" />,
         },
-        hasPermission('attraction:manage') && {
-          key: '/master-data/attractions',
-          label: (
-            <LanguageLabel langKey={language} labelKey="attractionManagement" />
-          ),
-        },
         hasPermission('point:manage') && {
           key: '/master-data/points',
           label: <LanguageLabel langKey={language} labelKey="pointManagement" />,
+        },
+        hasPermission('landmark:manage') && {
+          key: '/master-data/landmarks',
+          label: (
+            <LanguageLabel langKey={language} labelKey="landmarkManagement" />
+          ),
         },
       ].filter(Boolean) as MenuProps['items'],
     },
@@ -137,23 +137,27 @@ export default function BasicLayout() {
   ].filter(Boolean) as MenuProps['items'];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div
-          style={{ height: 32, margin: 16, color: '#fff', textAlign: 'center' }}
-        >
-          finger-more
+    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
+      <Sider trigger={null} collapsible collapsed={collapsed} style={{ height: '100%' }}>
+        <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{ height: 32, margin: 16, color: '#fff', textAlign: 'center', flexShrink: 0 }}
+          >
+            finger-more
+          </div>
+          <div className="sider-menu-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <Menu
+              theme="dark"
+              mode="inline"
+              selectedKeys={[location.pathname]}
+              defaultOpenKeys={['info-center', 'master-data', 'system']}
+              items={menuItems}
+              onClick={({ key }) => navigate(key)}
+            />
+          </div>
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          defaultOpenKeys={['info-center', 'master-data', 'system']}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-        />
       </Sider>
-      <Layout>
+      <Layout style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
         <Header
           style={{
             padding: 0,
@@ -161,6 +165,7 @@ export default function BasicLayout() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -192,7 +197,7 @@ export default function BasicLayout() {
             <LanguageLabel langKey={language} labelKey="logout" />
           </Button>
         </Header>
-        <Content style={{ margin: 16, background: '#fff', padding: 16 }}>
+        <Content style={{ margin: 16, background: '#fff', padding: 16, overflowY: 'auto', flex: 1, minHeight: 0 }}>
           <Outlet />
         </Content>
       </Layout>

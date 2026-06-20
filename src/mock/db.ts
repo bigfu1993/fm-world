@@ -1,6 +1,6 @@
 import type { AdminUser, Permission, Role } from '@/types/system'
 import type { City, Country } from '@/types/destination'
-import type { Attraction, Point } from '@/types/attraction'
+import type { Point, Landmark } from '@/types/point'
 
 export const PERMISSIONS: Permission[] = [
   { code: 'dashboard:view', label: '查看首页', group: '仪表盘' },
@@ -16,8 +16,8 @@ export const PERMISSIONS: Permission[] = [
   { code: 'city:manage', label: '城市管理', group: '基础数据' },
   { code: 'language:manage', label: '语言管理', group: '基础数据' },
   { code: 'province:manage', label: '省份管理', group: '基础数据' },
-  { code: 'attraction:manage', label: '景区管理', group: '基础数据' },
   { code: 'point:manage', label: '点位管理', group: '基础数据' },
+  { code: 'landmark:manage', label: '地标管理', group: '基础数据' },
   { code: 'transport:manage', label: '交通信息管理', group: '内容管理' },
   { code: 'culture:manage', label: '文化信息管理', group: '内容管理' },
 ]
@@ -40,8 +40,8 @@ export const roles: Role[] = [
       'dashboard:view',
       'country:manage',
       'city:manage',
-      'attraction:manage',
       'point:manage',
+      'landmark:manage',
       'transport:manage',
       'culture:manage',
     ],
@@ -178,29 +178,32 @@ export const cities: City[] = [
   },
 ]
 
-export const attractions: Attraction[] = [
+export const points: Point[] = [
   {
-    id: 'attraction-tokyo-tower',
+    id: 'point-tokyo-tower',
     cityCode: 'JP-TYO',
     name: { zh: '东京塔', en: 'Tokyo Tower', ja: '東京タワー', ko: '도쿄 타워', th: 'หอคอยโตเกียว' },
+    pointType: 'attraction',
     coordinates: [35.6586, 139.7454],
     website: 'https://www.tokyotower.co.jp/',
     ticketUrl: 'https://www.tokyotower.co.jp/ticket',
     createdAt: '2026-06-01 10:00:00',
   },
   {
-    id: 'attraction-gyeongbokgung',
+    id: 'point-gyeongbokgung',
     cityCode: 'KR-SEL',
     name: { zh: '景福宫', en: 'Gyeongbokgung Palace', ja: '景福宮', ko: '경복궁', th: 'พระราชวังเคียงบกกุง' },
+    pointType: 'attraction',
     coordinates: [37.5796, 126.977],
     website: 'https://www.royalpalace.go.kr/',
     ticketUrl: 'https://www.royalpalace.go.kr/ticket',
     createdAt: '2026-06-01 10:00:00',
   },
   {
-    id: 'attraction-grand-palace',
+    id: 'point-grand-palace',
     cityCode: 'TH-BKK',
     name: { zh: '大皇宫', en: 'Grand Palace', ja: '王宮', ko: '왕궁', th: 'พระบรมมหาราชวัง' },
+    pointType: 'attraction',
     coordinates: [13.75, 100.4913],
     website: 'https://www.royalgrandpalace.th/',
     ticketUrl: 'https://www.royalgrandpalace.th/ticket',
@@ -208,19 +211,21 @@ export const attractions: Attraction[] = [
   },
 ]
 
-export const points: Point[] = [
+export const landmarks: Landmark[] = [
   {
-    id: 'point-tokyo-tower-observatory',
-    attractionId: 'attraction-tokyo-tower',
-    name: '主展望台',
+    id: 'landmark-tokyo-tower-observatory',
+    pointId: 'point-tokyo-tower',
+    name: { zh: '主展望台', en: 'Main Observatory', ja: 'メインデッキ', ko: '메인 전망대', th: 'จุดชมวิวหลัก' },
+    landmarkType: 'viewpoint',
     description: '位于150米高度的主展望台，可俯瞰东京市区全景。',
     cultureExtension: '东京塔建于1958年，曾是日本最高建筑，象征战后日本的复兴。',
     createdAt: '2026-06-01 10:00:00',
   },
   {
-    id: 'point-gyeongbokgung-geunjeongjeon',
-    attractionId: 'attraction-gyeongbokgung',
-    name: '勤政殿',
+    id: 'landmark-gyeongbokgung-geunjeongjeon',
+    pointId: 'point-gyeongbokgung',
+    name: { zh: '勤政殿', en: 'Geunjeongjeon Hall', ja: '勤政殿', ko: '근정전', th: 'พระที่นั่งกึนจองจอน' },
+    landmarkType: 'landmark',
     description: '景福宫的正殿，是国王举行正式仪式和接见外国使臣的场所。',
     cultureExtension: '勤政殿名称取自“勤于政事”之意，体现儒家治国理念。',
     createdAt: '2026-06-01 10:00:00',

@@ -9,6 +9,15 @@ body,
   block-size: 100%;
 }
 
+.sider-menu-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sider-menu-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .ant-modal .ant-input,
 .ant-modal .ant-input-number-input,
 .ant-modal .ant-select-selector .ant-select-selection-item,

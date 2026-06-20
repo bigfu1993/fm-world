@@ -1,7 +1,6 @@
-import { Button, Form, Input, Modal, Popconfirm, Select, Space, Table, message } from 'antd'
+import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table, message } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { listAttractions } from '@/api/attraction'
 import {
   createPoint,
   listPoints,
@@ -9,16 +8,45 @@ import {
   updatePoint,
   type PointFormData,
 } from '@/api/point'
-import type { Attraction, Point } from '@/types/attraction'
+import { CITIES } from '@/mock/cities'
+import { POINT_TYPES } from '@/mock/pointTypes'
+import type { Point } from '@/types/point'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
+import LanguageText from '@/components/LanguageText'
+import LanguageFormItem from '@/components/LanguageFormItem'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
 import { modalPopupContainer } from '@/utils/popupContainer'
+
+function CoordinatesInput({
+  langKey,
+  value,
+  onChange,
+}: {
+  langKey: Parameters<typeof getLabel>[1]
+  value?: [number, number]
+  onChange?: (value: [number, number]) => void
+}) {
+  const [lat, lng] = value ?? [undefined, undefined]
+  return (
+    <Space.Compact>
+      <InputNumber
+        value={lat}
+        onChange={(v) => onChange?.([v ?? 0, lng ?? 0])}
+        placeholder={getLabel('latitude', langKey)}
+      />
+      <InputNumber
+        value={lng}
+        onChange={(v) => onChange?.([lat ?? 0, v ?? 0])}
+        placeholder={getLabel('longitude', langKey)}
+      />
+    </Space.Compact>
+  )
+}
 
 export default function PointPage() {
   const language = useAuthStore(selectCurrentLanguage)
   const [points, setPoints] = useState<Point[]>([])
-  const [attractions, setAttractions] = useState<Attraction[]>([])
   const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -28,9 +56,7 @@ export default function PointPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [pointList, attractionList] = await Promise.all([listPoints(), listAttractions()])
-      setPoints(pointList)
-      setAttractions(attractionList)
+      setPoints(await listPoints())
     } finally {
       setLoading(false)
     }
@@ -40,7 +66,15 @@ export default function PointPage() {
     fetchData()
   }, [])
 
-  const attractionOptions = attractions.map((a) => ({ value: a.id, label: a.name[language] ?? a.name.en }))
+  const cityOptions = CITIES.map((city) => ({
+    value: city.code,
+    label: <LanguageText langKey={language} map={city} />,
+  }))
+
+  const pointTypeOptions = POINT_TYPES.map((t) => ({
+    value: t.code,
+    label: <LanguageText langKey={language} map={t} />,
+  }))
 
   const openCreate = () => {
     setEditing(null)
@@ -79,21 +113,38 @@ export default function PointPage() {
 
   const keywordLower = keyword.trim().toLowerCase()
   const dataSource = keywordLower
-    ? points.filter((p) => p.name.toLowerCase().includes(keywordLower))
+    ? points.filter((p) => Object.values(p.name).some((value) => value.toLowerCase().includes(keywordLower)))
     : points
 
   const columns: ColumnsType<Point> = [
     {
-      title: <LanguageLabel langKey={language} labelKey="attractionName" />,
-      dataIndex: 'attractionId',
-      render: (attractionId: string) => {
-        const attraction = attractions.find((a) => a.id === attractionId)
-        return attraction ? attraction.name[language] ?? attraction.name.en : attractionId
+      title: <LanguageLabel langKey={language} labelKey="city" />,
+      dataIndex: 'cityCode',
+      render: (cityCode: string) => {
+        const city = CITIES.find((c) => c.code === cityCode)
+        return city ? <LanguageText langKey={language} map={city} /> : cityCode
       },
     },
-    { title: <LanguageLabel langKey={language} labelKey="pointName" />, dataIndex: 'name' },
-    { title: <LanguageLabel langKey={language} labelKey="introduction" />, dataIndex: 'description' },
-    { title: <LanguageLabel langKey={language} labelKey="cultureExtension" />, dataIndex: 'cultureExtension' },
+    {
+      title: <LanguageLabel langKey={language} labelKey="pointName" />,
+      dataIndex: 'name',
+      render: (name: Point['name']) => <LanguageText langKey={language} map={{ ...name }} />,
+    },
+    {
+      title: <LanguageLabel langKey={language} labelKey="pointType" />,
+      dataIndex: 'pointType',
+      render: (pointType: string) => {
+        const type = POINT_TYPES.find((t) => t.code === pointType)
+        return type ? <LanguageText langKey={language} map={type} /> : pointType
+      },
+    },
+    {
+      title: <LanguageLabel langKey={language} labelKey="coordinates" />,
+      dataIndex: 'coordinates',
+      render: (coordinates: Point['coordinates']) => coordinates.join(', '),
+    },
+    { title: <LanguageLabel langKey={language} labelKey="website" />, dataIndex: 'website' },
+    { title: <LanguageLabel langKey={language} labelKey="ticketUrl" />, dataIndex: 'ticketUrl' },
     {
       title: <LanguageLabel langKey={language} labelKey="actions" />,
       fixed: 'right',
@@ -148,24 +199,38 @@ export default function PointPage() {
       >
         <Form form={form} layout="vertical" size="small">
           <Form.Item
-            name="attractionId"
-            label={<LanguageLabel langKey={language} labelKey="attractionName" />}
-            rules={[{ required: true, message: getLabel('pleaseSelectAttraction', language) }]}
+            name="cityCode"
+            label={<LanguageLabel langKey={language} labelKey="city" />}
+            rules={[{ required: true, message: getLabel('pleaseSelectCity', language) }]}
           >
-            <Select options={attractionOptions} getPopupContainer={modalPopupContainer} />
+            <Select options={cityOptions} getPopupContainer={modalPopupContainer} />
           </Form.Item>
-          <Form.Item
+          <LanguageFormItem
+            langKey={language}
             name="name"
             label={<LanguageLabel langKey={language} labelKey="pointName" />}
-            rules={[{ required: true, message: getLabel('pleaseInputPointName', language) }]}
+            required
+            requiredMessage={getLabel('pleaseInputPointName', language)}
+          />
+          <Form.Item
+            name="pointType"
+            label={<LanguageLabel langKey={language} labelKey="pointType" />}
+            rules={[{ required: true, message: getLabel('pleaseSelectPointType', language) }]}
           >
+            <Select options={pointTypeOptions} getPopupContainer={modalPopupContainer} />
+          </Form.Item>
+          <Form.Item
+            name="coordinates"
+            label={<LanguageLabel langKey={language} labelKey="coordinates" />}
+            rules={[{ required: true, message: getLabel('pleaseInputCoordinates', language) }]}
+          >
+            <CoordinatesInput langKey={language} />
+          </Form.Item>
+          <Form.Item name="website" label={<LanguageLabel langKey={language} labelKey="website" />}>
             <Input />
           </Form.Item>
-          <Form.Item name="description" label={<LanguageLabel langKey={language} labelKey="introduction" />}>
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          <Form.Item name="cultureExtension" label={<LanguageLabel langKey={language} labelKey="cultureExtension" />}>
-            <Input.TextArea rows={3} />
+          <Form.Item name="ticketUrl" label={<LanguageLabel langKey={language} labelKey="ticketUrl" />}>
+            <Input />
           </Form.Item>
         </Form>
       </Modal>
