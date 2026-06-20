@@ -75,19 +75,58 @@ export default function GeoMap({
 }: GeoMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [zoom, setZoom] = useState(1)
+  // 当前画布中心对应的地理坐标（拖拽时更新），null 表示使用数据范围的几何中心
+  const [center, setCenter] = useState<{ lng: number; lat: number } | null>(null)
+  const centerRef = useRef(center)
+  const scaleRef = useRef(1)
+  const defaultCenterRef = useRef({ lng: 0, lat: 0 })
+
+  useEffect(() => {
+    centerRef.current = center
+  }, [center])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
-      setZoom((z) => {
-        const next = z * (e.deltaY > 0 ? 0.9 : 1.1)
-        return Math.min(8, Math.max(0.5, next))
+      const sensitivity = 0.001
+      setZoom((z) => Math.min(8, Math.max(0.5, z - e.deltaY * sensitivity)))
+    }
+
+    let dragging = false
+    let dragStart = { x: 0, y: 0, lng: 0, lat: 0 }
+
+    const handleMouseDown = (e: MouseEvent) => {
+      dragging = true
+      const startCenter = centerRef.current ?? defaultCenterRef.current
+      dragStart = { x: e.clientX, y: e.clientY, lng: startCenter.lng, lat: startCenter.lat }
+      canvas.style.cursor = 'grabbing'
+    }
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragging) return
+      const scale = scaleRef.current
+      setCenter({
+        lng: dragStart.lng - (e.clientX - dragStart.x) / scale,
+        lat: dragStart.lat + (e.clientY - dragStart.y) / scale,
       })
     }
+    const handleMouseUp = () => {
+      dragging = false
+      canvas.style.cursor = 'grab'
+    }
+
+    canvas.style.cursor = 'grab'
     canvas.addEventListener('wheel', handleWheel, { passive: false })
-    return () => canvas.removeEventListener('wheel', handleWheel)
+    canvas.addEventListener('mousedown', handleMouseDown)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel)
+      canvas.removeEventListener('mousedown', handleMouseDown)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
   }, [])
 
   useEffect(() => {
@@ -121,30 +160,40 @@ export default function GeoMap({
     const latRange = maxLat - minLat || 1
     const baseScale = Math.min((width - padding * 2) / lngRange, (height - padding * 2) / latRange)
     const scale = baseScale * zoom
-    const offsetX = (width - lngRange * scale) / 2
-    const offsetY = (height - latRange * scale) / 2
+    scaleRef.current = scale
 
-    const toXY = (lng: number, lat: number): [number, number] => [
-      offsetX + (lng - minLng) * scale,
-      height - offsetY - (lat - minLat) * scale,
+    const bboxCenterLng = (minLng + maxLng) / 2
+    const bboxCenterLat = (minLat + maxLat) / 2
+    defaultCenterRef.current = { lng: bboxCenterLng, lat: bboxCenterLat }
+    const effectiveCenter = center ?? defaultCenterRef.current
+
+    const worldWidthPx = 360 * scale
+    const wrapsHorizontally = worldWidthPx > width
+    const tileOffsets = wrapsHorizontally ? [-worldWidthPx, 0, worldWidthPx] : [0]
+
+    const toXY = (lng: number, lat: number, tileOffsetX = 0): [number, number] => [
+      width / 2 + (lng - effectiveCenter.lng) * scale + tileOffsetX,
+      height / 2 - (lat - effectiveCenter.lat) * scale,
     ]
 
     const drawRegions = (list: GeoMapRegion[], fill: string, stroke: string) => {
       ctx.fillStyle = fill
       ctx.strokeStyle = stroke
       ctx.lineWidth = strokeWidth
-      list.forEach((region) => {
-        toPolygons(region.geo).forEach((poly) => {
-          poly.forEach((ring, ringIndex) => {
-            ctx.beginPath()
-            ring.forEach(([lng, lat], index) => {
-              const [x, y] = toXY(lng, lat)
-              if (index === 0) ctx.moveTo(x, y)
-              else ctx.lineTo(x, y)
+      tileOffsets.forEach((tileOffsetX) => {
+        list.forEach((region) => {
+          toPolygons(region.geo).forEach((poly) => {
+            poly.forEach((ring, ringIndex) => {
+              ctx.beginPath()
+              ring.forEach(([lng, lat], index) => {
+                const [x, y] = toXY(lng, lat, tileOffsetX)
+                if (index === 0) ctx.moveTo(x, y)
+                else ctx.lineTo(x, y)
+              })
+              ctx.closePath()
+              if (ringIndex === 0) ctx.fill()
+              ctx.stroke()
             })
-            ctx.closePath()
-            if (ringIndex === 0) ctx.fill()
-            ctx.stroke()
           })
         })
       })
@@ -165,21 +214,22 @@ export default function GeoMap({
     drawRegions(regions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
 
     if (marker) {
-      const [x, y] = toXY(marker.lng, marker.lat)
-      ctx.beginPath()
-      ctx.arc(x, y, 5, 0, Math.PI * 2)
-      ctx.fillStyle = '#ff4d4f'
-      ctx.fill()
-      ctx.strokeStyle = '#fff'
-      ctx.lineWidth = 1.5
-      ctx.stroke()
-      ctx.fillStyle = '#000'
-      ctx.font = '12px sans-serif'
-      ctx.fillText(marker.label, x + 8, y - 8)
+      tileOffsets.forEach((tileOffsetX) => {
+        const [x, y] = toXY(marker.lng, marker.lat, tileOffsetX)
+        ctx.beginPath()
+        ctx.arc(x, y, 5, 0, Math.PI * 2)
+        ctx.fillStyle = '#ff4d4f'
+        ctx.fill()
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+        ctx.fillStyle = '#000'
+        ctx.font = '12px sans-serif'
+        ctx.fillText(marker.label, x + 8, y - 8)
+      })
     }
 
-    const centerLat = (minLat + maxLat) / 2
-    const kmPerLngDegree = KM_PER_DEGREE * Math.cos((centerLat * Math.PI) / 180)
+    const kmPerLngDegree = KM_PER_DEGREE * Math.cos((effectiveCenter.lat * Math.PI) / 180)
     const pxPerKm = scale / kmPerLngDegree
     const maxBarPx = 100
     const niceKm = pickNiceScaleKm(maxBarPx / pxPerKm)
@@ -211,6 +261,7 @@ export default function GeoMap({
     width,
     height,
     zoom,
+    center,
     fillColor,
     strokeColor,
     publishedFillColor,
