@@ -56,6 +56,13 @@ function toPolygons(geo?: GeoMapFeature): number[][][][] {
   return []
 }
 
+// 把 rgba(...)/rgb(...) 颜色的透明度强制设为 0，用于隐藏非当前层级的背景填充
+function transparentize(color: string): string {
+  if (color.startsWith('rgba')) return color.replace(/[\d.]+\)\s*$/, '0)')
+  if (color.startsWith('rgb(')) return color.replace('rgb(', 'rgba(').replace(')', ', 0)')
+  return 'transparent'
+}
+
 const KM_PER_DEGREE = 111
 const NICE_SCALE_STEPS_KM = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 
@@ -194,10 +201,12 @@ export default function GeoMap({
       height / 2 - (lat - effectiveCenter.lat) * scale,
     ]
 
-    const drawRegions = (list: GeoMapRegion[], fill: string, stroke: string) => {
+    const drawRegions = (list: GeoMapRegion[], fill: string, stroke: string, lineDash: number[] = []) => {
       ctx.fillStyle = fill
       ctx.strokeStyle = stroke
       ctx.lineWidth = strokeWidth
+      ctx.setLineDash(lineDash)
+      ctx.lineCap = lineDash.length > 0 ? 'round' : 'butt'
       tileOffsets.forEach((tileOffsetX) => {
         list.forEach((region) => {
           toPolygons(region.geo).forEach((poly) => {
@@ -217,33 +226,54 @@ export default function GeoMap({
       })
     }
 
+    const showProvinces = zoom >= provinceZoomThreshold && provinceRegions.length > 0
+    const showCities = zoom >= cityZoomThreshold && cityRegions.length > 0
+    // 当前最细的层级才显示背景填充色，更粗的层级只保留边界线（透明填充）
+    const currentLevel: 'country' | 'province' | 'city' = showCities
+      ? 'city'
+      : showProvinces
+        ? 'province'
+        : 'country'
+
     const publishedSet = new Set(publishedCodes)
     const activeSet = new Set(activeCodes)
+    const countryFill = currentLevel === 'country' ? fillColor : transparentize(fillColor)
+    const countryPublishedFill = currentLevel === 'country' ? publishedFillColor : transparentize(publishedFillColor)
     drawRegions(
       regions.filter((r) => !publishedSet.has(r.code) && !activeSet.has(r.code)),
-      fillColor,
+      countryFill,
       strokeColor,
     )
     drawRegions(
       regions.filter((r) => publishedSet.has(r.code) && !activeSet.has(r.code)),
-      publishedFillColor,
+      countryPublishedFill,
       publishedStrokeColor,
     )
     drawRegions(regions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
 
-    if (zoom >= provinceZoomThreshold && provinceRegions.length > 0) {
+    if (showProvinces) {
+      const provinceFill = currentLevel === 'province' ? provinceFillColor : transparentize(provinceFillColor)
       drawRegions(
         provinceRegions.filter((r) => !activeSet.has(r.code)),
-        provinceFillColor,
+        provinceFill,
         provinceStrokeColor,
+        [6, 4],
       )
-      drawRegions(provinceRegions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
+      drawRegions(
+        provinceRegions.filter((r) => activeSet.has(r.code)),
+        activeFillColor,
+        activeStrokeColor,
+        [6, 4],
+      )
     }
 
-    if (zoom >= cityZoomThreshold && cityRegions.length > 0) {
-      drawRegions(cityRegions.filter((r) => !activeSet.has(r.code)), cityFillColor, cityStrokeColor)
-      drawRegions(cityRegions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
+    if (showCities) {
+      drawRegions(cityRegions.filter((r) => !activeSet.has(r.code)), cityFillColor, cityStrokeColor, [1, 4])
+      drawRegions(cityRegions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor, [1, 4])
     }
+
+    ctx.setLineDash([])
+    ctx.lineCap = 'butt'
 
     if (marker) {
       tileOffsets.forEach((tileOffsetX) => {
