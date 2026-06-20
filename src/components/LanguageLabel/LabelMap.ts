@@ -45,6 +45,7 @@ export const labelMap = {
 
   // admin user page
   resetPassword: { zh: '重置密码', en: 'Reset Password', ja: 'パスワード再設定', ko: '비밀번호 재설정', th: 'รีเซ็ตรหัสผ่าน' },
+  resetMapView: { zh: '重置', en: 'Reset', ja: 'リセット', ko: '초기화', th: 'รีเซ็ต' },
   confirmDeleteAccount: { zh: '确认删除该账号？', en: 'Are you sure to delete this account?', ja: 'このアカウントを削除しますか？', ko: '이 계정을 삭제하시겠습니까?', th: 'ยืนยันการลบบัญชีนี้หรือไม่?' },
   searchByUsername: { zh: '按用户名搜索', en: 'Search by username', ja: 'ユーザー名で検索', ko: '사용자 이름으로 검색', th: 'ค้นหาตามชื่อผู้ใช้' },
   searchByCountryName: { zh: '按国家名称搜索', en: 'Search by country name', ja: '国名で検索', ko: '국가명으로 검색', th: 'ค้นหาตามชื่อประเทศ' },

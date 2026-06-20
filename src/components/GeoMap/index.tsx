@@ -1,3 +1,5 @@
+import { Button } from 'antd'
+import { UndoOutlined } from '@ant-design/icons'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
 import type { LanguageCode } from '@/types/system'
 
@@ -23,6 +25,8 @@ export interface GeoMapMarker {
 
 interface GeoMapProps {
   regions: GeoMapRegion[]
+  provinceRegions?: GeoMapRegion[]
+  cityRegions?: GeoMapRegion[]
   publishedCodes?: string[]
   activeCodes?: string[]
   marker?: GeoMapMarker
@@ -35,6 +39,12 @@ interface GeoMapProps {
   publishedStrokeColor?: string
   activeFillColor?: string
   activeStrokeColor?: string
+  provinceFillColor?: string
+  provinceStrokeColor?: string
+  provinceZoomThreshold?: number
+  cityFillColor?: string
+  cityStrokeColor?: string
+  cityZoomThreshold?: number
   strokeWidth?: number
 }
 
@@ -59,6 +69,8 @@ function pickNiceScaleKm(maxKm: number): number {
 
 export default function GeoMap({
   regions,
+  provinceRegions = [],
+  cityRegions = [],
   publishedCodes = [],
   activeCodes = [],
   marker,
@@ -71,6 +83,12 @@ export default function GeoMap({
   publishedStrokeColor = '#4096ff',
   activeFillColor = 'rgba(250, 140, 22, 0.2)',
   activeStrokeColor = '#fa8c16',
+  provinceFillColor = 'rgba(120, 120, 120, 0.04)',
+  provinceStrokeColor = 'rgba(100, 100, 100, 0.5)',
+  provinceZoomThreshold = 8,
+  cityFillColor = 'rgba(80, 80, 80, 0.03)',
+  cityStrokeColor = 'rgba(60, 60, 60, 0.5)',
+  cityZoomThreshold = 20,
   strokeWidth = 1,
 }: GeoMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -91,7 +109,7 @@ export default function GeoMap({
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
       const sensitivity = 0.001
-      setZoom((z) => Math.min(8, Math.max(0.5, z - e.deltaY * sensitivity)))
+      setZoom((z) => Math.min(50, Math.max(0.5, z - e.deltaY * sensitivity)))
     }
 
     let dragging = false
@@ -213,6 +231,20 @@ export default function GeoMap({
     )
     drawRegions(regions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
 
+    if (zoom >= provinceZoomThreshold && provinceRegions.length > 0) {
+      drawRegions(
+        provinceRegions.filter((r) => !activeSet.has(r.code)),
+        provinceFillColor,
+        provinceStrokeColor,
+      )
+      drawRegions(provinceRegions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
+    }
+
+    if (zoom >= cityZoomThreshold && cityRegions.length > 0) {
+      drawRegions(cityRegions.filter((r) => !activeSet.has(r.code)), cityFillColor, cityStrokeColor)
+      drawRegions(cityRegions.filter((r) => activeSet.has(r.code)), activeFillColor, activeStrokeColor)
+    }
+
     if (marker) {
       tileOffsets.forEach((tileOffsetX) => {
         const [x, y] = toXY(marker.lng, marker.lat, tileOffsetX)
@@ -254,6 +286,8 @@ export default function GeoMap({
     ctx.fillText(`${zoom.toFixed(1)}x`, barLeft, barBottom - 22)
   }, [
     regions,
+    provinceRegions,
+    cityRegions,
     publishedCodes,
     activeCodes,
     marker,
@@ -268,15 +302,35 @@ export default function GeoMap({
     publishedStrokeColor,
     activeFillColor,
     activeStrokeColor,
+    provinceFillColor,
+    provinceStrokeColor,
+    provinceZoomThreshold,
+    cityFillColor,
+    cityStrokeColor,
+    cityZoomThreshold,
     strokeWidth,
   ])
 
+  const handleReset = () => {
+    setZoom(1)
+    setCenter(null)
+  }
+
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      style={{ border: '1px solid #f0f0f0', background: '#fff' }}
-    />
+    <div style={{ position: 'relative', width, height }}>
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        style={{ border: '1px solid #f0f0f0', background: '#fff' }}
+      />
+      <Button
+        size="small"
+        icon={<UndoOutlined />}
+        onClick={handleReset}
+        title={getLabel('resetMapView', langKey)}
+        style={{ position: 'absolute', right: 8, bottom: 8 }}
+      />
+    </div>
   )
 }

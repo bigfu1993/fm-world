@@ -3,8 +3,8 @@ import { COUNTRIES } from '@/mock/countries'
 import { PROVINCES, type Province } from '@/mock/provinces'
 import { CITIES, type CityData } from '@/mock/cities'
 import { points, landmarks } from '@/mock/db'
-import { GEO_LIST } from '@/mock/geo'
-import { GEO_TREE } from '@/mock/geoGlobal'
+import { GEO_LIST } from '@/mock/geoSample'
+import { GEO_TREE } from '@/mock/geo'
 import type { Point, Landmark } from '@/types/point'
 import { getPublishStatus, requestPublish, requestUnpublish } from '@/api/publish'
 import type { PublishStatus } from '@/mock/publishStatus'
@@ -36,6 +36,14 @@ const countryOptions = countryCodes
 
 const geoLookup = new Map(GEO_LIST.map((g) => [g.code, g.geo]))
 const worldRegions: GeoMapRegion[] = GEO_TREE.map((n) => ({ code: n.code, geo: n.geo }))
+const worldProvinceRegions: GeoMapRegion[] = GEO_TREE.flatMap((n) =>
+  (n.children ?? []).map((child) => ({ code: child.code, geo: child.geo })),
+)
+const worldCityRegions: GeoMapRegion[] = GEO_TREE.flatMap((n) =>
+  (n.children ?? []).flatMap((province) =>
+    (province.children ?? []).map((city) => ({ code: city.code, geo: city.geo })),
+  ),
+)
 
 function provinceGeoCode(province: Province): string {
   return `${province.countryCode}*${province.code}`
@@ -285,6 +293,8 @@ export default function PublishCenterPage() {
         <div style={{ flex: 1, minHeight: 0 }}>
           <GeoMap
             regions={mapRegions}
+            provinceRegions={worldProvinceRegions}
+            cityRegions={worldCityRegions}
             publishedCodes={countryCodes}
             activeCodes={activeCodes}
             marker={canvasMarker}
