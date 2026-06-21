@@ -497,9 +497,7 @@ export default function GeoMap({
             left: label.x,
             top: label.y,
             transform: 'translate(-50%, -50%)',
-            background: 'rgba(255, 255, 255, 0.85)',
-            padding: '2px 8px',
-            borderRadius: 4,
+            fontSize: 12,
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
           }}
