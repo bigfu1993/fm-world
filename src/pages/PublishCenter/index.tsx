@@ -12,7 +12,12 @@ import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import type { LanguageCode } from '@/types/system'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
-import GeoMap, { type GeoMapFeature, type GeoMapMarker, type GeoMapRegion } from '@/components/GeoMap'
+import GeoMap, {
+  type GeoMapFeature,
+  type GeoMapFocus,
+  type GeoMapMarker,
+  type GeoMapRegion,
+} from '@/components/GeoMap'
 import { getLabel, type LabelKey } from '@/components/LanguageLabel/LabelMap'
 
 const STATUS_LABEL_KEY: Record<PublishStatus, LabelKey> = {
@@ -42,6 +47,15 @@ const worldCityRegions: GeoMapRegion[] = GEO_TREE.flatMap((n) =>
     (province.children ?? []).map((city) => ({ code: city.code, geo: city.geo })),
   ),
 )
+// db/geo 里省份的 code 跟 db/provinces.ts 的 code 是同一套体系（都来自 Natural Earth admin-1 的 iso_3166_2），
+// 唯独中国走的是 DataV 的数字编码（CN-32 等），跟 provinces.ts 里的字母编码（CN-XJ 等）对不上，
+// 只能退而用中文名做兼容映射（两边的省份中文名是一致的）
+const provinceGeoByCode = new Map(worldProvinceRegions.map((r) => [r.code, r.geo]))
+const provinceGeoByChineseName = new Map(
+  worldProvinceRegions
+    .filter((r) => r.geo.properties?.name)
+    .map((r) => [r.geo.properties!.name, r.geo]),
+)
 
 function provinceGeoCode(province: Province): string {
   return `${province.belongTo}*${province.code}`
@@ -49,6 +63,25 @@ function provinceGeoCode(province: Province): string {
 
 function cityGeoCode(city: CityData): string {
   return `${city.countryCode}*${city.provinceCode}*${city.code}`
+}
+
+const FOCUS_ZOOM_COUNTRY = 4
+const FOCUS_ZOOM_PROVINCE_OR_CITY = 10
+const FOCUS_ZOOM_POINT = 50
+
+function regionCenter(geo?: GeoMapFeature): { lng: number; lat: number } | undefined {
+  if (!geo) return undefined
+  if (geo.centroid) return { lng: geo.centroid[0], lat: geo.centroid[1] }
+  const { geometry } = geo
+  const polygons = geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates]
+  const ring = (polygons as number[][][][])[0]?.[0]
+  if (!ring || ring.length === 0) return undefined
+  const lngs = ring.map((p) => p[0])
+  const lats = ring.map((p) => p[1])
+  return {
+    lng: (Math.min(...lngs) + Math.max(...lngs)) / 2,
+    lat: (Math.min(...lats) + Math.max(...lats)) / 2,
+  }
 }
 
 function matchesKeyword(values: string[], keyword: string): boolean {
@@ -283,7 +316,10 @@ export default function PublishCenterPage() {
     activeCodes.push(selectedCountry.code)
   }
   if (selectedProvince) {
-    const geo = geoLookup.get(provinceGeoCode(selectedProvince)) as GeoMapFeature | undefined
+    const geo =
+      provinceGeoByCode.get(selectedProvince.code) ??
+      provinceGeoByChineseName.get(selectedProvince.zh) ??
+      (geoLookup.get(provinceGeoCode(selectedProvince)) as GeoMapFeature | undefined)
     if (geo) {
       mapRegions.push({ code: 'selected-province', geo })
       activeCodes.push('selected-province')
@@ -309,6 +345,33 @@ export default function PublishCenterPage() {
     canvasMarker = pointMarker
   }
 
+  const countryGeo = selectedCountry
+    ? worldRegions.find((r) => r.code === selectedCountry.code)?.geo
+    : undefined
+
+  const selectedProvinceGeo = selectedProvince
+    ? provinceGeoByCode.get(selectedProvince.code) ??
+      provinceGeoByChineseName.get(selectedProvince.zh) ??
+      (geoLookup.get(provinceGeoCode(selectedProvince)) as GeoMapFeature | undefined)
+    : undefined
+
+  let mapFocus: GeoMapFocus | undefined
+  if (selectedPoint) {
+    mapFocus = { lng: selectedPoint.coordinates[1], lat: selectedPoint.coordinates[0], zoom: FOCUS_ZOOM_POINT }
+  } else if (selectedCity) {
+    const center =
+      regionCenter(geoLookup.get(cityGeoCode(selectedCity)) as GeoMapFeature | undefined) ??
+      regionCenter(selectedProvinceGeo) ??
+      regionCenter(countryGeo)
+    if (center) mapFocus = { ...center, zoom: FOCUS_ZOOM_PROVINCE_OR_CITY }
+  } else if (selectedProvince) {
+    const center = regionCenter(selectedProvinceGeo) ?? regionCenter(countryGeo)
+    if (center) mapFocus = { ...center, zoom: FOCUS_ZOOM_PROVINCE_OR_CITY }
+  } else if (selectedCountry) {
+    const center = regionCenter(countryGeo)
+    if (center) mapFocus = { ...center, zoom: FOCUS_ZOOM_COUNTRY }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 720 }}>
       <div style={{ height: 400, marginBottom: 16, display: 'flex', flexDirection: 'column' }}>
@@ -320,6 +383,7 @@ export default function PublishCenterPage() {
             publishedCodes={countryCodes}
             activeCodes={activeCodes}
             marker={canvasMarker}
+            focus={mapFocus}
             langKey={language}
             width={1040}
             height={400}
