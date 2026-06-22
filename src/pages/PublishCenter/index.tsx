@@ -38,9 +38,24 @@ const countryCodes = Array.from(new Set(PROVINCES.map((p) => p.belongTo)))
 const countryOptions = COUNTRIES
 
 const geoLookup = new Map(GEO_LIST.map((g) => [g.code, g.geo]))
-const worldRegions: GeoMapRegion[] = GEO_TREE.map((n) => ({ code: n.code, geo: n.geo }))
+
+// COUNTRIES/PROVINCES 里才有完整的多语言译名，geo 数据本身只存了一个中文名；
+// 这里把多语言名称挂到 geo.properties.names 上，地图组件才能跟着语言切换展示
+const countryNamesByCode = new Map(COUNTRIES.map((c) => [c.code, c as Record<string, string>]))
+const provinceNamesByCode = new Map(PROVINCES.map((p) => [p.code, p as Record<string, string>]))
+
+function withNames(region: { code: string; geo: GeoMapFeature }, names?: Record<string, string>): GeoMapRegion {
+  if (!names || !region.geo.properties) return region
+  return { ...region, geo: { ...region.geo, properties: { ...region.geo.properties, names } } }
+}
+
+const worldRegions: GeoMapRegion[] = GEO_TREE.map((n) =>
+  withNames({ code: n.code, geo: n.geo }, countryNamesByCode.get(n.code)),
+)
 const worldProvinceRegions: GeoMapRegion[] = GEO_TREE.flatMap((n) =>
-  (n.children ?? []).map((child) => ({ code: child.code, geo: child.geo })),
+  (n.children ?? []).map((child) =>
+    withNames({ code: child.code, geo: child.geo }, provinceNamesByCode.get(child.code)),
+  ),
 )
 const worldCityRegions: GeoMapRegion[] = GEO_TREE.flatMap((n) =>
   (n.children ?? []).flatMap((province) =>

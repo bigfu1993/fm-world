@@ -1,6 +1,5 @@
 import { Button } from 'antd';
 import { UndoOutlined } from '@ant-design/icons';
-import LanguageText from '@/components/LanguageText';
 import LanguageLabel from '@/components/LanguageLabel';
 import { getLabel, type LabelKey } from '@/components/LanguageLabel/LabelMap';
 import type { LanguageCode } from '@/types/system';
@@ -12,7 +11,7 @@ export interface GeoMapGeometry {
 
 export interface GeoMapFeature {
   geometry: GeoMapGeometry;
-  properties?: { name: string };
+  properties?: { name: string; names?: Record<string, string> };
   centroid?: [number, number];
 }
 
@@ -125,7 +124,6 @@ export default function GeoMap({
   // 列表没有选中任何区域时，按当前缩放倍数对应的层级（国家/省份/城市），把该层级下所有区域的名称都展示出来；
   // 跟画布中心点无关，同一时刻只展示当前一个层级，不会跟其它层级同时显示
   const autoLevelRegions = showCities ? cityRegions : showProvinces ? provinceRegions : regions;
-  const [regionLabels, setRegionLabels] = useState<{ name: string; x: number; y: number }[]>([]);
   // 当前画布中心对应的地理坐标（拖拽时更新），null 表示使用数据范围的几何中心
   const [center, setCenter] = useState<{ lng: number; lat: number } | null>(
     null,
@@ -252,10 +250,15 @@ export default function GeoMap({
       height / 2 - (lat - effectiveCenter.lat) * scale,
     ];
 
-    // 标签画在区域的面积质心上（geo.centroid，没有的话退回第一个环的 bbox 中心）
-    const regionLabelPos = (region: GeoMapRegion): { name: string; x: number; y: number } | null => {
-      const name = region.geo.properties?.name;
+    // 标签画在区域的面积质心上（geo.centroid，没有的话退回第一个环的 bbox 中心）；
+    // 主/副文案的取值规则跟 LanguageText 组件保持一致：优先用 names[langKey]/names.en，没有多语言数据时退回单一的 name
+    const regionLabelPos = (
+      region: GeoMapRegion,
+    ): { mainText: string; subText: string; x: number; y: number } | null => {
+      const { name, names } = region.geo.properties ?? {};
       if (!name) return null;
+      const mainText = (langKey && names?.[langKey]) || name;
+      const subText = names?.en || name;
       let labelCenter = region.geo.centroid;
       if (!labelCenter) {
         const labelRing = toPolygons(region.geo)[0]?.[0];
@@ -268,12 +271,12 @@ export default function GeoMap({
         ];
       }
       const [x, y] = toXY(...labelCenter);
-      return { name, x, y };
+      return { mainText, subText, x, y };
     };
 
     // 列表选中了某个区域，只展示这一个区域的名称；没选中则展示当前层级下所有区域的名称（跟画布中心点无关）
     const labelTargets = activeRegion ? [activeRegion] : autoLevelRegions;
-    setRegionLabels(labelTargets.map(regionLabelPos).filter((label) => label !== null));
+    const regionLabels = labelTargets.map(regionLabelPos).filter((label) => label !== null);
 
     const drawRegions = (
       list: GeoMapRegion[],
@@ -397,6 +400,34 @@ export default function GeoMap({
     ctx.setLineDash([]);
     ctx.lineCap = 'butt';
 
+    // 跟 LanguageText 组件的展示规则保持一致：langKey 为 en（或缺省）时只画主文案；
+    // 否则主文案（粗体10px黑色）+ 英文副文案（8px灰色）并排展示，整体以 (x,y) 居中
+    ctx.textBaseline = 'middle';
+    regionLabels.forEach(({ mainText, subText, x, y }) => {
+      if (!langKey || langKey === 'en') {
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText(mainText, x, y);
+        return;
+      }
+      ctx.font = 'bold 10px sans-serif';
+      const mainWidth = ctx.measureText(mainText).width;
+      ctx.font = '8px sans-serif';
+      const subWidth = ctx.measureText(subText).width;
+      const gap = 4;
+      const startX = x - (mainWidth + gap + subWidth) / 2;
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillStyle = '#000';
+      ctx.fillText(mainText, startX, y);
+      ctx.font = '8px sans-serif';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillText(subText, startX + mainWidth + gap, y);
+    });
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+
     if (marker) {
       tileOffsets.forEach((tileOffsetX) => {
         const [x, y] = toXY(marker.lng, marker.lat, tileOffsetX);
@@ -489,22 +520,6 @@ export default function GeoMap({
         height={height}
         style={{ border: '1px solid #f0f0f0', background: oceanColor }}
       />
-      {regionLabels.map((label, index) => (
-        <div
-          key={`${label.name}-${index}`}
-          style={{
-            position: 'absolute',
-            left: label.x,
-            top: label.y,
-            transform: 'translate(-50%, -50%)',
-            fontSize: 12,
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <LanguageText langKey={langKey} map={{ [langKey]: label.name, en: label.name }} />
-        </div>
-      ))}
       <div
         style={{
           position: 'absolute',
