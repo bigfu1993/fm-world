@@ -160,7 +160,7 @@ const DEFAULT_LEVEL_STYLE: Record<
     borderStyle: 'solid',
     borderColor: 'rgba(180, 180, 180, 0.4)',
     borderWidth: 1.2,
-    fillColor: 'rgba(250, 248, 240, 0.8)',
+    fillColor: 'rgb(250, 248, 238)',
     publishedBorderColor: 'rgba(82, 196, 26, 0.3)',
     activeBorderColor: ACTIVE_BORDER_COLOR,
     activeLabelColor: ACTIVE_LABEL_COLOR,
@@ -224,7 +224,7 @@ interface GeoMapProps {
   cityRegions?: GeoMapRegion[];
   /** 已发布区域编码集合。 */
   publishedCodes?: string[];
-  /** 当前选中路径编码集合，组件内部只把最后一个有效编码作为唯一选中态。 */
+  /** 当前选中区域编码集合。 */
   activeCodes?: string[];
   /** 点位或地标标记。 */
   marker?: GeoMapMarker;

@@ -44,6 +44,10 @@ const STATUS_TAG_COLOR: Record<PublishStatus, string> = {
 const countryCodes = ['CN'];
 console.log('模拟已发布国家列表:', countryCodes);
 const countryOptions = COUNTRIES;
+const PUBLISH_CENTER_LEFT_WIDTH = 1000;
+const PUBLISH_CENTER_LIST_HEIGHT = 420;
+const PUBLISH_CENTER_SECTION_GAP = 16;
+const DEFAULT_MAP_HEIGHT = 280;
 
 const geoLookup = new Map(GEO_LIST.map((g) => [g.code, g.geo]));
 
@@ -275,6 +279,8 @@ export default function PublishCenterPage() {
   const [cityKeyword, setCityKeyword] = useState('');
   const [pointKeyword, setPointKeyword] = useState('');
   const [landmarkKeyword, setLandmarkKeyword] = useState('');
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [mapHeight, setMapHeight] = useState(DEFAULT_MAP_HEIGHT);
 
   useEffect(() => {
     let disposed = false;
@@ -290,6 +296,28 @@ export default function PublishCenterPage() {
       });
     return () => {
       disposed = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) return;
+
+    const updateMapHeight = (nextHeight: number) => {
+      if (nextHeight <= 0) return;
+      setMapHeight(Math.max(1, Math.floor(nextHeight)));
+    };
+
+    updateMapHeight(container.clientHeight);
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      updateMapHeight(entry.contentRect.height);
+    });
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
     };
   }, []);
 
@@ -521,156 +549,180 @@ export default function PublishCenterPage() {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
+        display: 'grid',
+        gridTemplateColumns: `${PUBLISH_CENTER_LEFT_WIDTH}px minmax(0, 1fr)`,
+        columnGap: PUBLISH_CENTER_SECTION_GAP,
         height: '100%',
         minHeight: 720,
+        width: '100%',
       }}
     >
       <div
         style={{
-          height: 400,
-          marginBottom: 16,
           display: 'flex',
           flexDirection: 'column',
+          height: '100%',
+          minWidth: 0,
         }}
       >
-        <div style={{ flex: 1, minHeight: 0 }}>
-          {geoTreeLoading ? (
-            <div
-              style={{
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid #f0f0f0',
-                background: '#dceefc',
-              }}
-            >
-              <Spin size="small" />
-            </div>
-          ) : (
-            <GeoMap
-              continentRegions={worldContinentRegions}
-              regions={mapRegions}
-              provinceRegions={worldProvinceRegions}
-              cityRegions={worldCityRegions}
-              publishedCodes={countryCodes}
-              activeCodes={activeCodes}
-              marker={canvasMarker}
-              focus={mapFocus}
-              langKey={language}
-              height={400}
-            />
-          )}
+        <div
+          style={{
+            display: 'flex',
+            flex: '1 1 0',
+            flexDirection: 'column',
+            marginBottom: PUBLISH_CENTER_SECTION_GAP,
+            minHeight: 0,
+          }}
+        >
+          <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0 }}>
+            {geoTreeLoading ? (
+              <div
+                style={{
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid #f0f0f0',
+                  background: '#dceefc',
+                }}
+              >
+                <Spin size="small" />
+              </div>
+            ) : (
+              <GeoMap
+                continentRegions={worldContinentRegions}
+                regions={mapRegions}
+                provinceRegions={worldProvinceRegions}
+                cityRegions={worldCityRegions}
+                publishedCodes={countryCodes}
+                activeCodes={activeCodes}
+                marker={canvasMarker}
+                focus={mapFocus}
+                langKey={language}
+                height={mapHeight}
+              />
+            )}
+          </div>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flex: '0 0 auto',
+            height: PUBLISH_CENTER_LIST_HEIGHT,
+            border: '1px solid #f0f0f0',
+            overflowX: 'auto',
+            overflowY: 'hidden',
+          }}
+        >
+          <ListColumn
+            titleKey="country"
+            items={filteredCountries}
+            selectedKey={countryCode}
+            onSelect={handleSelectCountry}
+            langKey={language}
+            keyword={countryKeyword}
+            onKeywordChange={setCountryKeyword}
+            getKey={(item) => item.code}
+            getNameMap={(item) => item}
+            hasMissingChild={countryHasMissingChild}
+          />
+          <ListColumn
+            titleKey="province"
+            items={filteredProvinces}
+            selectedKey={provinceCode}
+            onSelect={handleSelectProvince}
+            langKey={language}
+            keyword={provinceKeyword}
+            onKeywordChange={setProvinceKeyword}
+            getKey={(item) => item.code}
+            getNameMap={(item) => item}
+            hasMissingChild={provinceHasMissingChild}
+          />
+          <ListColumn
+            titleKey="city"
+            items={filteredCities}
+            selectedKey={cityCode}
+            onSelect={handleSelectCity}
+            langKey={language}
+            keyword={cityKeyword}
+            onKeywordChange={setCityKeyword}
+            getKey={(item) => item.code}
+            getNameMap={(item) => item}
+          />
+          <ListColumn<Point>
+            titleKey="point"
+            items={filteredPoints}
+            selectedKey={pointId}
+            onSelect={handleSelectPoint}
+            langKey={language}
+            keyword={pointKeyword}
+            onKeywordChange={setPointKeyword}
+            getKey={(item) => item.id}
+            getNameMap={(item) => ({ ...item.name })}
+          />
+          <ListColumn<Landmark>
+            titleKey="landmark"
+            items={filteredLandmarks}
+            selectedKey={landmarkId}
+            onSelect={handleSelectLandmark}
+            langKey={language}
+            keyword={landmarkKeyword}
+            onKeywordChange={setLandmarkKeyword}
+            getKey={(item) => item.id}
+            getNameMap={(item) => ({ ...item.name })}
+          />
         </div>
       </div>
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 12,
+          borderLeft: '1px solid #f0f0f0',
+          minWidth: 0,
+          paddingLeft: PUBLISH_CENTER_SECTION_GAP,
         }}
       >
-        {currentPublishStatus ? (
-          <Tag color={STATUS_TAG_COLOR[currentPublishStatus]}>
-            <LanguageLabel
-              langKey={language}
-              labelKey={STATUS_LABEL_KEY[currentPublishStatus]}
-            />
-          </Tag>
-        ) : (
-          <span style={{ color: 'rgba(0, 0, 0, 0.45)' }}>
-            <LanguageLabel
-              langKey={language}
-              labelKey="pleaseSelectItemToPublish"
-            />
-          </span>
-        )}
-        <Button
-          size="small"
-          type="primary"
-          disabled={
-            !selectedPublishKey || currentPublishStatus !== 'unpublished'
-          }
-          onClick={handlePublish}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 12,
+          }}
         >
-          <LanguageLabel langKey={language} labelKey="publish" />
-        </Button>
-        <Button
-          size="small"
-          disabled={!selectedPublishKey || currentPublishStatus !== 'published'}
-          onClick={handleUnpublish}
-        >
-          <LanguageLabel langKey={language} labelKey="unpublish" />
-        </Button>
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          flex: '0 0 auto',
-          height: 320,
-          border: '1px solid #f0f0f0',
-        }}
-      >
-        <ListColumn
-          titleKey="country"
-          items={filteredCountries}
-          selectedKey={countryCode}
-          onSelect={handleSelectCountry}
-          langKey={language}
-          keyword={countryKeyword}
-          onKeywordChange={setCountryKeyword}
-          getKey={(item) => item.code}
-          getNameMap={(item) => item}
-          hasMissingChild={countryHasMissingChild}
-        />
-        <ListColumn
-          titleKey="province"
-          items={filteredProvinces}
-          selectedKey={provinceCode}
-          onSelect={handleSelectProvince}
-          langKey={language}
-          keyword={provinceKeyword}
-          onKeywordChange={setProvinceKeyword}
-          getKey={(item) => item.code}
-          getNameMap={(item) => item}
-          hasMissingChild={provinceHasMissingChild}
-        />
-        <ListColumn
-          titleKey="city"
-          items={filteredCities}
-          selectedKey={cityCode}
-          onSelect={handleSelectCity}
-          langKey={language}
-          keyword={cityKeyword}
-          onKeywordChange={setCityKeyword}
-          getKey={(item) => item.code}
-          getNameMap={(item) => item}
-        />
-        <ListColumn<Point>
-          titleKey="point"
-          items={filteredPoints}
-          selectedKey={pointId}
-          onSelect={handleSelectPoint}
-          langKey={language}
-          keyword={pointKeyword}
-          onKeywordChange={setPointKeyword}
-          getKey={(item) => item.id}
-          getNameMap={(item) => ({ ...item.name })}
-        />
-        <ListColumn<Landmark>
-          titleKey="landmark"
-          items={filteredLandmarks}
-          selectedKey={landmarkId}
-          onSelect={handleSelectLandmark}
-          langKey={language}
-          keyword={landmarkKeyword}
-          onKeywordChange={setLandmarkKeyword}
-          getKey={(item) => item.id}
-          getNameMap={(item) => ({ ...item.name })}
-        />
+          {currentPublishStatus ? (
+            <Tag color={STATUS_TAG_COLOR[currentPublishStatus]}>
+              <LanguageLabel
+                langKey={language}
+                labelKey={STATUS_LABEL_KEY[currentPublishStatus]}
+              />
+            </Tag>
+          ) : (
+            <span style={{ color: 'rgba(0, 0, 0, 0.45)' }}>
+              <LanguageLabel
+                langKey={language}
+                labelKey="pleaseSelectItemToPublish"
+              />
+            </span>
+          )}
+          <Button
+            size="small"
+            type="primary"
+            disabled={
+              !selectedPublishKey || currentPublishStatus !== 'unpublished'
+            }
+            onClick={handlePublish}
+          >
+            <LanguageLabel langKey={language} labelKey="publish" />
+          </Button>
+          <Button
+            size="small"
+            disabled={
+              !selectedPublishKey || currentPublishStatus !== 'published'
+            }
+            onClick={handleUnpublish}
+          >
+            <LanguageLabel langKey={language} labelKey="unpublish" />
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -12,9 +12,14 @@ import LanguagePage from '@/pages/MasterData/Language'
 import ProvincePage from '@/pages/MasterData/Province'
 import PointPage from '@/pages/MasterData/Point'
 import LandmarkPage from '@/pages/MasterData/Landmark'
-import GeoInfoPage from '@/pages/InfoCenter/Geo'
 import TrafficInfoPage from '@/pages/InfoCenter/Traffic'
 import CommunicationInfoPage from '@/pages/InfoCenter/Communication'
+import StandardSpecPage from '@/pages/InfoCenter/StandardSpec'
+import ServiceInfoPage from '@/pages/InfoCenter/ServiceInfo'
+import SecurityRiskPage from '@/pages/InfoCenter/SecurityRisk'
+import CultureCustomsPage from '@/pages/InfoCenter/CultureCustoms'
+import CurrencyPaymentPage from '@/pages/InfoCenter/CurrencyPayment'
+import EmergencyHandlingPage from '@/pages/InfoCenter/EmergencyHandling'
 import PointTypePage from '@/pages/InfoCenter/PointType'
 import LandmarkTypePage from '@/pages/InfoCenter/LandmarkType'
 import NotFoundPage from '@/pages/NotFound'
@@ -48,9 +53,14 @@ export const router = createBrowserRouter([
           </Suspense>
         ),
       },
-      { path: 'info-center/geo', element: <GeoInfoPage /> },
       { path: 'info-center/traffic', element: <TrafficInfoPage /> },
       { path: 'info-center/communication', element: <CommunicationInfoPage /> },
+      { path: 'info-center/standard-specs', element: <StandardSpecPage /> },
+      { path: 'info-center/service-info', element: <ServiceInfoPage /> },
+      { path: 'info-center/security-risk', element: <SecurityRiskPage /> },
+      { path: 'info-center/culture-customs', element: <CultureCustomsPage /> },
+      { path: 'info-center/currency-payment', element: <CurrencyPaymentPage /> },
+      { path: 'info-center/emergency-handling', element: <EmergencyHandlingPage /> },
       { path: 'info-center/point-types', element: <PointTypePage /> },
       { path: 'info-center/landmark-types', element: <LandmarkTypePage /> },
       { path: 'system/admin-users', element: <AdminUserPage /> },

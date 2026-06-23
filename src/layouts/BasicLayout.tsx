@@ -39,43 +39,6 @@ export default function BasicLayout() {
       icon: <SendOutlined />,
       label: <LanguageLabel langKey={language} labelKey="publishCenter" />,
     },
-    (hasPermission('geo:manage') ||
-      hasPermission('traffic:manage') ||
-      hasPermission('communication:manage') ||
-      hasPermission('pointType:manage') ||
-      hasPermission('landmarkType:manage')) && {
-      key: 'info-center',
-      icon: <InfoCircleOutlined />,
-      label: <LanguageLabel langKey={language} labelKey="informationCenter" />,
-      children: [
-        hasPermission('geo:manage') && {
-          key: '/info-center/geo',
-          label: <LanguageLabel langKey={language} labelKey="geoInformation" />,
-        },
-        hasPermission('traffic:manage') && {
-          key: '/info-center/traffic',
-          label: <LanguageLabel langKey={language} labelKey="trafficInformation" />,
-        },
-        hasPermission('communication:manage') && {
-          key: '/info-center/communication',
-          label: (
-            <LanguageLabel langKey={language} labelKey="communicationInformation" />
-          ),
-        },
-        hasPermission('pointType:manage') && {
-          key: '/info-center/point-types',
-          label: (
-            <LanguageLabel langKey={language} labelKey="pointTypeManagement" />
-          ),
-        },
-        hasPermission('landmarkType:manage') && {
-          key: '/info-center/landmark-types',
-          label: (
-            <LanguageLabel langKey={language} labelKey="landmarkTypeManagement" />
-          ),
-        },
-      ].filter(Boolean) as MenuProps['items'],
-    },
     (hasPermission('country:manage') ||
       hasPermission('city:manage') ||
       hasPermission('language:manage') ||
@@ -120,6 +83,74 @@ export default function BasicLayout() {
         },
       ].filter(Boolean) as MenuProps['items'],
     },
+    (hasPermission('traffic:manage') ||
+      hasPermission('communication:manage') ||
+      hasPermission('standardSpec:manage') ||
+      hasPermission('serviceInfo:manage') ||
+      hasPermission('securityRisk:manage') ||
+      hasPermission('cultureCustoms:manage') ||
+      hasPermission('currencyPayment:manage') ||
+      hasPermission('emergencyHandling:manage') ||
+      hasPermission('pointType:manage') ||
+      hasPermission('landmarkType:manage')) && {
+      key: 'info-center',
+      icon: <InfoCircleOutlined />,
+      label: <LanguageLabel langKey={language} labelKey="informationCenter" />,
+      children: [
+        hasPermission('traffic:manage') && {
+          key: '/info-center/traffic',
+          label: <LanguageLabel langKey={language} labelKey="trafficInformation" />,
+        },
+        hasPermission('communication:manage') && {
+          key: '/info-center/communication',
+          label: (
+            <LanguageLabel langKey={language} labelKey="communicationInformation" />
+          ),
+        },
+        hasPermission('standardSpec:manage') && {
+          key: '/info-center/standard-specs',
+          label: (
+            <LanguageLabel langKey={language} labelKey="standardSpecification" />
+          ),
+        },
+        hasPermission('serviceInfo:manage') && {
+          key: '/info-center/service-info',
+          label: (
+            <LanguageLabel langKey={language} labelKey="serviceInformation" />
+          ),
+        },
+        hasPermission('securityRisk:manage') && {
+          key: '/info-center/security-risk',
+          label: <LanguageLabel langKey={language} labelKey="securityRisk" />,
+        },
+        hasPermission('cultureCustoms:manage') && {
+          key: '/info-center/culture-customs',
+          label: <LanguageLabel langKey={language} labelKey="cultureCustoms" />,
+        },
+        hasPermission('currencyPayment:manage') && {
+          key: '/info-center/currency-payment',
+          label: <LanguageLabel langKey={language} labelKey="currencyPayment" />,
+        },
+        hasPermission('emergencyHandling:manage') && {
+          key: '/info-center/emergency-handling',
+          label: (
+            <LanguageLabel langKey={language} labelKey="emergencyHandling" />
+          ),
+        },
+        hasPermission('pointType:manage') && {
+          key: '/info-center/point-types',
+          label: (
+            <LanguageLabel langKey={language} labelKey="pointTypeManagement" />
+          ),
+        },
+        hasPermission('landmarkType:manage') && {
+          key: '/info-center/landmark-types',
+          label: (
+            <LanguageLabel langKey={language} labelKey="landmarkTypeManagement" />
+          ),
+        },
+      ].filter(Boolean) as MenuProps['items'],
+    },
     (hasPermission('admin:manage') || hasPermission('role:manage')) && {
       key: 'system',
       icon: <SettingOutlined />,
@@ -153,7 +184,7 @@ export default function BasicLayout() {
               theme="dark"
               mode="inline"
               selectedKeys={[location.pathname]}
-              defaultOpenKeys={['info-center', 'master-data', 'system']}
+              defaultOpenKeys={['master-data', 'info-center', 'system']}
               items={menuItems}
               onClick={({ key }) => navigate(key)}
             />
