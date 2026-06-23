@@ -49,15 +49,17 @@ function withNames(region: { code: string; geo: GeoMapFeature }, names?: Record<
   return { ...region, geo: { ...region.geo, properties: { ...region.geo.properties, names } } }
 }
 
-const worldRegions: GeoMapRegion[] = GEO_TREE.map((n) =>
+// GEO_TREE 顶层现在是大洲，国家变成了大洲的子节点，省份/城市相应再往下各退一层
+const worldCountries = GEO_TREE.flatMap((continent) => continent.children ?? [])
+const worldRegions: GeoMapRegion[] = worldCountries.map((n) =>
   withNames({ code: n.code, geo: n.geo }, countryNamesByCode.get(n.code)),
 )
-const worldProvinceRegions: GeoMapRegion[] = GEO_TREE.flatMap((n) =>
+const worldProvinceRegions: GeoMapRegion[] = worldCountries.flatMap((n) =>
   (n.children ?? []).map((child) =>
     withNames({ code: child.code, geo: child.geo }, provinceNamesByCode.get(child.code)),
   ),
 )
-const worldCityRegions: GeoMapRegion[] = GEO_TREE.flatMap((n) =>
+const worldCityRegions: GeoMapRegion[] = worldCountries.flatMap((n) =>
   (n.children ?? []).flatMap((province) =>
     (province.children ?? []).map((city) => ({ code: city.code, geo: city.geo })),
   ),

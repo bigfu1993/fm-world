@@ -55,6 +55,9 @@ interface GeoMapProps {
   cityPublishedStrokeColor?: string;
   cityZoomThreshold?: number;
   strokeWidth?: number;
+  countryLabelOpacity?: number;
+  provinceLabelOpacity?: number;
+  cityLabelOpacity?: number;
 }
 
 function toPolygons(geo?: GeoMapFeature): number[][][][] {
@@ -103,6 +106,9 @@ export default function GeoMap({
   cityPublishedStrokeColor = 'rgba(149, 222, 100, 0.3)',
   cityZoomThreshold = 10,
   strokeWidth = 1,
+  countryLabelOpacity = 0.8,
+  provinceLabelOpacity = 0.5,
+  cityLabelOpacity = 0.3,
 }: GeoMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [zoom, setZoom] = useState(1);
@@ -252,9 +258,13 @@ export default function GeoMap({
 
     // 标签画在区域的面积质心上（geo.centroid，没有的话退回第一个环的 bbox 中心）；
     // 主/副文案的取值规则跟 LanguageText 组件保持一致：优先用 names[langKey]/names.en，没有多语言数据时退回单一的 name
+    // 国家文字 10px/8px（主/副），省份比国家小2号（8px/6px），城市跟国家一致
+    const mainFontSize = showProvinces && !showCities ? 8 : 10;
+    const subFontSize = showProvinces && !showCities ? 6 : 8;
+
     const regionLabelPos = (
       region: GeoMapRegion,
-    ): { mainText: string; subText: string; x: number; y: number } | null => {
+    ): { mainText: string; subText: string; x: number; y: number; opacity: number } | null => {
       const { name, names } = region.geo.properties ?? {};
       if (!name) return null;
       const mainText = (langKey && names?.[langKey]) || name;
@@ -271,12 +281,13 @@ export default function GeoMap({
         ];
       }
       const [x, y] = toXY(...labelCenter);
-      return { mainText, subText, x, y };
+      const baseOpacity = showCities ? cityLabelOpacity : showProvinces ? provinceLabelOpacity : countryLabelOpacity;
+      const opacity = activeRegion && region.code === activeRegion.code ? 1 : baseOpacity;
+      return { mainText, subText, x, y, opacity };
     };
 
-    // 列表选中了某个区域，只展示这一个区域的名称；没选中则展示当前层级下所有区域的名称（跟画布中心点无关）
-    const labelTargets = activeRegion ? [activeRegion] : autoLevelRegions;
-    const regionLabels = labelTargets.map(regionLabelPos).filter((label) => label !== null);
+    // 始终展示当前层级下所有区域的名称（跟画布中心点无关）；选中的那个用 opacity 1 突出显示，其余保持半透明
+    const regionLabels = autoLevelRegions.map(regionLabelPos).filter((label) => label !== null);
 
     const drawRegions = (
       list: GeoMapRegion[],
@@ -401,30 +412,32 @@ export default function GeoMap({
     ctx.lineCap = 'butt';
 
     // 跟 LanguageText 组件的展示规则保持一致：langKey 为 en（或缺省）时只画主文案；
-    // 否则主文案（粗体10px黑色）+ 英文副文案（8px灰色）并排展示，整体以 (x,y) 居中
+    // 否则主文案（粗体，黑色）+ 英文副文案（灰色，字号比主文案小）并排展示，整体以 (x,y) 居中
     ctx.textBaseline = 'middle';
-    regionLabels.forEach(({ mainText, subText, x, y }) => {
+    regionLabels.forEach(({ mainText, subText, x, y, opacity }) => {
+      ctx.globalAlpha = opacity;
       if (!langKey || langKey === 'en') {
-        ctx.font = 'bold 10px sans-serif';
+        ctx.font = `bold ${mainFontSize}px sans-serif`;
         ctx.fillStyle = '#000';
         ctx.textAlign = 'center';
         ctx.fillText(mainText, x, y);
         return;
       }
-      ctx.font = 'bold 10px sans-serif';
+      ctx.font = `bold ${mainFontSize}px sans-serif`;
       const mainWidth = ctx.measureText(mainText).width;
-      ctx.font = '8px sans-serif';
+      ctx.font = `${subFontSize}px sans-serif`;
       const subWidth = ctx.measureText(subText).width;
       const gap = 4;
       const startX = x - (mainWidth + gap + subWidth) / 2;
       ctx.textAlign = 'left';
-      ctx.font = 'bold 10px sans-serif';
+      ctx.font = `bold ${mainFontSize}px sans-serif`;
       ctx.fillStyle = '#000';
       ctx.fillText(mainText, startX, y);
-      ctx.font = '8px sans-serif';
+      ctx.font = `${subFontSize}px sans-serif`;
       ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
       ctx.fillText(subText, startX + mainWidth + gap, y);
     });
+    ctx.globalAlpha = 1;
     ctx.textAlign = 'start';
     ctx.textBaseline = 'alphabetic';
 
@@ -496,6 +509,9 @@ export default function GeoMap({
     cityPublishedStrokeColor,
     cityZoomThreshold,
     strokeWidth,
+    countryLabelOpacity,
+    provinceLabelOpacity,
+    cityLabelOpacity,
   ]);
 
   const handleReset = () => {
