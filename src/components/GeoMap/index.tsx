@@ -67,6 +67,10 @@ export interface GeoMapLevelStyle {
   publishedBorderColor?: string;
   /** 当前选中区域边线颜色。 */
   activeBorderColor?: string;
+  /** 当前选中区域标签主文本颜色。 */
+  activeLabelColor?: string;
+  /** 当前选中区域标签英文副文本颜色。 */
+  activeLabelSubColor?: string;
   /** 非选中标签透明度。 */
   labelOpacity?: number;
   /** 标签主文本颜色。 */
@@ -116,8 +120,8 @@ export interface GeoMapZoomThresholds {
 const DEFAULT_ZOOM_THRESHOLDS: Required<GeoMapZoomThresholds> = {
   continent: 0,
   country: 2,
-  province: 8,
-  city: 20,
+  province: 20,
+  city: 50,
 };
 
 /** 内部使用的完整层级样式，所有可选字段都已补齐默认值。 */
@@ -125,6 +129,10 @@ type ResolvedLevelStyle = Required<GeoMapLevelStyle>;
 
 /** 全局选中态边框颜色。 */
 const ACTIVE_BORDER_COLOR = 'rgba(255, 77, 79, 0.75)';
+/** 全局选中态标签主文本颜色。 */
+const ACTIVE_LABEL_COLOR = '#ff4d4f';
+/** 全局选中态标签英文副文本颜色。 */
+const ACTIVE_LABEL_SUB_COLOR = 'rgba(255, 77, 79, 0.78)';
 /** 默认标签主文本颜色。 */
 const DEFAULT_LABEL_COLOR = '#000';
 /** 默认标签英文副文本颜色。 */
@@ -142,6 +150,8 @@ const DEFAULT_LEVEL_STYLE: Record<
     fillColor: 'rgba(255, 255, 255, 1)',
     publishedBorderColor: 'rgba(82, 196, 26, 0.5)',
     activeBorderColor: ACTIVE_BORDER_COLOR,
+    activeLabelColor: ACTIVE_LABEL_COLOR,
+    activeLabelSubColor: ACTIVE_LABEL_SUB_COLOR,
     labelOpacity: 0.9,
     labelColor: DEFAULT_LABEL_COLOR,
     labelSubColor: DEFAULT_LABEL_SUB_COLOR,
@@ -153,6 +163,8 @@ const DEFAULT_LEVEL_STYLE: Record<
     fillColor: 'rgba(250, 248, 240, 0.8)',
     publishedBorderColor: 'rgba(82, 196, 26, 0.3)',
     activeBorderColor: ACTIVE_BORDER_COLOR,
+    activeLabelColor: ACTIVE_LABEL_COLOR,
+    activeLabelSubColor: ACTIVE_LABEL_SUB_COLOR,
     labelOpacity: 0.8,
     labelColor: DEFAULT_LABEL_COLOR,
     labelSubColor: DEFAULT_LABEL_SUB_COLOR,
@@ -164,6 +176,8 @@ const DEFAULT_LEVEL_STYLE: Record<
     fillColor: 'transparent',
     publishedBorderColor: 'rgba(149, 222, 100, 0.2)',
     activeBorderColor: ACTIVE_BORDER_COLOR,
+    activeLabelColor: ACTIVE_LABEL_COLOR,
+    activeLabelSubColor: ACTIVE_LABEL_SUB_COLOR,
     labelOpacity: 0.5,
     labelColor: DEFAULT_LABEL_COLOR,
     labelSubColor: DEFAULT_LABEL_SUB_COLOR,
@@ -175,6 +189,8 @@ const DEFAULT_LEVEL_STYLE: Record<
     fillColor: 'transparent',
     publishedBorderColor: 'rgba(149, 222, 100, 0.3)',
     activeBorderColor: ACTIVE_BORDER_COLOR,
+    activeLabelColor: ACTIVE_LABEL_COLOR,
+    activeLabelSubColor: ACTIVE_LABEL_SUB_COLOR,
     labelOpacity: 0.3,
     labelColor: DEFAULT_LABEL_COLOR,
     labelSubColor: DEFAULT_LABEL_SUB_COLOR,
@@ -208,7 +224,7 @@ interface GeoMapProps {
   cityRegions?: GeoMapRegion[];
   /** 已发布区域编码集合。 */
   publishedCodes?: string[];
-  /** 当前选中区域编码集合。 */
+  /** 当前选中路径编码集合，组件内部只把最后一个有效编码作为唯一选中态。 */
   activeCodes?: string[];
   /** 点位或地标标记。 */
   marker?: GeoMapMarker;
@@ -286,7 +302,9 @@ function boundsFromRing(ring?: number[][]): GeoMapBounds | undefined {
 }
 
 /** 从多个 polygon 的外环中合并区域边界盒。 */
-function boundsFromPolygons(polygons: number[][][][]): GeoMapBounds | undefined {
+function boundsFromPolygons(
+  polygons: number[][][][],
+): GeoMapBounds | undefined {
   let bounds: GeoMapBounds | undefined;
   polygons.forEach((poly) => {
     // poly[0] 是外环，内环/洞不参与视口边界计算。
@@ -318,7 +336,9 @@ function prepareRegion(region: GeoMapRegion): PreparedGeoMapRegion {
   // bounds 用于视口 fit 和后续整体 bounds 合并。
   const bounds = boundsFromPolygons(polygons);
   // 没有面积质心时，退回第一个外环的 bbox 中心。
-  const fallbackLabelCenter = centerFromBounds(boundsFromRing(polygons[0]?.[0]));
+  const fallbackLabelCenter = centerFromBounds(
+    boundsFromRing(polygons[0]?.[0]),
+  );
   return {
     ...region,
     polygons,
@@ -328,7 +348,9 @@ function prepareRegion(region: GeoMapRegion): PreparedGeoMapRegion {
 }
 
 /** 合并多个预处理区域的整体边界盒。 */
-function combineBounds(regions: PreparedGeoMapRegion[]): GeoMapBounds | undefined {
+function combineBounds(
+  regions: PreparedGeoMapRegion[],
+): GeoMapBounds | undefined {
   let bounds: GeoMapBounds | undefined;
   regions.forEach((region) => {
     if (!region.bounds) return;
@@ -452,8 +474,33 @@ export default function GeoMap({
     () => new Set(publishedCodes),
     [publishedCodes],
   );
-  // 当前选中编码集合，用 Set 加速绘制分组和标签高亮判断。
-  const activeCodeSet = useMemo(() => new Set(activeCodes), [activeCodes]);
+  // 当前选中链路中最终落到地图上的区域；activeCodes 可能同时包含父级和子级，倒序取最后一个有效编码作为唯一选中态。
+  const activeRegion = useMemo(() => {
+    const regionLayers = [
+      preparedCityRegions,
+      preparedProvinceRegions,
+      preparedRegions,
+      preparedContinentRegions,
+    ];
+    for (let index = activeCodes.length - 1; index >= 0; index -= 1) {
+      const activeCode = activeCodes[index];
+      for (const layer of regionLayers) {
+        const matchedRegion = layer.find(
+          (region) => region.code === activeCode,
+        );
+        if (matchedRegion) return matchedRegion;
+      }
+    }
+    return undefined;
+  }, [
+    activeCodes,
+    preparedCityRegions,
+    preparedProvinceRegions,
+    preparedRegions,
+    preparedContinentRegions,
+  ]);
+  // 唯一应该应用选中态样式的区域编码，父级路径只保留上下文，不再参与 active 绘制。
+  const activeRegionCode = activeRegion?.code;
   // 同一时刻只有一个层级是"当前层级"：大洲(<4x) -> 国家(4-5x) -> 省份(5-10x) -> 城市(>=10x)，
   // 层级之间互斥，只渲染当前层级的边界线/填充/名称，不会同时出现多个层级
   // 目前只有美国有完整的城市级 geo 数据，其余国家数据缺失，暂时关闭城市边界线渲染；
@@ -479,17 +526,6 @@ export default function GeoMap({
     !showProvinces &&
     !showCountry &&
     zoom >= continentZoomThreshold;
-  // 由深到浅依次查找：当前层级没有匹配的选中项时，回退到更粗的层级（比如放大到省份层级但选中的是没有省份数据的国家时，仍应显示国家名）
-  // 当前标签高亮所对应的区域。
-  const activeRegion =
-    (showCities
-      ? preparedCityRegions.find((r) => activeCodeSet.has(r.code))
-      : undefined) ??
-    (showProvinces
-      ? preparedProvinceRegions.find((r) => activeCodeSet.has(r.code))
-      : undefined) ??
-    preparedRegions.find((r) => activeCodeSet.has(r.code)) ??
-    preparedContinentRegions.find((r) => activeCodeSet.has(r.code));
   // 列表没有选中任何区域时，按当前缩放倍数对应的层级（大洲/国家/省份/城市），把该层级下所有区域的名称都展示出来；
   // 跟画布中心点无关，同一时刻只展示当前一个层级，不会跟其它层级同时显示
   // 当前需要展示标签的区域列表。
@@ -726,15 +762,18 @@ export default function GeoMap({
     const subFontSize = showContinent ? 10 : showProvinces ? 6 : 8;
 
     /** 计算区域标签的文本、屏幕坐标和透明度。 */
-    const regionLabelPos = (
-      region: PreparedGeoMapRegion,
-    ): {
+    interface RegionLabel {
+      regionCode: string;
       mainText: string;
       subText: string;
       x: number;
       y: number;
       opacity: number;
-    } | null => {
+    }
+
+    const regionLabelPos = (
+      region: PreparedGeoMapRegion,
+    ): RegionLabel | null => {
       const { name, names } = region.geo.properties ?? {};
       if (!name) return null;
       // 主文本按当前语言优先，缺失时退回原始 name。
@@ -751,14 +790,32 @@ export default function GeoMap({
         activeRegion && region.code === activeRegion.code
           ? 1
           : currentLevelStyle.labelOpacity;
-      return { mainText, subText, x, y, opacity };
+      return { regionCode: region.code, mainText, subText, x, y, opacity };
     };
+    const isRegionLabel = (label: RegionLabel | null): label is RegionLabel =>
+      label !== null;
 
-    // 始终展示当前层级下所有区域的名称（跟画布中心点无关）；选中的那个用 opacity 1 突出显示，其余保持半透明
-    // 当前需要绘制的标签列表。
+    // 始终展示当前层级下所有区域的名称（跟画布中心点无关）；选中标签会单独放到最后绘制，避免被其它内容压住。
+    // 当前需要绘制的普通标签列表。
     const regionLabels = autoLevelRegions
       .map(regionLabelPos)
-      .filter((label) => label !== null);
+      .filter(isRegionLabel)
+      .filter((label) => label.regionCode !== activeRegion?.code);
+    // 当前选中区域的标签；可能来自临时 overlay（如 selected-province），不一定存在于 autoLevelRegions 中。
+    const activeRegionLabel = activeRegion
+      ? regionLabelPos(activeRegion)
+      : null;
+    // 选中区域的顶层描边样式，按区域来源层级取对应配置。
+    const activeRegionLevelStyle =
+      activeRegion && preparedCityRegions.includes(activeRegion)
+        ? cityStyle
+        : activeRegion && preparedProvinceRegions.includes(activeRegion)
+          ? provinceStyle
+          : activeRegion && preparedRegions.includes(activeRegion)
+            ? countryStyle
+            : activeRegion && preparedContinentRegions.includes(activeRegion)
+              ? continentStyle
+              : currentLevelStyle;
 
     /** 绘制一条 polygon ring 到当前路径。 */
     const drawRingPath = (ring: number[][], tileOffsetX: number) => {
@@ -799,6 +856,39 @@ export default function GeoMap({
       });
     };
 
+    /** 只重绘选中区域描边，作为所有地图图层之上的高亮轮廓。 */
+    const drawActiveRegionOverlay = () => {
+      if (!activeRegion) return;
+      drawRegions(
+        [activeRegion],
+        'transparent',
+        activeRegionLevelStyle.activeBorderColor,
+        borderStyleToLineDash(activeRegionLevelStyle.borderStyle),
+        activeRegionLevelStyle.borderWidth,
+      );
+      ctx.setLineDash([]);
+      ctx.lineCap = 'butt';
+    };
+
+    /** 绘制当前点位/地标标记。 */
+    const drawMarker = () => {
+      if (!marker) return;
+      tileOffsets.forEach((tileOffsetX) => {
+        // marker 的画布坐标。
+        const [x, y] = toXY(marker.lng, marker.lat, tileOffsetX);
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff4d4f';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = '#000';
+        ctx.font = '12px sans-serif';
+        ctx.fillText(marker.label, x + 8, y - 8);
+      });
+    };
+
     // showContinent/showCountry/showProvinces/showCities 在组件顶层计算，互斥，每次只有一个层级会画出来；
     // 每个层级自己的边框类型/颜色/粗细/填充色都来自 style.<level>，已在组件顶层解析好（continentStyle/countryStyle/...）
     /** 按发布态/选中态分组并绘制一个地图层级。 */
@@ -810,7 +900,7 @@ export default function GeoMap({
       // 当前层级的 Canvas 虚线配置。
       const lineDash = borderStyleToLineDash(levelStyle.borderStyle);
       // 发布态/选中态是国家层级的概念，大洲编码跟国家 ISO 编码存在偶然撞码（如大洲 AF 跟阿富汗的国家编码 AF），
-      // 大洲层级不参与 publishedCodes/activeCodes 匹配，避免把命中撞码的大洲误画成"已发布"
+      // 大洲层级不参与 publishedCodes/activeRegionCode 匹配，避免把命中撞码的大洲误画成"已发布"
       if (isContinent) {
         // 大洲的 geo 数据是成员国轮廓直接拼接而成（未做几何融合），逐个国家描边会把内部国界也画出来；
         // 大洲填充色本身跟海洋色不同，靠色块对比即可分辨大洲外轮廓，不描边，避免出现"国家边界"假象
@@ -831,7 +921,7 @@ export default function GeoMap({
       // 当前选中区域列表。
       const activeRegions: PreparedGeoMapRegion[] = [];
       list.forEach((region) => {
-        if (activeCodeSet.has(region.code)) {
+        if (activeRegionCode === region.code) {
           activeRegions.push(region);
         } else if (publishedCodeSet.has(region.code)) {
           publishedRegions.push(region);
@@ -862,7 +952,8 @@ export default function GeoMap({
       );
     };
 
-    if (showContinent) drawLevel(preparedContinentRegions, continentStyle, true);
+    if (showContinent)
+      drawLevel(preparedContinentRegions, continentStyle, true);
     if (showCountry) drawLevel(preparedRegions, countryStyle);
     // 放大到省份/城市层级后，国家边界不再消失，作为底图用国家自己的样式始终叠加描边
     if (showProvinces || showCities) drawLevel(preparedRegions, countryStyle);
@@ -872,16 +963,41 @@ export default function GeoMap({
     ctx.setLineDash([]);
     ctx.lineCap = 'butt';
 
-    // 跟 LanguageText 组件的展示规则保持一致：langKey 为 en（或缺省）时只画主文案；
-    // 否则主文案（粗体，黑色）+ 英文副文案（灰色，字号比主文案小）并排展示，整体以 (x,y) 居中
-    ctx.textBaseline = 'middle';
-    regionLabels.forEach(({ mainText, subText, x, y, opacity }) => {
-      ctx.globalAlpha = opacity;
+    /** 绘制区域标签；选中标签使用高亮色和白色描边，并由调用方放到最后绘制。 */
+    const drawRegionLabel = (
+      { mainText, subText, x, y, opacity }: RegionLabel,
+      active = false,
+    ) => {
+      const mainColor = active
+        ? activeRegionLevelStyle.activeLabelColor
+        : currentLevelStyle.labelColor;
+      const subColor = active
+        ? activeRegionLevelStyle.activeLabelSubColor
+        : currentLevelStyle.labelSubColor;
+      const drawText = (
+        text: string,
+        textX: number,
+        textY: number,
+        fillColor: string,
+      ) => {
+        if (active) {
+          ctx.lineWidth = 3;
+          ctx.lineJoin = 'round';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+          ctx.strokeText(text, textX, textY);
+        }
+        ctx.fillStyle = fillColor;
+        ctx.fillText(text, textX, textY);
+      };
+
+      ctx.save();
+      ctx.globalAlpha = active ? 1 : opacity;
+      ctx.textBaseline = 'middle';
       if (!langKey || langKey === 'en') {
         ctx.font = `bold ${mainFontSize}px sans-serif`;
-        ctx.fillStyle = currentLevelStyle.labelColor;
         ctx.textAlign = 'center';
-        ctx.fillText(mainText, x, y);
+        drawText(mainText, x, y, mainColor);
+        ctx.restore();
         return;
       }
       ctx.font = `bold ${mainFontSize}px sans-serif`;
@@ -896,32 +1012,15 @@ export default function GeoMap({
       const startX = x - (mainWidth + gap + subWidth) / 2;
       ctx.textAlign = 'left';
       ctx.font = `bold ${mainFontSize}px sans-serif`;
-      ctx.fillStyle = currentLevelStyle.labelColor;
-      ctx.fillText(mainText, startX, y);
+      drawText(mainText, startX, y, mainColor);
       ctx.font = `${subFontSize}px sans-serif`;
-      ctx.fillStyle = currentLevelStyle.labelSubColor;
-      ctx.fillText(subText, startX + mainWidth + gap, y);
-    });
-    ctx.globalAlpha = 1;
-    ctx.textAlign = 'start';
-    ctx.textBaseline = 'alphabetic';
+      drawText(subText, startX + mainWidth + gap, y, subColor);
+      ctx.restore();
+    };
 
-    if (marker) {
-      tileOffsets.forEach((tileOffsetX) => {
-        // marker 的画布坐标。
-        const [x, y] = toXY(marker.lng, marker.lat, tileOffsetX);
-        ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ff4d4f';
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        ctx.fillStyle = '#000';
-        ctx.font = '12px sans-serif';
-        ctx.fillText(marker.label, x + 8, y - 8);
-      });
-    }
+    // 跟 LanguageText 组件的展示规则保持一致：langKey 为 en（或缺省）时只画主文案；
+    // 否则主文案（粗体）+ 英文副文案（字号比主文案小）并排展示，整体以 (x,y) 居中。
+    regionLabels.forEach((label) => drawRegionLabel(label));
 
     // 当前纬度下 1 经度约等于多少公里。
     const kmPerLngDegree =
@@ -954,6 +1053,12 @@ export default function GeoMap({
     ctx.font = '11px sans-serif';
     ctx.fillText(`${niceKm} km`, barLeft, barBottom - 8);
     ctx.fillText(`${zoom.toFixed(1)}x`, barLeft, barBottom - 22);
+
+    drawActiveRegionOverlay();
+    drawMarker();
+    if (activeRegionLabel) {
+      drawRegionLabel(activeRegionLabel, true);
+    }
   }, [
     preparedContinentRegions,
     preparedRegions,
@@ -961,8 +1066,8 @@ export default function GeoMap({
     preparedCityRegions,
     fitBounds,
     publishedCodeSet,
-    activeCodeSet,
     activeRegion,
+    activeRegionCode,
     autoLevelRegions,
     showContinent,
     showCountry,
