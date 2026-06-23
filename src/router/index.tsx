@@ -1,3 +1,5 @@
+import { lazy, Suspense } from 'react'
+import { Spin } from 'antd'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import BasicLayout from '@/layouts/BasicLayout'
 import Login from '@/pages/Login'
@@ -10,7 +12,6 @@ import LanguagePage from '@/pages/MasterData/Language'
 import ProvincePage from '@/pages/MasterData/Province'
 import PointPage from '@/pages/MasterData/Point'
 import LandmarkPage from '@/pages/MasterData/Landmark'
-import PublishCenterPage from '@/pages/PublishCenter'
 import GeoInfoPage from '@/pages/InfoCenter/Geo'
 import TrafficInfoPage from '@/pages/InfoCenter/Traffic'
 import CommunicationInfoPage from '@/pages/InfoCenter/Communication'
@@ -18,6 +19,14 @@ import PointTypePage from '@/pages/InfoCenter/PointType'
 import LandmarkTypePage from '@/pages/InfoCenter/LandmarkType'
 import NotFoundPage from '@/pages/NotFound'
 import RequireAuth from './RequireAuth'
+
+const PublishCenterPage = lazy(() => import('@/pages/PublishCenter'))
+
+const routeFallback = (
+  <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+    <Spin />
+  </div>
+)
 
 export const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
@@ -31,7 +40,14 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <Dashboard /> },
-      { path: 'publish-center', element: <PublishCenterPage /> },
+      {
+        path: 'publish-center',
+        element: (
+          <Suspense fallback={routeFallback}>
+            <PublishCenterPage />
+          </Suspense>
+        ),
+      },
       { path: 'info-center/geo', element: <GeoInfoPage /> },
       { path: 'info-center/traffic', element: <TrafficInfoPage /> },
       { path: 'info-center/communication', element: <CommunicationInfoPage /> },

@@ -1,11 +1,11 @@
-import { Button, Input, Tag, message } from 'antd';
+import { Button, Input, Spin, Tag, message } from 'antd';
 import { COUNTRIES } from '@/db/countries';
 import { CONTINENTS } from '@/db/continents';
 import { PROVINCES, type Province } from '@/db/provinces';
 import { CITIES, type CityData } from '@/mock/cities';
 import { points, landmarks } from '@/mock/db';
 import { GEO_LIST } from '@/mock/geoSample';
-import { GEO_TREE } from '@/db/geo';
+import type { GeoNode } from '@/db/geo';
 import type { Point, Landmark } from '@/types/point';
 import {
   getPublishStatus,
@@ -70,43 +70,71 @@ function withNames(
   };
 }
 
-// GEO_TREE 顶层现在是大洲，国家变成了大洲的子节点，省份/城市相应再往下各退一层
-const worldContinentRegions: GeoMapRegion[] = GEO_TREE.map((n) =>
-  withNames({ code: n.code, geo: n.geo }, continentNamesByCode.get(n.code)),
-);
-const worldCountries = GEO_TREE.flatMap(
-  (continent) => continent.children ?? [],
-);
-const worldRegions: GeoMapRegion[] = worldCountries.map((n) =>
-  withNames({ code: n.code, geo: n.geo }, countryNamesByCode.get(n.code)),
-);
-const worldProvinceRegions: GeoMapRegion[] = worldCountries.flatMap((n) =>
-  (n.children ?? []).map((child) =>
-    withNames(
-      { code: child.code, geo: child.geo },
-      provinceNamesByCode.get(child.code),
+interface PreparedGeoTreeData {
+  worldContinentRegions: GeoMapRegion[];
+  worldRegions: GeoMapRegion[];
+  worldProvinceRegions: GeoMapRegion[];
+  worldCityRegions: GeoMapRegion[];
+  provinceGeoByCode: Map<string, GeoMapFeature>;
+  provinceGeoByChineseName: Map<string, GeoMapFeature>;
+}
+
+const EMPTY_GEO_TREE_DATA: PreparedGeoTreeData = {
+  worldContinentRegions: [],
+  worldRegions: [],
+  worldProvinceRegions: [],
+  worldCityRegions: [],
+  provinceGeoByCode: new Map(),
+  provinceGeoByChineseName: new Map(),
+};
+
+function prepareGeoTreeData(geoTree: GeoNode[]): PreparedGeoTreeData {
+  // GEO_TREE 顶层现在是大洲，国家变成了大洲的子节点，省份/城市相应再往下各退一层
+  const worldContinentRegions: GeoMapRegion[] = geoTree.map((n) =>
+    withNames({ code: n.code, geo: n.geo }, continentNamesByCode.get(n.code)),
+  );
+  const worldCountries = geoTree.flatMap(
+    (continent) => continent.children ?? [],
+  );
+  const worldRegions: GeoMapRegion[] = worldCountries.map((n) =>
+    withNames({ code: n.code, geo: n.geo }, countryNamesByCode.get(n.code)),
+  );
+  const worldProvinceRegions: GeoMapRegion[] = worldCountries.flatMap((n) =>
+    (n.children ?? []).map((child) =>
+      withNames(
+        { code: child.code, geo: child.geo },
+        provinceNamesByCode.get(child.code),
+      ),
     ),
-  ),
-);
-const worldCityRegions: GeoMapRegion[] = worldCountries.flatMap((n) =>
-  (n.children ?? []).flatMap((province) =>
-    (province.children ?? []).map((city) => ({
-      code: city.code,
-      geo: city.geo,
-    })),
-  ),
-);
-// db/geo 里省份的 code 跟 db/provinces.ts 的 code 是同一套体系（都来自 Natural Earth admin-1 的 iso_3166_2），
-// 唯独中国走的是 DataV 的数字编码（CN-32 等），跟 provinces.ts 里的字母编码（CN-XJ 等）对不上，
-// 只能退而用中文名做兼容映射（两边的省份中文名是一致的）
-const provinceGeoByCode = new Map(
-  worldProvinceRegions.map((r) => [r.code, r.geo]),
-);
-const provinceGeoByChineseName = new Map(
-  worldProvinceRegions
-    .filter((r) => r.geo.properties?.name)
-    .map((r) => [r.geo.properties!.name, r.geo]),
-);
+  );
+  const worldCityRegions: GeoMapRegion[] = worldCountries.flatMap((n) =>
+    (n.children ?? []).flatMap((province) =>
+      (province.children ?? []).map((city) => ({
+        code: city.code,
+        geo: city.geo,
+      })),
+    ),
+  );
+  // db/geo 里省份的 code 跟 db/provinces.ts 的 code 是同一套体系（都来自 Natural Earth admin-1 的 iso_3166_2），
+  // 唯独中国走的是 DataV 的数字编码（CN-32 等），跟 provinces.ts 里的字母编码（CN-XJ 等）对不上，
+  // 只能退而用中文名做兼容映射（两边的省份中文名是一致的）
+  const provinceGeoByCode = new Map(
+    worldProvinceRegions.map((r) => [r.code, r.geo]),
+  );
+  const provinceGeoByChineseName = new Map(
+    worldProvinceRegions
+      .filter((r) => r.geo.properties?.name)
+      .map((r) => [r.geo.properties!.name, r.geo]),
+  );
+  return {
+    worldContinentRegions,
+    worldRegions,
+    worldProvinceRegions,
+    worldCityRegions,
+    provinceGeoByCode,
+    provinceGeoByChineseName,
+  };
+}
 
 function provinceGeoCode(province: Province): string {
   return `${province.belongTo}*${province.code}`;
@@ -233,6 +261,8 @@ function ListColumn<T>({
 
 export default function PublishCenterPage() {
   const language = useAuthStore(selectCurrentLanguage);
+  const [geoTree, setGeoTree] = useState<GeoNode[] | null>(null);
+  const [geoTreeLoading, setGeoTreeLoading] = useState(true);
   const [countryCode, setCountryCode] = useState<string | undefined>(undefined);
   const [provinceCode, setProvinceCode] = useState<string | undefined>(
     undefined,
@@ -245,6 +275,35 @@ export default function PublishCenterPage() {
   const [cityKeyword, setCityKeyword] = useState('');
   const [pointKeyword, setPointKeyword] = useState('');
   const [landmarkKeyword, setLandmarkKeyword] = useState('');
+
+  useEffect(() => {
+    let disposed = false;
+    import('@/db/geo')
+      .then(({ GEO_TREE }) => {
+        if (!disposed) setGeoTree(GEO_TREE);
+      })
+      .catch((error) => {
+        console.error('加载地理数据失败:', error);
+      })
+      .finally(() => {
+        if (!disposed) setGeoTreeLoading(false);
+      });
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  const {
+    worldContinentRegions,
+    worldRegions,
+    worldProvinceRegions,
+    worldCityRegions,
+    provinceGeoByCode,
+    provinceGeoByChineseName,
+  } = useMemo(
+    () => (geoTree ? prepareGeoTreeData(geoTree) : EMPTY_GEO_TREE_DATA),
+    [geoTree],
+  );
 
   // 级联规则：选中某一层级后，再往下的层级强依赖"上一层级是否有具体选中值"；
   // 只有当上一层级及其更上层都没有任何选中（即一直没有被"锁住"）时，才独立展示全量数据，否则展示为空
@@ -477,19 +536,33 @@ export default function PublishCenterPage() {
         }}
       >
         <div style={{ flex: 1, minHeight: 0 }}>
-          <GeoMap
-            continentRegions={worldContinentRegions}
-            regions={mapRegions}
-            provinceRegions={worldProvinceRegions}
-            cityRegions={worldCityRegions}
-            publishedCodes={countryCodes}
-            activeCodes={activeCodes}
-            marker={canvasMarker}
-            focus={mapFocus}
-            langKey={language}
-            width={1040}
-            height={400}
-          />
+          {geoTreeLoading ? (
+            <div
+              style={{
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #f0f0f0',
+                background: '#dceefc',
+              }}
+            >
+              <Spin size="small" />
+            </div>
+          ) : (
+            <GeoMap
+              continentRegions={worldContinentRegions}
+              regions={mapRegions}
+              provinceRegions={worldProvinceRegions}
+              cityRegions={worldCityRegions}
+              publishedCodes={countryCodes}
+              activeCodes={activeCodes}
+              marker={canvasMarker}
+              focus={mapFocus}
+              langKey={language}
+              height={400}
+            />
+          )}
         </div>
       </div>
       <div
