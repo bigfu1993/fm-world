@@ -32,7 +32,121 @@ export interface GeoMapFocus {
   zoom: number;
 }
 
+export type GeoMapBorderStyle = 'solid' | 'dashed' | 'dotted';
+
+export interface GeoMapLevelStyle {
+  borderStyle?: GeoMapBorderStyle;
+  borderColor?: string;
+  borderWidth?: number;
+  fillColor?: string;
+  publishedBorderColor?: string;
+  activeBorderColor?: string;
+  labelOpacity?: number;
+  labelColor?: string;
+  labelSubColor?: string;
+}
+
+export interface GeoMapOceanStyle {
+  fillColor?: string;
+}
+
+export interface GeoMapStyle {
+  ocean?: GeoMapOceanStyle;
+  continent?: GeoMapLevelStyle;
+  country?: GeoMapLevelStyle;
+  province?: GeoMapLevelStyle;
+  city?: GeoMapLevelStyle;
+}
+
+const DEFAULT_OCEAN_STYLE: Required<GeoMapOceanStyle> = {
+  fillColor: '#dceefc',
+};
+
+export interface GeoMapZoomThresholds {
+  continent?: number;
+  country?: number;
+  province?: number;
+  city?: number;
+}
+
+const DEFAULT_ZOOM_THRESHOLDS: Required<GeoMapZoomThresholds> = {
+  continent: 0,
+  country: 2,
+  province: 8,
+  city: 20,
+};
+
+type ResolvedLevelStyle = Required<GeoMapLevelStyle>;
+
+const ACTIVE_BORDER_COLOR = 'rgba(255, 77, 79, 0.75)';
+const DEFAULT_LABEL_COLOR = '#000';
+const DEFAULT_LABEL_SUB_COLOR = 'rgba(0, 0, 0, 0.45)';
+
+const DEFAULT_LEVEL_STYLE: Record<
+  'continent' | 'country' | 'province' | 'city',
+  ResolvedLevelStyle
+> = {
+  continent: {
+    borderStyle: 'solid',
+    borderColor: 'rgba(120, 120, 100, 0.1)',
+    borderWidth: 1.5,
+    fillColor: 'rgba(255, 255, 255, 1)',
+    publishedBorderColor: 'rgba(82, 196, 26, 0.5)',
+    activeBorderColor: ACTIVE_BORDER_COLOR,
+    labelOpacity: 0.9,
+    labelColor: DEFAULT_LABEL_COLOR,
+    labelSubColor: DEFAULT_LABEL_SUB_COLOR,
+  },
+  country: {
+    borderStyle: 'solid',
+    borderColor: 'rgba(180, 180, 180, 0.4)',
+    borderWidth: 1.2,
+    fillColor: 'rgba(250, 248, 240, 0.8)',
+    publishedBorderColor: 'rgba(82, 196, 26, 0.3)',
+    activeBorderColor: ACTIVE_BORDER_COLOR,
+    labelOpacity: 0.8,
+    labelColor: DEFAULT_LABEL_COLOR,
+    labelSubColor: DEFAULT_LABEL_SUB_COLOR,
+  },
+  province: {
+    borderStyle: 'dashed',
+    borderColor: 'rgba(100, 100, 100, 0.3)',
+    borderWidth: 0.6,
+    fillColor: 'transparent',
+    publishedBorderColor: 'rgba(149, 222, 100, 0.2)',
+    activeBorderColor: ACTIVE_BORDER_COLOR,
+    labelOpacity: 0.5,
+    labelColor: DEFAULT_LABEL_COLOR,
+    labelSubColor: DEFAULT_LABEL_SUB_COLOR,
+  },
+  city: {
+    borderStyle: 'dotted',
+    borderColor: 'rgba(60, 60, 60, 0.2)',
+    borderWidth: 0.5,
+    fillColor: 'transparent',
+    publishedBorderColor: 'rgba(149, 222, 100, 0.3)',
+    activeBorderColor: ACTIVE_BORDER_COLOR,
+    labelOpacity: 0.3,
+    labelColor: DEFAULT_LABEL_COLOR,
+    labelSubColor: DEFAULT_LABEL_SUB_COLOR,
+  },
+};
+
+function resolveLevelStyle(
+  level: 'continent' | 'country' | 'province' | 'city',
+  override?: GeoMapLevelStyle,
+): ResolvedLevelStyle {
+  return { ...DEFAULT_LEVEL_STYLE[level], ...override };
+}
+
+function borderStyleToLineDash(borderStyle: GeoMapBorderStyle): number[] {
+  if (borderStyle === 'dashed') return [6, 4];
+  if (borderStyle === 'dotted') return [1, 4];
+  return [];
+}
+
 interface GeoMapProps {
+  continentRegions?: GeoMapRegion[];
   regions: GeoMapRegion[];
   provinceRegions?: GeoMapRegion[];
   cityRegions?: GeoMapRegion[];
@@ -43,21 +157,8 @@ interface GeoMapProps {
   langKey: LanguageCode;
   width?: number;
   height?: number;
-  oceanColor?: string;
-  fillColor?: string;
-  strokeColor?: string;
-  publishedStrokeColor?: string;
-  activeStrokeColor?: string;
-  provinceStrokeColor?: string;
-  provincePublishedStrokeColor?: string;
-  provinceZoomThreshold?: number;
-  cityStrokeColor?: string;
-  cityPublishedStrokeColor?: string;
-  cityZoomThreshold?: number;
-  strokeWidth?: number;
-  countryLabelOpacity?: number;
-  provinceLabelOpacity?: number;
-  cityLabelOpacity?: number;
+  style?: GeoMapStyle;
+  zoomThresholds?: GeoMapZoomThresholds;
 }
 
 function toPolygons(geo?: GeoMapFeature): number[][][][] {
@@ -70,7 +171,95 @@ function toPolygons(geo?: GeoMapFeature): number[][][][] {
   return [];
 }
 
+interface GeoMapBounds {
+  minLng: number;
+  maxLng: number;
+  minLat: number;
+  maxLat: number;
+}
+
+interface PreparedGeoMapRegion extends GeoMapRegion {
+  polygons: number[][][][];
+  bounds?: GeoMapBounds;
+  labelCenter?: [number, number];
+}
+
+function expandBounds(bounds: GeoMapBounds, lng: number, lat: number) {
+  bounds.minLng = Math.min(bounds.minLng, lng);
+  bounds.maxLng = Math.max(bounds.maxLng, lng);
+  bounds.minLat = Math.min(bounds.minLat, lat);
+  bounds.maxLat = Math.max(bounds.maxLat, lat);
+}
+
+function boundsFromRing(ring?: number[][]): GeoMapBounds | undefined {
+  if (!ring || ring.length === 0) return undefined;
+  const [firstLng, firstLat] = ring[0];
+  const bounds = {
+    minLng: firstLng,
+    maxLng: firstLng,
+    minLat: firstLat,
+    maxLat: firstLat,
+  };
+  for (let index = 1; index < ring.length; index += 1) {
+    const [lng, lat] = ring[index];
+    expandBounds(bounds, lng, lat);
+  }
+  return bounds;
+}
+
+function boundsFromPolygons(polygons: number[][][][]): GeoMapBounds | undefined {
+  let bounds: GeoMapBounds | undefined;
+  polygons.forEach((poly) => {
+    const ringBounds = boundsFromRing(poly[0]);
+    if (!ringBounds) return;
+    if (!bounds) {
+      bounds = { ...ringBounds };
+      return;
+    }
+    expandBounds(bounds, ringBounds.minLng, ringBounds.minLat);
+    expandBounds(bounds, ringBounds.maxLng, ringBounds.maxLat);
+  });
+  return bounds;
+}
+
+function centerFromBounds(bounds?: GeoMapBounds): [number, number] | undefined {
+  if (!bounds) return undefined;
+  return [
+    (bounds.minLng + bounds.maxLng) / 2,
+    (bounds.minLat + bounds.maxLat) / 2,
+  ];
+}
+
+function prepareRegion(region: GeoMapRegion): PreparedGeoMapRegion {
+  const polygons = toPolygons(region.geo);
+  const bounds = boundsFromPolygons(polygons);
+  const fallbackLabelCenter = centerFromBounds(boundsFromRing(polygons[0]?.[0]));
+  return {
+    ...region,
+    polygons,
+    bounds,
+    labelCenter: region.geo.centroid ?? fallbackLabelCenter,
+  };
+}
+
+function combineBounds(regions: PreparedGeoMapRegion[]): GeoMapBounds | undefined {
+  let bounds: GeoMapBounds | undefined;
+  regions.forEach((region) => {
+    if (!region.bounds) return;
+    if (!bounds) {
+      bounds = { ...region.bounds };
+      return;
+    }
+    expandBounds(bounds, region.bounds.minLng, region.bounds.minLat);
+    expandBounds(bounds, region.bounds.maxLng, region.bounds.maxLat);
+  });
+  return bounds;
+}
+
 const KM_PER_DEGREE = 111;
+const MIN_ZOOM = 0.8;
+const MAX_ZOOM = 100;
+const WHEEL_ZOOM_SENSITIVITY = 0.005;
 const NICE_SCALE_STEPS_KM = [
   1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000,
 ];
@@ -84,6 +273,7 @@ function pickNiceScaleKm(maxKm: number): number {
 }
 
 export default function GeoMap({
+  continentRegions = [],
   regions,
   provinceRegions = [],
   cityRegions = [],
@@ -94,42 +284,91 @@ export default function GeoMap({
   langKey,
   width = 480,
   height = 420,
-  oceanColor = '#dceefc',
-  fillColor = 'rgba(250, 248, 240, 0.92)',
-  strokeColor = 'rgba(180, 180, 180, 0.6)',
-  publishedStrokeColor = 'rgba(82, 196, 26, 0.3)',
-  activeStrokeColor = 'rgba(255, 77, 79, 0.75)',
-  provinceStrokeColor = 'rgba(100, 100, 100, 0.2)',
-  provincePublishedStrokeColor = 'rgba(149, 222, 100, 0.2)',
-  provinceZoomThreshold = 4,
-  cityStrokeColor = 'rgba(60, 60, 60, 0.2)',
-  cityPublishedStrokeColor = 'rgba(149, 222, 100, 0.3)',
-  cityZoomThreshold = 10,
-  strokeWidth = 1,
-  countryLabelOpacity = 0.8,
-  provinceLabelOpacity = 0.5,
-  cityLabelOpacity = 0.3,
+  style,
+  zoomThresholds,
 }: GeoMapProps) {
+  const oceanStyle = { ...DEFAULT_OCEAN_STYLE, ...style?.ocean };
+  const {
+    continent: continentZoomThreshold,
+    country: countryZoomThreshold,
+    province: provinceZoomThreshold,
+    city: cityZoomThreshold,
+  } = {
+    ...DEFAULT_ZOOM_THRESHOLDS,
+    ...zoomThresholds,
+  };
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [zoom, setZoom] = useState(1);
-  const showProvinces =
-    zoom >= provinceZoomThreshold && provinceRegions.length > 0;
+  const continentStyle = resolveLevelStyle('continent', style?.continent);
+  const countryStyle = resolveLevelStyle('country', style?.country);
+  const provinceStyle = resolveLevelStyle('province', style?.province);
+  const cityStyle = resolveLevelStyle('city', style?.city);
+  const preparedContinentRegions = useMemo(
+    () => continentRegions.map(prepareRegion),
+    [continentRegions],
+  );
+  const preparedRegions = useMemo(() => regions.map(prepareRegion), [regions]);
+  const preparedProvinceRegions = useMemo(
+    () => provinceRegions.map(prepareRegion),
+    [provinceRegions],
+  );
+  const preparedCityRegions = useMemo(
+    () => cityRegions.map(prepareRegion),
+    [cityRegions],
+  );
+  const fitBounds = useMemo(
+    () =>
+      combineBounds(
+        preparedContinentRegions.length > 0
+          ? preparedContinentRegions
+          : preparedRegions,
+      ),
+    [preparedContinentRegions, preparedRegions],
+  );
+  const publishedCodeSet = useMemo(
+    () => new Set(publishedCodes),
+    [publishedCodes],
+  );
+  const activeCodeSet = useMemo(() => new Set(activeCodes), [activeCodes]);
+  // 同一时刻只有一个层级是"当前层级"：大洲(<4x) -> 国家(4-5x) -> 省份(5-10x) -> 城市(>=10x)，
+  // 层级之间互斥，只渲染当前层级的边界线/填充/名称，不会同时出现多个层级
   // 目前只有美国有完整的城市级 geo 数据，其余国家数据缺失，暂时关闭城市边界线渲染；
   // 阈值判断逻辑保留不删，等全部国家的城市级数据补全后，把 CITY_BOUNDARIES_ENABLED 改回 true 即可重新开放
   const CITY_BOUNDARIES_ENABLED = false;
   const showCities =
     CITY_BOUNDARIES_ENABLED &&
     zoom >= cityZoomThreshold &&
-    cityRegions.length > 0;
-  const activeSetForName = new Set(activeCodes);
+    preparedCityRegions.length > 0;
+  const showProvinces =
+    !showCities &&
+    zoom >= provinceZoomThreshold &&
+    preparedProvinceRegions.length > 0;
+  const showCountry =
+    !showCities && !showProvinces && zoom >= countryZoomThreshold;
+  const showContinent =
+    !showCities &&
+    !showProvinces &&
+    !showCountry &&
+    zoom >= continentZoomThreshold;
   // 由深到浅依次查找：当前层级没有匹配的选中项时，回退到更粗的层级（比如放大到省份层级但选中的是没有省份数据的国家时，仍应显示国家名）
   const activeRegion =
-    (showCities ? cityRegions.find((r) => activeSetForName.has(r.code)) : undefined) ??
-    (showProvinces ? provinceRegions.find((r) => activeSetForName.has(r.code)) : undefined) ??
-    regions.find((r) => activeSetForName.has(r.code));
-  // 列表没有选中任何区域时，按当前缩放倍数对应的层级（国家/省份/城市），把该层级下所有区域的名称都展示出来；
+    (showCities
+      ? preparedCityRegions.find((r) => activeCodeSet.has(r.code))
+      : undefined) ??
+    (showProvinces
+      ? preparedProvinceRegions.find((r) => activeCodeSet.has(r.code))
+      : undefined) ??
+    preparedRegions.find((r) => activeCodeSet.has(r.code)) ??
+    preparedContinentRegions.find((r) => activeCodeSet.has(r.code));
+  // 列表没有选中任何区域时，按当前缩放倍数对应的层级（大洲/国家/省份/城市），把该层级下所有区域的名称都展示出来；
   // 跟画布中心点无关，同一时刻只展示当前一个层级，不会跟其它层级同时显示
-  const autoLevelRegions = showCities ? cityRegions : showProvinces ? provinceRegions : regions;
+  const autoLevelRegions = showCities
+    ? preparedCityRegions
+    : showProvinces
+      ? preparedProvinceRegions
+      : showCountry
+        ? preparedRegions
+        : preparedContinentRegions;
   // 当前画布中心对应的地理坐标（拖拽时更新），null 表示使用数据范围的几何中心
   const [center, setCenter] = useState<{ lng: number; lat: number } | null>(
     null,
@@ -137,6 +376,8 @@ export default function GeoMap({
   const centerRef = useRef(center);
   const scaleRef = useRef(1);
   const defaultCenterRef = useRef({ lng: 0, lat: 0 });
+  const wheelDeltaRef = useRef(0);
+  const wheelFrameRef = useRef<number | null>(null);
 
   // 列表选中项变化时，外部传入 focus（目标经纬度+目标缩放倍数），驱动地图平移并缩放到对应位置
   useEffect(() => {
@@ -154,8 +395,19 @@ export default function GeoMap({
     if (!canvas) return;
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const sensitivity = 0.005;
-      setZoom((z) => Math.min(100, Math.max(0.8, z - e.deltaY * sensitivity)));
+      wheelDeltaRef.current += e.deltaY;
+      if (wheelFrameRef.current !== null) return;
+      wheelFrameRef.current = window.requestAnimationFrame(() => {
+        const deltaY = wheelDeltaRef.current;
+        wheelDeltaRef.current = 0;
+        wheelFrameRef.current = null;
+        setZoom((z) =>
+          Math.min(
+            MAX_ZOOM,
+            Math.max(MIN_ZOOM, z - deltaY * WHEEL_ZOOM_SENSITIVITY),
+          ),
+        );
+      });
     };
 
     let dragging = false;
@@ -195,6 +447,11 @@ export default function GeoMap({
       canvas.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      if (wheelFrameRef.current !== null) {
+        window.cancelAnimationFrame(wheelFrameRef.current);
+        wheelFrameRef.current = null;
+      }
+      wheelDeltaRef.current = 0;
     };
   }, []);
 
@@ -204,28 +461,32 @@ export default function GeoMap({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = oceanColor;
+    ctx.fillStyle = oceanStyle.fillColor;
     ctx.fillRect(0, 0, width, height);
 
-    const allPolygons = regions.flatMap((region) => toPolygons(region.geo));
+    let viewportBounds = fitBounds ? { ...fitBounds } : undefined;
 
-    if (allPolygons.length === 0 && !marker) {
+    if (marker) {
+      if (!viewportBounds) {
+        viewportBounds = {
+          minLng: marker.lng,
+          maxLng: marker.lng,
+          minLat: marker.lat,
+          maxLat: marker.lat,
+        };
+      } else {
+        expandBounds(viewportBounds, marker.lng, marker.lat);
+      }
+    }
+
+    if (!viewportBounds) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
       ctx.font = '12px sans-serif';
       ctx.fillText(getLabel('pleaseSelectRegionHint', langKey), 16, height / 2);
       return;
     }
 
-    const lngs = allPolygons.flatMap((poly) => poly[0].map((p) => p[0]));
-    const lats = allPolygons.flatMap((poly) => poly[0].map((p) => p[1]));
-    if (marker) {
-      lngs.push(marker.lng);
-      lats.push(marker.lat);
-    }
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
+    const { minLng, maxLng, minLat, maxLat } = viewportBounds;
     const padding = 16;
     const lngRange = maxLng - minLng || 1;
     const latRange = maxLat - minLat || 1;
@@ -258,43 +519,52 @@ export default function GeoMap({
 
     // 标签画在区域的面积质心上（geo.centroid，没有的话退回第一个环的 bbox 中心）；
     // 主/副文案的取值规则跟 LanguageText 组件保持一致：优先用 names[langKey]/names.en，没有多语言数据时退回单一的 name
-    // 国家文字 10px/8px（主/副），省份比国家小2号（8px/6px），城市跟国家一致
-    const mainFontSize = showProvinces && !showCities ? 8 : 10;
-    const subFontSize = showProvinces && !showCities ? 6 : 8;
+    // 大洲文字 12px/10px，国家 10px/8px，省份比国家小2号（8px/6px），城市跟国家一致
+    const currentLevelStyle = showCities
+      ? cityStyle
+      : showProvinces
+        ? provinceStyle
+        : showCountry
+          ? countryStyle
+          : continentStyle;
+    const mainFontSize = showContinent ? 12 : showProvinces ? 8 : 10;
+    const subFontSize = showContinent ? 10 : showProvinces ? 6 : 8;
 
     const regionLabelPos = (
-      region: GeoMapRegion,
-    ): { mainText: string; subText: string; x: number; y: number; opacity: number } | null => {
+      region: PreparedGeoMapRegion,
+    ): {
+      mainText: string;
+      subText: string;
+      x: number;
+      y: number;
+      opacity: number;
+    } | null => {
       const { name, names } = region.geo.properties ?? {};
       if (!name) return null;
       const mainText = (langKey && names?.[langKey]) || name;
       const subText = names?.en || name;
-      let labelCenter = region.geo.centroid;
-      if (!labelCenter) {
-        const labelRing = toPolygons(region.geo)[0]?.[0];
-        if (!labelRing || labelRing.length === 0) return null;
-        const ringLngs = labelRing.map((p) => p[0]);
-        const ringLats = labelRing.map((p) => p[1]);
-        labelCenter = [
-          (Math.min(...ringLngs) + Math.max(...ringLngs)) / 2,
-          (Math.min(...ringLats) + Math.max(...ringLats)) / 2,
-        ];
-      }
+      if (!region.labelCenter) return null;
+      const labelCenter = region.labelCenter;
       const [x, y] = toXY(...labelCenter);
-      const baseOpacity = showCities ? cityLabelOpacity : showProvinces ? provinceLabelOpacity : countryLabelOpacity;
-      const opacity = activeRegion && region.code === activeRegion.code ? 1 : baseOpacity;
+      const opacity =
+        activeRegion && region.code === activeRegion.code
+          ? 1
+          : currentLevelStyle.labelOpacity;
       return { mainText, subText, x, y, opacity };
     };
 
     // 始终展示当前层级下所有区域的名称（跟画布中心点无关）；选中的那个用 opacity 1 突出显示，其余保持半透明
-    const regionLabels = autoLevelRegions.map(regionLabelPos).filter((label) => label !== null);
+    const regionLabels = autoLevelRegions
+      .map(regionLabelPos)
+      .filter((label) => label !== null);
 
     const drawRegions = (
-      list: GeoMapRegion[],
+      list: PreparedGeoMapRegion[],
       fill: string,
       stroke: string,
-      lineDash: number[] = [],
-      lineWidth: number = strokeWidth,
+      lineDash: number[],
+      lineWidth: number,
+      strokeEnabled = true,
     ) => {
       ctx.fillStyle = fill;
       ctx.strokeStyle = stroke;
@@ -303,7 +573,7 @@ export default function GeoMap({
       ctx.lineCap = lineDash.length > 0 ? 'round' : 'butt';
       tileOffsets.forEach((tileOffsetX) => {
         list.forEach((region) => {
-          toPolygons(region.geo).forEach((poly) => {
+          region.polygons.forEach((poly) => {
             poly.forEach((ring, ringIndex) => {
               ctx.beginPath();
               ring.forEach(([lng, lat], index) => {
@@ -313,100 +583,77 @@ export default function GeoMap({
               });
               ctx.closePath();
               if (ringIndex === 0) ctx.fill();
-              ctx.stroke();
+              if (strokeEnabled) ctx.stroke();
             });
           });
         });
       });
     };
 
-    // showProvinces/showCities 在组件顶层计算，这里直接复用
-    // 国家层级始终保留填充；省份/城市只画边界线，不画填充
-    const publishedSet = new Set(publishedCodes);
-    const activeSet = new Set(activeCodes);
-    const countryLineWidth = strokeWidth * 1.2;
-    drawRegions(
-      regions.filter(
-        (r) => !publishedSet.has(r.code) && !activeSet.has(r.code),
-      ),
-      fillColor,
-      strokeColor,
-      [],
-      countryLineWidth,
-    );
-    drawRegions(
-      regions.filter((r) => publishedSet.has(r.code) && !activeSet.has(r.code)),
-      fillColor,
-      publishedStrokeColor,
-      [],
-      countryLineWidth,
-    );
-    drawRegions(
-      regions.filter((r) => activeSet.has(r.code)),
-      fillColor,
-      activeStrokeColor,
-      [],
-      countryLineWidth,
-    );
+    // showContinent/showCountry/showProvinces/showCities 在组件顶层计算，互斥，每次只有一个层级会画出来；
+    // 每个层级自己的边框类型/颜色/粗细/填充色都来自 style.<level>，已在组件顶层解析好（continentStyle/countryStyle/...）
+    const drawLevel = (
+      list: PreparedGeoMapRegion[],
+      levelStyle: ResolvedLevelStyle,
+      isContinent = false,
+    ) => {
+      const lineDash = borderStyleToLineDash(levelStyle.borderStyle);
+      // 发布态/选中态是国家层级的概念，大洲编码跟国家 ISO 编码存在偶然撞码（如大洲 AF 跟阿富汗的国家编码 AF），
+      // 大洲层级不参与 publishedCodes/activeCodes 匹配，避免把命中撞码的大洲误画成"已发布"
+      if (isContinent) {
+        // 大洲的 geo 数据是成员国轮廓直接拼接而成（未做几何融合），逐个国家描边会把内部国界也画出来；
+        // 大洲填充色本身跟海洋色不同，靠色块对比即可分辨大洲外轮廓，不描边，避免出现"国家边界"假象
+        drawRegions(
+          list,
+          levelStyle.fillColor,
+          levelStyle.borderColor,
+          lineDash,
+          levelStyle.borderWidth,
+          false,
+        );
+        return;
+      }
+      const baseRegions: PreparedGeoMapRegion[] = [];
+      const publishedRegions: PreparedGeoMapRegion[] = [];
+      const activeRegions: PreparedGeoMapRegion[] = [];
+      list.forEach((region) => {
+        if (activeCodeSet.has(region.code)) {
+          activeRegions.push(region);
+        } else if (publishedCodeSet.has(region.code)) {
+          publishedRegions.push(region);
+        } else {
+          baseRegions.push(region);
+        }
+      });
+      drawRegions(
+        baseRegions,
+        levelStyle.fillColor,
+        levelStyle.borderColor,
+        lineDash,
+        levelStyle.borderWidth,
+      );
+      drawRegions(
+        publishedRegions,
+        levelStyle.fillColor,
+        levelStyle.publishedBorderColor,
+        lineDash,
+        levelStyle.borderWidth,
+      );
+      drawRegions(
+        activeRegions,
+        levelStyle.fillColor,
+        levelStyle.activeBorderColor,
+        lineDash,
+        levelStyle.borderWidth,
+      );
+    };
 
-    const provinceLineWidth = strokeWidth * 0.6;
-    const cityLineWidth = strokeWidth * 0.5;
-
-    if (showProvinces) {
-      drawRegions(
-        provinceRegions.filter(
-          (r) => !publishedSet.has(r.code) && !activeSet.has(r.code),
-        ),
-        'transparent',
-        provinceStrokeColor,
-        [6, 4],
-        provinceLineWidth,
-      );
-      drawRegions(
-        provinceRegions.filter(
-          (r) => publishedSet.has(r.code) && !activeSet.has(r.code),
-        ),
-        'transparent',
-        provincePublishedStrokeColor,
-        [6, 4],
-        provinceLineWidth,
-      );
-      drawRegions(
-        provinceRegions.filter((r) => activeSet.has(r.code)),
-        'transparent',
-        activeStrokeColor,
-        [6, 4],
-        provinceLineWidth,
-      );
-    }
-
-    if (showCities) {
-      drawRegions(
-        cityRegions.filter(
-          (r) => !publishedSet.has(r.code) && !activeSet.has(r.code),
-        ),
-        'transparent',
-        cityStrokeColor,
-        [1, 4],
-        cityLineWidth,
-      );
-      drawRegions(
-        cityRegions.filter(
-          (r) => publishedSet.has(r.code) && !activeSet.has(r.code),
-        ),
-        'transparent',
-        cityPublishedStrokeColor,
-        [1, 4],
-        cityLineWidth,
-      );
-      drawRegions(
-        cityRegions.filter((r) => activeSet.has(r.code)),
-        'transparent',
-        activeStrokeColor,
-        [1, 4],
-        cityLineWidth,
-      );
-    }
+    if (showContinent) drawLevel(preparedContinentRegions, continentStyle, true);
+    if (showCountry) drawLevel(preparedRegions, countryStyle);
+    // 放大到省份/城市层级后，国家边界不再消失，作为底图用国家自己的样式始终叠加描边
+    if (showProvinces || showCities) drawLevel(preparedRegions, countryStyle);
+    if (showProvinces) drawLevel(preparedProvinceRegions, provinceStyle);
+    if (showCities) drawLevel(preparedCityRegions, cityStyle);
 
     ctx.setLineDash([]);
     ctx.lineCap = 'butt';
@@ -418,7 +665,7 @@ export default function GeoMap({
       ctx.globalAlpha = opacity;
       if (!langKey || langKey === 'en') {
         ctx.font = `bold ${mainFontSize}px sans-serif`;
-        ctx.fillStyle = '#000';
+        ctx.fillStyle = currentLevelStyle.labelColor;
         ctx.textAlign = 'center';
         ctx.fillText(mainText, x, y);
         return;
@@ -431,10 +678,10 @@ export default function GeoMap({
       const startX = x - (mainWidth + gap + subWidth) / 2;
       ctx.textAlign = 'left';
       ctx.font = `bold ${mainFontSize}px sans-serif`;
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = currentLevelStyle.labelColor;
       ctx.fillText(mainText, startX, y);
       ctx.font = `${subFontSize}px sans-serif`;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillStyle = currentLevelStyle.labelSubColor;
       ctx.fillText(subText, startX + mainWidth + gap, y);
     });
     ctx.globalAlpha = 1;
@@ -482,13 +729,17 @@ export default function GeoMap({
     ctx.fillText(`${niceKm} km`, barLeft, barBottom - 8);
     ctx.fillText(`${zoom.toFixed(1)}x`, barLeft, barBottom - 22);
   }, [
-    regions,
-    provinceRegions,
-    cityRegions,
-    publishedCodes,
-    activeCodes,
+    preparedContinentRegions,
+    preparedRegions,
+    preparedProvinceRegions,
+    preparedCityRegions,
+    fitBounds,
+    publishedCodeSet,
+    activeCodeSet,
     activeRegion,
     autoLevelRegions,
+    showContinent,
+    showCountry,
     showProvinces,
     showCities,
     marker,
@@ -497,21 +748,11 @@ export default function GeoMap({
     height,
     zoom,
     center,
-    oceanColor,
-    fillColor,
-    strokeColor,
-    publishedStrokeColor,
-    activeStrokeColor,
-    provinceStrokeColor,
-    provincePublishedStrokeColor,
-    provinceZoomThreshold,
-    cityStrokeColor,
-    cityPublishedStrokeColor,
-    cityZoomThreshold,
-    strokeWidth,
-    countryLabelOpacity,
-    provinceLabelOpacity,
-    cityLabelOpacity,
+    oceanStyle,
+    continentStyle,
+    countryStyle,
+    provinceStyle,
+    cityStyle,
   ]);
 
   const handleReset = () => {
@@ -520,12 +761,15 @@ export default function GeoMap({
   };
 
   const legendItems: { color: string; labelKey: LabelKey }[] = [
-    { color: publishedStrokeColor, labelKey: 'publishedCountryLegend' },
     {
-      color: provincePublishedStrokeColor,
+      color: countryStyle.publishedBorderColor,
+      labelKey: 'publishedCountryLegend',
+    },
+    {
+      color: provinceStyle.publishedBorderColor,
       labelKey: 'publishedProvinceLegend',
     },
-    { color: cityPublishedStrokeColor, labelKey: 'publishedCityLegend' },
+    { color: cityStyle.publishedBorderColor, labelKey: 'publishedCityLegend' },
   ];
 
   return (
@@ -534,7 +778,10 @@ export default function GeoMap({
         ref={canvasRef}
         width={width}
         height={height}
-        style={{ border: '1px solid #f0f0f0', background: oceanColor }}
+        style={{
+          border: '1px solid #f0f0f0',
+          background: oceanStyle.fillColor,
+        }}
       />
       <div
         style={{
