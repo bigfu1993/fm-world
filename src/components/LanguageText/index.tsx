@@ -16,8 +16,9 @@ export default function LanguageText({ langKey, map }: LanguageTextProps) {
       </span>
       <span
         style={{
-          color: 'rgba(0, 0, 0, 0.45)',
+          color: 'inherit',
           fontSize: 10,
+          opacity: 0.7,
         }}
       >
         {map.en}

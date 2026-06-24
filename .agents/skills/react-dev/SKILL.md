@@ -54,6 +54,8 @@ src/
 - `Select.options` 展示多语言业务数据时，`label` 使用 `<LanguageText langKey={language} map={data} />`，不要提前取 `data[language]` 字符串；下拉展示需和顶部语言选择保持一致：当前语言为非英文时展示“当前语言主文案 + 英文副文案”，英文时只展示英文主文案。
 - 创建类按钮和创建态标题统一展示为“新建”，不要拼接具体业务对象名，例如不要写“新建国家”“新建类型”。
 - Modal 内的 `<Form>` 统一加 `size="small"`，会自动级联到内部所有 Input/Select/Checkbox 等控件，不用逐个加。
+- `Input`、`InputNumber`、`Select` 字号由 `src/App.tsx` 的 Ant Design `ConfigProvider.theme.components` 统一配置为 `12`，页面和组件内不要重复写控件 `fontSize`。
+- `Input`、`InputNumber`、`Select` 尺寸只按是否处于弹窗场景区分：非弹窗场景不单独写 `size`，使用 Ant Design 默认尺寸；弹窗内通过外层 `<Form size="small">` 统一下发，不要给单个控件重复设置 `size`。
 
 ## 表格约定
 

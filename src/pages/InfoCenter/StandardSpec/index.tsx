@@ -1,30 +1,44 @@
-import { Button, Divider, Form, Input, Modal, Select, Space, Table } from 'antd';
+import {
+  Button,
+  Divider,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Table,
+  theme,
+} from 'antd';
 import { PlusOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import LanguageLabel from '@/components/LanguageLabel';
 import LanguageText from '@/components/LanguageText';
-import LanguageFormItem from '@/components/LanguageFormItem';
 import { getLabel } from '@/components/LanguageLabel/LabelMap';
 import {
   STANDARD_SPEC_INFOS,
   type StandardSpecInfoItem,
 } from '@/mock/information';
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore';
+import TypeListModal, {
+  normalizeCodePrefix,
+  standardSpecInitialTypes,
+  type StandardSpecTypeFilter,
+  type StandardSpecTypeItem,
+} from './TypeListModal';
 
 const noWrapColumnStyle = { whiteSpace: 'nowrap' } as const;
 const noWrapColumnProps = {
   onCell: () => ({ style: noWrapColumnStyle }),
   onHeaderCell: () => ({ style: noWrapColumnStyle }),
 };
-const orangeOutlineButtonStyle = {
+const orangePrimaryButtonStyle = {
+  backgroundColor: '#fa8c16',
   borderColor: '#fa8c16',
-  color: '#fa8c16',
 };
 const toolbarDividerStyle = {
   height: 24,
 };
 
-type StandardSpecTypeFilter = string;
 type StandardSpecFormMode = 'create' | 'edit';
 
 interface StandardSpecForm {
@@ -33,42 +47,6 @@ interface StandardSpecForm {
   parameter: string;
   description: string;
 }
-
-interface StandardSpecTypeItem {
-  key: string;
-  codePrefix: string;
-  name: StandardSpecInfoItem['type'];
-}
-
-interface StandardSpecTypeForm {
-  codePrefix: string;
-  name: StandardSpecInfoItem['type'];
-}
-
-const standardSpecInitialTypes: StandardSpecTypeItem[] = [
-  {
-    key: 'voltage',
-    codePrefix: 'VOLTAGE',
-    name: {
-      zh: '电压',
-      en: 'Voltage',
-      ja: '電圧',
-      ko: '전압',
-      th: 'แรงดันไฟฟ้า',
-    },
-  },
-  {
-    key: 'plug',
-    codePrefix: 'PLUG',
-    name: {
-      zh: '插头',
-      en: 'Plug',
-      ja: 'プラグ',
-      ko: '플러그',
-      th: 'ปลั๊ก',
-    },
-  },
-];
 
 const defaultStandardSpecTypeName: StandardSpecInfoItem['type'] = {
   zh: '类型',
@@ -93,35 +71,6 @@ function getStandardSpecTypeByKey(
   typeKey: StandardSpecTypeFilter,
 ) {
   return standardSpecTypes.find((item) => item.key === typeKey);
-}
-
-function normalizeCodePrefix(value: string): string {
-  return (
-    value
-      .trim()
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, '') || 'TYPE'
-  );
-}
-
-function completeLocalizedText(
-  value: Partial<StandardSpecInfoItem['type']> | undefined,
-  fallback: string,
-): StandardSpecInfoItem['type'] {
-  const firstValue =
-    value?.zh?.trim() ||
-    value?.en?.trim() ||
-    value?.ja?.trim() ||
-    value?.ko?.trim() ||
-    value?.th?.trim() ||
-    fallback;
-  return {
-    zh: value?.zh?.trim() || firstValue,
-    en: value?.en?.trim() || firstValue,
-    ja: value?.ja?.trim() || firstValue,
-    ko: value?.ko?.trim() || firstValue,
-    th: value?.th?.trim() || firstValue,
-  };
 }
 
 function createLocalizedText(value: string): StandardSpecInfoItem['parameter'] {
@@ -164,6 +113,7 @@ function createStandardSpecCode(
 }
 
 export default function StandardSpecPage() {
+  const { token } = theme.useToken();
   const language = useAuthStore(selectCurrentLanguage);
   const [keyword, setKeyword] = useState('');
   const [typeFilter, setTypeFilter] = useState<
@@ -179,9 +129,11 @@ export default function StandardSpecPage() {
   const [formMode, setFormMode] = useState<StandardSpecFormMode>('create');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [typeModalOpen, setTypeModalOpen] = useState(false);
-  const [typeCreateModalOpen, setTypeCreateModalOpen] = useState(false);
   const [editForm] = Form.useForm<StandardSpecForm>();
-  const [typeForm] = Form.useForm<StandardSpecTypeForm>();
+  const primaryOutlineButtonStyle = {
+    borderColor: token.colorPrimary,
+    color: token.colorPrimary,
+  };
 
   const typeFilterOptions = standardSpecTypes.map((item) => ({
     label: <LanguageText langKey={language} map={item.name} />,
@@ -224,28 +176,6 @@ export default function StandardSpecPage() {
   const refreshCreateCode = (typeKey: StandardSpecTypeFilter) => {
     if (formMode !== 'create') return;
     editForm.setFieldValue('code', generateCode(typeKey));
-  };
-
-  const openTypeCreateModal = () => {
-    typeForm.resetFields();
-    setTypeCreateModalOpen(true);
-  };
-
-  const closeTypeCreateModal = () => {
-    setTypeCreateModalOpen(false);
-    typeForm.resetFields();
-  };
-
-  const saveStandardSpecType = async () => {
-    const values = await typeForm.validateFields();
-    const codePrefix = normalizeCodePrefix(values.codePrefix);
-    const newType: StandardSpecTypeItem = {
-      key: codePrefix.toLowerCase(),
-      codePrefix,
-      name: completeLocalizedText(values.name, codePrefix),
-    };
-    setStandardSpecTypes((prev) => [newType, ...prev]);
-    closeTypeCreateModal();
   };
 
   const closeEditModal = () => {
@@ -314,28 +244,6 @@ export default function StandardSpecPage() {
     );
   });
 
-  const typeColumns: ColumnsType<StandardSpecTypeItem> = [
-    {
-      ...noWrapColumnProps,
-      title: (
-        <LanguageLabel langKey={language} labelKey="standardSpecTypeCode" />
-      ),
-      dataIndex: 'codePrefix',
-      width: 160,
-    },
-    {
-      ...noWrapColumnProps,
-      title: (
-        <LanguageLabel langKey={language} labelKey="standardSpecTypeName" />
-      ),
-      dataIndex: 'name',
-      width: 220,
-      render: (_, record) => (
-        <LanguageText langKey={language} map={record.name} />
-      ),
-    },
-  ];
-
   const columns: ColumnsType<StandardSpecInfoItem> = [
     {
       ...noWrapColumnProps,
@@ -390,17 +298,18 @@ export default function StandardSpecPage() {
     <>
       <Space style={{ marginBottom: 16 }}>
         <Button
+          type="primary"
           icon={<UnorderedListOutlined />}
           onClick={() => setTypeModalOpen(true)}
-          style={orangeOutlineButtonStyle}
+          style={orangePrimaryButtonStyle}
         >
           <LanguageLabel langKey={language} labelKey="standardSpecTypeList" />
         </Button>
         <Divider type="vertical" style={toolbarDividerStyle} />
         <Button
-          type="primary"
           icon={<PlusOutlined />}
           onClick={openCreateModal}
+          style={primaryOutlineButtonStyle}
         >
           <LanguageLabel langKey={language} labelKey="newStandardSpec" />
         </Button>
@@ -488,92 +397,13 @@ export default function StandardSpecPage() {
           </Form.Item>
         </Form>
       </Modal>
-      <Modal
-        title={
-          <LanguageLabel langKey={language} labelKey="standardSpecTypeList" />
-        }
+      <TypeListModal
         open={typeModalOpen}
+        language={language}
+        standardSpecTypes={standardSpecTypes}
         onCancel={() => setTypeModalOpen(false)}
-        footer={null}
-        width={640}
-      >
-        <Space style={{ marginBottom: 16 }}>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={openTypeCreateModal}
-          >
-            <LanguageLabel langKey={language} labelKey="newStandardSpecType" />
-          </Button>
-        </Space>
-        <Table
-          rowKey="key"
-          columns={typeColumns}
-          dataSource={standardSpecTypes}
-          pagination={false}
-          scroll={{ x: 'max-content' }}
-        />
-      </Modal>
-      <Modal
-        title={
-          <LanguageLabel langKey={language} labelKey="newStandardSpecType" />
-        }
-        open={typeCreateModalOpen}
-        onOk={saveStandardSpecType}
-        onCancel={closeTypeCreateModal}
-      >
-        <Form form={typeForm} layout="vertical" size="small">
-          <Form.Item
-            name="codePrefix"
-            label={
-              <LanguageLabel
-                langKey={language}
-                labelKey="standardSpecTypeCode"
-              />
-            }
-            rules={[
-              {
-                required: true,
-                message: getLabel('pleaseInputStandardSpecTypeCode', language),
-              },
-              {
-                validator: (_, value) => {
-                  const codePrefix = normalizeCodePrefix(value ?? '');
-                  if (
-                    standardSpecTypes.some(
-                      (item) => item.codePrefix === codePrefix,
-                    )
-                  ) {
-                    return Promise.reject(
-                      new Error(
-                        getLabel('standardSpecTypeCodeExists', language),
-                      ),
-                    );
-                  }
-                  return Promise.resolve();
-                },
-              },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <LanguageFormItem
-            langKey={language}
-            name="name"
-            label={
-              <LanguageLabel
-                langKey={language}
-                labelKey="standardSpecTypeName"
-              />
-            }
-            required
-            requiredMessage={getLabel(
-              'pleaseInputStandardSpecTypeName',
-              language,
-            )}
-          />
-        </Form>
-      </Modal>
+        onStandardSpecTypesChange={setStandardSpecTypes}
+      />
     </>
   );
 }

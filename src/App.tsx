@@ -1,10 +1,33 @@
 import { RouterProvider } from 'react-router-dom'
-import { ConfigProvider } from 'antd'
+import { ConfigProvider, type ThemeConfig } from 'antd'
 import { router } from './router'
 import { ANTD_LOCALES } from './i18n/antdLocale'
 import { useAuthStore, selectCurrentLanguage } from './store/useAuthStore'
 import { getCurrentUser } from './api/auth'
 import { GlobalLanguageProvider } from './context/GlobalLanguageContext'
+
+const CONTROL_FONT_SIZE = 12
+
+const antdTheme: ThemeConfig = {
+  components: {
+    Input: {
+      fontSize: CONTROL_FONT_SIZE,
+      inputFontSize: CONTROL_FONT_SIZE,
+      inputFontSizeLG: CONTROL_FONT_SIZE,
+      inputFontSizeSM: CONTROL_FONT_SIZE,
+    },
+    InputNumber: {
+      fontSize: CONTROL_FONT_SIZE,
+      inputFontSize: CONTROL_FONT_SIZE,
+      inputFontSizeLG: CONTROL_FONT_SIZE,
+      inputFontSizeSM: CONTROL_FONT_SIZE,
+    },
+    Select: {
+      fontSize: CONTROL_FONT_SIZE,
+      optionFontSize: CONTROL_FONT_SIZE,
+    },
+  },
+}
 
 function App() {
   const language = useAuthStore(selectCurrentLanguage)
@@ -19,7 +42,7 @@ function App() {
   }, [])
 
   return (
-    <ConfigProvider locale={ANTD_LOCALES[language]}>
+    <ConfigProvider locale={ANTD_LOCALES[language]} theme={antdTheme}>
       <GlobalLanguageProvider>
         <RouterProvider router={router} />
       </GlobalLanguageProvider>

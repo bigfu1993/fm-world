@@ -217,7 +217,6 @@ function ListColumn<T>({
           <LanguageLabel langKey={langKey} labelKey={titleKey} />
         </div>
         <Input
-          size="small"
           allowClear
           placeholder={getLabel('search', langKey)}
           value={keyword}

@@ -20,13 +20,16 @@ export default function LanguageLabel({
   }
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-      <span style={{ fontWeight: 600, fontSize: mainFontSize, marginRight: '5px' }}>
+      <span
+        style={{ fontWeight: 600, fontSize: mainFontSize, marginRight: '5px' }}
+      >
         {labels[langKey]}
       </span>
       <span
         style={{
-          color: 'rgba(0, 0, 0, 0.45)',
+          color: 'inherit',
           fontSize: subFontSize,
+          opacity: 0.7,
         }}
       >
         {labels.en}
