@@ -1,6 +1,7 @@
-import { Button, Table, Modal, Form, Input, Checkbox, Popconfirm, message, Tag } from 'antd'
+import { Button, Table, Form, Input, Checkbox, Popconfirm, message, Tag } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
+import DraggableModal from '@/components/DraggableModal'
 import {
   createRole,
   listPermissions,
@@ -127,11 +128,13 @@ export default function RolePage() {
         scroll={{ x: 'max-content' }}
       />
 
-      <Modal
+      <DraggableModal
         title={<LanguageLabel langKey={language} labelKey={editing ? 'editRole' : 'newRole'} />}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        okButtonProps={{ size: 'small' }}
+        cancelButtonProps={{ size: 'small' }}
         destroyOnHidden
       >
         <Form form={form} layout="vertical" size="small">
@@ -169,7 +172,7 @@ export default function RolePage() {
             </Checkbox.Group>
           </Form.Item>
         </Form>
-      </Modal>
+      </DraggableModal>
     </>
   )
 }

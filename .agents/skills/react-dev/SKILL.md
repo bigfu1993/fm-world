@@ -51,17 +51,21 @@ src/
 - Props 用 `interface` 定义，不用 `type`（除非是联合类型）。
 - UI 优先用 antd 组件，不另外引入其他 UI 库；图标用 `@ant-design/icons`。
 - 不写行内大段样式对象，简单样式用 `style` 内联，复杂样式用单独的 `.css` 文件。
-- `Select.options` 展示多语言业务数据时，`label` 使用 `<LanguageText langKey={language} map={data} />`，不要提前取 `data[language]` 字符串；下拉展示需和顶部语言选择保持一致：当前语言为非英文时展示“当前语言主文案 + 英文副文案”，英文时只展示英文主文案。
+- `Select.options` 展示多语言业务数据时，`label` 使用 `<LanguageText langKey={language} map={data} />`，不要提前取 `data[language]` 字符串；下拉展示需和顶部语言选择保持一致：当前语言为非英文时展示“当前语言主文案 + 英文副文案”，英文时只展示英文主文案。筛选类单选 `Select` 可给 option 额外提供纯文本字段，并通过 `optionLabelProp` 让选择框内已选值展示纯文本，避免已选值区域渲染双语节点。
 - 创建类按钮和创建态标题统一展示为“新建”，不要拼接具体业务对象名，例如不要写“新建国家”“新建类型”。
-- Modal 内的 `<Form>` 统一加 `size="small"`，会自动级联到内部所有 Input/Select/Checkbox 等控件，不用逐个加。
-- `Input`、`InputNumber`、`Select` 字号由 `src/App.tsx` 的 Ant Design `ConfigProvider.theme.components` 统一配置为 `12`，页面和组件内不要重复写控件 `fontSize`。
-- `Input`、`InputNumber`、`Select` 尺寸只按是否处于弹窗场景区分：非弹窗场景不单独写 `size`，使用 Ant Design 默认尺寸；弹窗内通过外层 `<Form size="small">` 统一下发，不要给单个控件重复设置 `size`。
+- 弹窗统一使用 `src/components/DraggableModal`，不要直接从 antd 使用 `Modal`；项目弹窗均需支持拖拽移动、不显示 mask，并且不展示右上角关闭图标。
+- 弹窗默认 footer 的“确定”按钮颜色由 `DraggableModal` 统一固定为绿色，页面内不要重复配置确定按钮颜色。
+- 弹窗 footer 按钮文案统一使用 `LanguageLabel` 组件；`DraggableModal` 已默认用 `confirm`、`cancel` 渲染确定/取消，若自定义 footer 或自定义 `okText`/`cancelText`，也必须传入 `LanguageLabel` 节点。
+- Modal 内的按钮、下拉、输入框、表格统一使用小一号尺寸：`<Form>` 加 `size="small"`，弹窗内 `Select` 显式加 `size="small"`，弹窗内自定义 `Button` 和 `Table` 显式加 `size="small"`，Modal 默认 footer 按钮通过 `okButtonProps={{ size: 'small' }}` 和 `cancelButtonProps={{ size: 'small' }}` 配置。
+- `Input`、`InputNumber` 字号由 `src/App.tsx` 的 Ant Design `ConfigProvider.theme.components` 统一配置为 `12`，页面和组件内不要重复写控件 `fontSize`；`Select` 不配置选择框 `fontSize`，只保留 `optionFontSize` 用于下拉选项字号，避免影响默认选择框高度。
+- `Input`、`InputNumber`、`Select` 尺寸只按是否处于弹窗场景区分：非弹窗场景不单独写 `size`，使用 Ant Design 默认尺寸；弹窗内输入类控件通过 Form 小尺寸或控件自身 `size="small"` 保持一致。
 
 ## 表格约定
 
 - Ant Design `Table` 横向内容超出时，由表格主体负责滚动，优先配置 `scroll={{ x: 'max-content' }}` 或明确的 `scroll.x`。
 - 表格存在操作列时，操作列固定在右侧，配置 `fixed: 'right'`，并给出稳定 `width`，避免横向滚动后操作入口丢失。
 - 每列都应设置合理 `width`，表头通过 `whiteSpace: 'nowrap'` 或同等方式保持一行展示；不要让表头换行撑高表格。
+- 表格单元格内容为空时统一展示 `-` 占位，优先使用 `src/utils/table.tsx` 中的 `renderTableEmptyPlaceholder`，不要直接返回 `null`、空字符串或空白内容。
 
 ## 其他
 

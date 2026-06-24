@@ -1,6 +1,7 @@
-import { Button, Form, Input, Modal, Popconfirm, Select, Space, Table, message } from 'antd'
+import { Button, Form, Input, Popconfirm, Select, Space, Table, message } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
+import DraggableModal from '@/components/DraggableModal'
 import { listPoints } from '@/api/point'
 import {
   createLandmark,
@@ -162,11 +163,13 @@ export default function LandmarkPage() {
         scroll={{ x: 'max-content' }}
       />
 
-      <Modal
+      <DraggableModal
         title={<LanguageLabel langKey={language} labelKey={editing ? 'editLandmark' : 'newLandmark'} />}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        okButtonProps={{ size: 'small' }}
+        cancelButtonProps={{ size: 'small' }}
         destroyOnHidden
       >
         <Form form={form} layout="vertical" size="small">
@@ -175,7 +178,11 @@ export default function LandmarkPage() {
             label={<LanguageLabel langKey={language} labelKey="pointName" />}
             rules={[{ required: true, message: getLabel('pleaseSelectPoint', language) }]}
           >
-            <Select options={pointOptions} getPopupContainer={modalPopupContainer} />
+            <Select
+              size="small"
+              options={pointOptions}
+              getPopupContainer={modalPopupContainer}
+            />
           </Form.Item>
           <LanguageFormItem
             langKey={language}
@@ -189,7 +196,11 @@ export default function LandmarkPage() {
             label={<LanguageLabel langKey={language} labelKey="landmarkType" />}
             rules={[{ required: true, message: getLabel('pleaseSelectLandmarkType', language) }]}
           >
-            <Select options={landmarkTypeOptions} getPopupContainer={modalPopupContainer} />
+            <Select
+              size="small"
+              options={landmarkTypeOptions}
+              getPopupContainer={modalPopupContainer}
+            />
           </Form.Item>
           <Form.Item name="description" label={<LanguageLabel langKey={language} labelKey="introduction" />}>
             <Input.TextArea rows={3} />
@@ -198,7 +209,7 @@ export default function LandmarkPage() {
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
-      </Modal>
+      </DraggableModal>
     </>
   )
 }

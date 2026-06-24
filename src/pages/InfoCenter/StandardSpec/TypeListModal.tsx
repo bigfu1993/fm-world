@@ -1,9 +1,10 @@
-import { Button, Form, Input, Modal, Space, Table } from 'antd';
+import { Button, Form, Space, Table } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import DraggableModal from '@/components/DraggableModal';
+import DataFormItem, { type DataFormItemValue } from '@/components/DataFormItem';
 import LanguageLabel from '@/components/LanguageLabel';
 import LanguageText from '@/components/LanguageText';
-import LanguageFormItem from '@/components/LanguageFormItem';
 import { getLabel } from '@/components/LanguageLabel/LabelMap';
 import type { StandardSpecInfoItem } from '@/mock/information';
 import type { LanguageCode } from '@/types/system';
@@ -12,6 +13,10 @@ const noWrapColumnStyle = { whiteSpace: 'nowrap' } as const;
 const noWrapColumnProps = {
   onCell: () => ({ style: noWrapColumnStyle }),
   onHeaderCell: () => ({ style: noWrapColumnStyle }),
+};
+const orangeOutlineButtonStyle = {
+  borderColor: '#fa8c16',
+  color: '#fa8c16',
 };
 
 export type StandardSpecTypeFilter = string;
@@ -23,8 +28,8 @@ export interface StandardSpecTypeItem {
 }
 
 interface StandardSpecTypeForm {
-  codePrefix: string;
-  name: StandardSpecInfoItem['type'];
+  codePrefix: DataFormItemValue;
+  name: DataFormItemValue;
 }
 
 interface TypeListModalProps {
@@ -89,6 +94,21 @@ function completeLocalizedText(
   };
 }
 
+function getTypeNameContent(
+  value: DataFormItemValue | undefined,
+): StandardSpecInfoItem['type'] | undefined {
+  const content = value?.content;
+  if (!content || typeof content !== 'object' || Array.isArray(content)) {
+    return undefined;
+  }
+  return content;
+}
+
+function getTypeCodePrefixContent(value: DataFormItemValue | undefined) {
+  const content = value?.content;
+  return typeof content === 'string' ? content : '';
+}
+
 export default function TypeListModal({
   open,
   language,
@@ -111,11 +131,22 @@ export default function TypeListModal({
 
   const saveStandardSpecType = async () => {
     const values = await typeForm.validateFields();
-    const codePrefix = normalizeCodePrefix(values.codePrefix);
+    const codePrefix = normalizeCodePrefix(
+      getTypeCodePrefixContent(values.codePrefix),
+    );
+    if (standardSpecTypes.some((item) => item.codePrefix === codePrefix)) {
+      typeForm.setFields([
+        {
+          name: ['codePrefix', 'content'],
+          errors: [getLabel('standardSpecTypeCodeExists', language)],
+        },
+      ]);
+      return;
+    }
     const newType: StandardSpecTypeItem = {
       key: codePrefix.toLowerCase(),
       codePrefix,
-      name: completeLocalizedText(values.name, codePrefix),
+      name: completeLocalizedText(getTypeNameContent(values.name), codePrefix),
     };
     onStandardSpecTypesChange([newType, ...standardSpecTypes]);
     closeTypeCreateModal();
@@ -145,7 +176,7 @@ export default function TypeListModal({
 
   return (
     <>
-      <Modal
+      <DraggableModal
         title={
           <LanguageLabel langKey={language} labelKey="standardSpecTypeList" />
         }
@@ -156,8 +187,9 @@ export default function TypeListModal({
       >
         <Space style={{ marginBottom: 16 }}>
           <Button
-            type="primary"
+            size="small"
             icon={<PlusOutlined />}
+            style={orangeOutlineButtonStyle}
             onClick={openTypeCreateModal}
           >
             <LanguageLabel langKey={language} labelKey="newStandardSpecType" />
@@ -167,56 +199,42 @@ export default function TypeListModal({
           rowKey="key"
           columns={typeColumns}
           dataSource={standardSpecTypes}
+          size="small"
           pagination={false}
           scroll={{ x: 'max-content' }}
         />
-      </Modal>
-      <Modal
+      </DraggableModal>
+      <DraggableModal
         title={
           <LanguageLabel langKey={language} labelKey="newStandardSpecType" />
         }
         open={typeCreateModalOpen}
         onOk={saveStandardSpecType}
         onCancel={closeTypeCreateModal}
+        okButtonProps={{ size: 'small' }}
+        cancelButtonProps={{ size: 'small' }}
       >
         <Form form={typeForm} layout="vertical" size="small">
-          <Form.Item
+          <DataFormItem
             name="codePrefix"
+            langKey={language}
+            type={['text']}
             label={
               <LanguageLabel
                 langKey={language}
                 labelKey="standardSpecTypeCode"
               />
             }
-            rules={[
-              {
-                required: true,
-                message: getLabel('pleaseInputStandardSpecTypeCode', language),
-              },
-              {
-                validator: (_, value) => {
-                  const codePrefix = normalizeCodePrefix(value ?? '');
-                  if (
-                    standardSpecTypes.some(
-                      (item) => item.codePrefix === codePrefix,
-                    )
-                  ) {
-                    return Promise.reject(
-                      new Error(
-                        getLabel('standardSpecTypeCodeExists', language),
-                      ),
-                    );
-                  }
-                  return Promise.resolve();
-                },
-              },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <LanguageFormItem
+            required
+            requiredMessage={getLabel(
+              'pleaseInputStandardSpecTypeCode',
+              language,
+            )}
+          />
+          <DataFormItem
             langKey={language}
             name="name"
+            type={['label']}
             label={
               <LanguageLabel
                 langKey={language}
@@ -230,7 +248,7 @@ export default function TypeListModal({
             )}
           />
         </Form>
-      </Modal>
+      </DraggableModal>
     </>
   );
 }

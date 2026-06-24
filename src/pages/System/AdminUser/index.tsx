@@ -1,7 +1,6 @@
 import {
   Button,
   Table,
-  Modal,
   Form,
   Input,
   Select,
@@ -13,6 +12,7 @@ import {
 } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
+import DraggableModal from '@/components/DraggableModal'
 import {
   createAdminUser,
   listAdminUsers,
@@ -222,13 +222,15 @@ export default function AdminUserPage() {
         }}
       />
 
-      <Modal
+      <DraggableModal
         title={
           <LanguageLabel langKey={language} labelKey={editing ? 'editAccount' : 'createAccount'} />
         }
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        okButtonProps={{ size: 'small' }}
+        cancelButtonProps={{ size: 'small' }}
         destroyOnHidden
       >
         <Form form={form} layout="vertical" size="small">
@@ -259,6 +261,7 @@ export default function AdminUserPage() {
             rules={[{ required: true, message: getLabel('pleaseSelectRole', language) }]}
           >
             <Select
+              size="small"
               mode="multiple"
               options={roles.map((r) => ({ label: r.name, value: r.id }))}
               placeholder={getLabel('pleaseSelectRole', language)}
@@ -272,6 +275,7 @@ export default function AdminUserPage() {
             extra={getLabel('languageOrderHint', language)}
           >
             <Select
+              size="small"
               mode="multiple"
               options={LANGUAGES.map((l) => ({ label: l.label, value: l.code }))}
               placeholder={getLabel('selectLanguagePlaceholder', language)}
@@ -288,13 +292,15 @@ export default function AdminUserPage() {
             </Form.Item>
           )}
         </Form>
-      </Modal>
+      </DraggableModal>
 
-      <Modal
+      <DraggableModal
         title={<LanguageLabel langKey={language} labelKey="resetPassword" />}
         open={!!resetTarget}
         onCancel={() => setResetTarget(null)}
         onOk={handleResetPassword}
+        okButtonProps={{ size: 'small' }}
+        cancelButtonProps={{ size: 'small' }}
         destroyOnHidden
       >
         <Form form={resetForm} layout="vertical" size="small">
@@ -306,7 +312,7 @@ export default function AdminUserPage() {
             <Input.Password />
           </Form.Item>
         </Form>
-      </Modal>
+      </DraggableModal>
     </>
   )
 }

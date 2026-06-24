@@ -4,7 +4,6 @@ import {
   Form,
   Input,
   InputNumber,
-  Modal,
   Select,
   Space,
   Table,
@@ -22,6 +21,7 @@ import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
+import DraggableModal from '@/components/DraggableModal'
 
 const DEFAULT_DISPLAY_ZOOM = 8
 const MIN_DISPLAY_ZOOM = 0.8
@@ -243,11 +243,13 @@ export default function CountryPage() {
         dataSource={dataSource}
         scroll={{ x: 'max-content' }}
       />
-      <Modal
+      <DraggableModal
         title={<LanguageLabel langKey={language} labelKey="infoBinding" />}
         open={bindingModalOpen}
         onOk={saveInfoBinding}
         onCancel={closeInfoBindingModal}
+        okButtonProps={{ size: 'small' }}
+        cancelButtonProps={{ size: 'small' }}
       >
         <Form form={bindingForm} layout="vertical" size="small">
           <Form.Item
@@ -291,6 +293,7 @@ export default function CountryPage() {
             }
           >
             <Select
+              size="small"
               allowClear
               options={communicationInfoOptions}
               placeholder={getLabel(
@@ -310,6 +313,7 @@ export default function CountryPage() {
             }
           >
             <Select
+              size="small"
               allowClear
               options={intercityTrafficInfoOptions}
               placeholder={getLabel(
@@ -324,6 +328,7 @@ export default function CountryPage() {
             label={<LanguageLabel langKey={language} labelKey="nationalPower" />}
           >
             <Select
+              size="small"
               allowClear
               options={nationalPowerInfoOptions}
               placeholder={getLabel('pleaseSelectNationalPower', language)}
@@ -337,6 +342,7 @@ export default function CountryPage() {
             }
           >
             <Select
+              size="small"
               allowClear
               mode="multiple"
               options={officialLanguageOptions}
@@ -357,6 +363,7 @@ export default function CountryPage() {
             label={<LanguageLabel langKey={language} labelKey="cultureCustoms" />}
           >
             <Select
+              size="small"
               allowClear
               options={cultureCustomInfoOptions}
               placeholder={getLabel('pleaseSelectCultureCustoms', language)}
@@ -364,7 +371,7 @@ export default function CountryPage() {
             />
           </Form.Item>
         </Form>
-      </Modal>
+      </DraggableModal>
     </>
   )
 }

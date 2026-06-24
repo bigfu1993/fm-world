@@ -1,6 +1,7 @@
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Row, Col, Select, Space, Switch, Table, message } from 'antd'
+import { Button, Form, Input, InputNumber, Popconfirm, Row, Col, Select, Space, Switch, Table, message } from 'antd'
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
+import DraggableModal from '@/components/DraggableModal'
 import {
   createPoint,
   listPoints,
@@ -316,11 +317,13 @@ export default function PointPage() {
         scroll={{ x: 'max-content' }}
       />
 
-      <Modal
+      <DraggableModal
         title={<LanguageLabel langKey={language} labelKey={editing ? 'editPoint' : 'newPoint'} />}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        okButtonProps={{ size: 'small' }}
+        cancelButtonProps={{ size: 'small' }}
         destroyOnHidden
         width={720}
       >
@@ -332,7 +335,11 @@ export default function PointPage() {
                 label={<LanguageLabel langKey={language} labelKey="city" />}
                 rules={[{ required: true, message: getLabel('pleaseSelectCity', language) }]}
               >
-                <Select options={cityOptions} getPopupContainer={modalPopupContainer} />
+                <Select
+                  size="small"
+                  options={cityOptions}
+                  getPopupContainer={modalPopupContainer}
+                />
               </Form.Item>
               <LanguageFormItem
                 langKey={language}
@@ -368,13 +375,17 @@ export default function PointPage() {
                 label={<LanguageLabel langKey={language} labelKey="pointType" />}
                 rules={[{ required: true, message: getLabel('pleaseSelectPointType', language) }]}
               >
-                <Select options={pointTypeOptions} getPopupContainer={modalPopupContainer} />
+                <Select
+                  size="small"
+                  options={pointTypeOptions}
+                  getPopupContainer={modalPopupContainer}
+                />
               </Form.Item>
               <PointTypeFields pointType={pointType} language={language} />
             </Col>
           </Row>
         </Form>
-      </Modal>
+      </DraggableModal>
     </>
   )
 }
