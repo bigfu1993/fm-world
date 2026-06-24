@@ -15,9 +15,29 @@ import type { Landmark, Point } from '@/types/point'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
-import LanguageFormItem from '@/components/LanguageFormItem'
+import DataFormItem, { type DataFormItemValue } from '@/components/DataFormItem'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
 import { modalPopupContainer } from '@/utils/popupContainer'
+import type { LocalizedText } from '@/types/destination'
+
+type LandmarkEditorFormData = Omit<LandmarkFormData, 'name'> & {
+  name: DataFormItemValue
+}
+
+function createLabelDataFormValue(content: LocalizedText): DataFormItemValue {
+  return {
+    type: 'label',
+    content,
+  }
+}
+
+function getLabelDataFormContent(value: DataFormItemValue): LocalizedText {
+  const content = value.content
+  if (content && typeof content === 'object' && !Array.isArray(content)) {
+    return content
+  }
+  return {} as LocalizedText
+}
 
 export default function LandmarkPage() {
   const language = useAuthStore(selectCurrentLanguage)
@@ -27,7 +47,7 @@ export default function LandmarkPage() {
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Landmark | null>(null)
-  const [form] = Form.useForm<LandmarkFormData>()
+  const [form] = Form.useForm<LandmarkEditorFormData>()
 
   const fetchData = async () => {
     setLoading(true)
@@ -62,18 +82,25 @@ export default function LandmarkPage() {
 
   const openEdit = (landmark: Landmark) => {
     setEditing(landmark)
-    form.setFieldsValue(landmark)
+    form.setFieldsValue({
+      ...landmark,
+      name: createLabelDataFormValue(landmark.name),
+    })
     setModalOpen(true)
   }
 
   const handleSubmit = async () => {
     const values = await form.validateFields()
+    const submitValues: LandmarkFormData = {
+      ...values,
+      name: getLabelDataFormContent(values.name),
+    }
     try {
       if (editing) {
-        await updateLandmark(editing.id, values)
+        await updateLandmark(editing.id, submitValues)
         message.success(<LanguageLabel langKey={language} labelKey="landmarkUpdated" />)
       } else {
-        await createLandmark(values)
+        await createLandmark(submitValues)
         message.success(<LanguageLabel langKey={language} labelKey="landmarkCreated" />)
       }
       setModalOpen(false)
@@ -184,9 +211,10 @@ export default function LandmarkPage() {
               getPopupContainer={modalPopupContainer}
             />
           </Form.Item>
-          <LanguageFormItem
+          <DataFormItem
             langKey={language}
             name="name"
+            type={['label']}
             label={<LanguageLabel langKey={language} labelKey="landmarkName" />}
             required
             requiredMessage={getLabel('pleaseInputLandmarkName', language)}

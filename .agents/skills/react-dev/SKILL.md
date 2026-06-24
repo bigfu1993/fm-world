@@ -59,6 +59,11 @@ src/
 - Modal 内的按钮、下拉、输入框、表格统一使用小一号尺寸：`<Form>` 加 `size="small"`，弹窗内 `Select` 显式加 `size="small"`，弹窗内自定义 `Button` 和 `Table` 显式加 `size="small"`，Modal 默认 footer 按钮通过 `okButtonProps={{ size: 'small' }}` 和 `cancelButtonProps={{ size: 'small' }}` 配置。
 - `Input`、`InputNumber` 字号由 `src/App.tsx` 的 Ant Design `ConfigProvider.theme.components` 统一配置为 `12`，页面和组件内不要重复写控件 `fontSize`；`Select` 不配置选择框 `fontSize`，只保留 `optionFontSize` 用于下拉选项字号，避免影响默认选择框高度。
 - `Input`、`InputNumber`、`Select` 尺寸只按是否处于弹窗场景区分：非弹窗场景不单独写 `size`，使用 Ant Design 默认尺寸；弹窗内输入类控件通过 Form 小尺寸或控件自身 `size="small"` 保持一致。
+- 组件 DOM 层级保持克制：不要为了“占位”或习惯性包裹额外添加 `div`、`Space`、`Card`、隐藏 `Form.Item` 等节点；单子节点不需要布局能力时直接返回子节点，多子节点优先用 `Fragment`，只有存在间距、滚动、定位、对齐、表单绑定或语义容器需求时才添加真实 DOM 容器。
+- DOM 层级优化覆盖场景：单按钮/单输入工具栏不要用 `Space` 只承载 `marginBottom`，可将间距放到控件自身；单子节点的 `Fragment`、只包一层样式但可下沉样式的 `div`、无实际语义的嵌套 `Card`、固定值隐藏控件、无内容占位节点都应优先移除或合并。
+- DOM 层级保留场景：承载滚动区域、flex/grid 布局、拖拽范围、绝对定位上下文、事件委托、语义分组、可访问性角色、表单字段绑定、列表 key 边界、Ant Design 组件要求的 wrapper 时，应保留真实容器。
+- 进行页面或组件调整时，如果分析发现可减少 DOM 层级且能够保证交互逻辑、表单数据结构、视觉布局不变，应同步完成优化，不只停留在说明；无法确定是否影响布局或交互时，保留现状并说明风险。
+- 表单组件封装时避免渲染无效隐藏字段；固定类型、固定状态等可由组件内部同步到表单值时，不再额外渲染隐藏控件。确需使用 `Form.Item noStyle` 时，应只用于给自定义控件绑定表单值，不作为布局容器。
 
 ## 表格约定
 

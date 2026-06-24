@@ -15,9 +15,14 @@ import type { Point } from '@/types/point'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
-import LanguageFormItem from '@/components/LanguageFormItem'
+import DataFormItem, { type DataFormItemValue } from '@/components/DataFormItem'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
 import { modalPopupContainer } from '@/utils/popupContainer'
+import type { LocalizedText } from '@/types/destination'
+
+type PointEditorFormData = Omit<PointFormData, 'name'> & {
+  name: DataFormItemValue
+}
 
 function CoordinatesInput({
   langKey,
@@ -130,21 +135,17 @@ function TransportFields({ language }: { language: Parameters<typeof getLabel>[1
 
 function FoodFields({ language }: { language: Parameters<typeof getLabel>[1] }) {
   return (
-    <>
-      <Form.Item name="avgCost" label={<LanguageLabel langKey={language} labelKey="avgCost" />}>
-        <InputNumber min={0} style={{ width: '100%' }} />
-      </Form.Item>
-    </>
+    <Form.Item name="avgCost" label={<LanguageLabel langKey={language} labelKey="avgCost" />}>
+      <InputNumber min={0} style={{ width: '100%' }} />
+    </Form.Item>
   )
 }
 
 function ShoppingFields({ language }: { language: Parameters<typeof getLabel>[1] }) {
   return (
-    <>
-      <Form.Item name="brandIntro" label={<LanguageLabel langKey={language} labelKey="brandIntro" />}>
-        <Input.TextArea rows={2} />
-      </Form.Item>
-    </>
+    <Form.Item name="brandIntro" label={<LanguageLabel langKey={language} labelKey="brandIntro" />}>
+      <Input.TextArea rows={2} />
+    </Form.Item>
   )
 }
 
@@ -171,6 +172,21 @@ function PointTypeFields({
   }
 }
 
+function createLabelDataFormValue(content: LocalizedText): DataFormItemValue {
+  return {
+    type: 'label',
+    content,
+  }
+}
+
+function getLabelDataFormContent(value: DataFormItemValue): LocalizedText {
+  const content = value.content
+  if (content && typeof content === 'object' && !Array.isArray(content)) {
+    return content
+  }
+  return {} as LocalizedText
+}
+
 export default function PointPage() {
   const language = useAuthStore(selectCurrentLanguage)
   const [points, setPoints] = useState<Point[]>([])
@@ -178,7 +194,7 @@ export default function PointPage() {
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Point | null>(null)
-  const [form] = Form.useForm<PointFormData>()
+  const [form] = Form.useForm<PointEditorFormData>()
   const pointType = Form.useWatch('pointType', form)
 
   const fetchData = async () => {
@@ -213,18 +229,25 @@ export default function PointPage() {
 
   const openEdit = (point: Point) => {
     setEditing(point)
-    form.setFieldsValue(point)
+    form.setFieldsValue({
+      ...point,
+      name: createLabelDataFormValue(point.name),
+    })
     setModalOpen(true)
   }
 
   const handleSubmit = async () => {
     const values = await form.validateFields()
+    const submitValues: PointFormData = {
+      ...values,
+      name: getLabelDataFormContent(values.name),
+    }
     try {
       if (editing) {
-        await updatePoint(editing.id, values)
+        await updatePoint(editing.id, submitValues)
         message.success(<LanguageLabel langKey={language} labelKey="pointUpdated" />)
       } else {
-        await createPoint(values)
+        await createPoint(submitValues)
         message.success(<LanguageLabel langKey={language} labelKey="pointCreated" />)
       }
       setModalOpen(false)
@@ -341,9 +364,10 @@ export default function PointPage() {
                   getPopupContainer={modalPopupContainer}
                 />
               </Form.Item>
-              <LanguageFormItem
+              <DataFormItem
                 langKey={language}
                 name="name"
+                type={['label']}
                 label={<LanguageLabel langKey={language} labelKey="pointName" />}
                 required
                 requiredMessage={getLabel('pleaseInputPointName', language)}

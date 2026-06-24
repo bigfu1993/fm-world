@@ -1,4 +1,4 @@
-import { Button, Form, Space, Table } from 'antd';
+import { Button, Form, Table } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import DraggableModal from '@/components/DraggableModal';
@@ -17,6 +17,10 @@ const noWrapColumnProps = {
 const orangeOutlineButtonStyle = {
   borderColor: '#fa8c16',
   color: '#fa8c16',
+};
+const typeCreateButtonStyle = {
+  ...orangeOutlineButtonStyle,
+  marginBottom: 16,
 };
 
 export type StandardSpecTypeFilter = string;
@@ -185,16 +189,14 @@ export default function TypeListModal({
         footer={null}
         width={640}
       >
-        <Space style={{ marginBottom: 16 }}>
-          <Button
-            size="small"
-            icon={<PlusOutlined />}
-            style={orangeOutlineButtonStyle}
-            onClick={openTypeCreateModal}
-          >
-            <LanguageLabel langKey={language} labelKey="newStandardSpecType" />
-          </Button>
-        </Space>
+        <Button
+          size="small"
+          icon={<PlusOutlined />}
+          style={typeCreateButtonStyle}
+          onClick={openTypeCreateModal}
+        >
+          <LanguageLabel langKey={language} labelKey="newStandardSpecType" />
+        </Button>
         <Table
           rowKey="key"
           columns={typeColumns}

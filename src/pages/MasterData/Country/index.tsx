@@ -5,7 +5,6 @@ import {
   Input,
   InputNumber,
   Select,
-  Space,
   Table,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -229,14 +228,12 @@ export default function CountryPage() {
 
   return (
     <>
-      <Space style={{ marginBottom: 16 }}>
-        <Input
-          placeholder={getLabel('searchByCountryName', language)}
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          style={{ width: 200 }}
-        />
-      </Space>
+      <Input
+        placeholder={getLabel('searchByCountryName', language)}
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+        style={{ width: 200, marginBottom: 16 }}
+      />
       <Table
         rowKey="code"
         columns={columns}

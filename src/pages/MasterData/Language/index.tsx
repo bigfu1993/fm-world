@@ -1,4 +1,4 @@
-import { Input, Space, Table } from 'antd'
+import { Input, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { GLOBAL_LANGUAGES, type GlobalLanguage } from '@/mock/languages'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
@@ -28,14 +28,12 @@ export default function LanguagePage() {
 
   return (
     <>
-      <Space style={{ marginBottom: 16 }}>
-        <Input
-          placeholder={getLabel('searchByLanguageName', language)}
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          style={{ width: 200 }}
-        />
-      </Space>
+      <Input
+        placeholder={getLabel('searchByLanguageName', language)}
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+        style={{ width: 200, marginBottom: 16 }}
+      />
       <Table rowKey="code" columns={columns} dataSource={dataSource} scroll={{ x: 'max-content' }} />
     </>
   )
