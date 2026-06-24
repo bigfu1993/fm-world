@@ -51,7 +51,15 @@ src/
 - Props 用 `interface` 定义，不用 `type`（除非是联合类型）。
 - UI 优先用 antd 组件，不另外引入其他 UI 库；图标用 `@ant-design/icons`。
 - 不写行内大段样式对象，简单样式用 `style` 内联，复杂样式用单独的 `.css` 文件。
+- `Select.options` 展示多语言业务数据时，`label` 使用 `<LanguageText langKey={language} map={data} />`，不要提前取 `data[language]` 字符串；下拉展示需和顶部语言选择保持一致：当前语言为非英文时展示“当前语言主文案 + 英文副文案”，英文时只展示英文主文案。
+- 创建类按钮和创建态标题统一展示为“新建”，不要拼接具体业务对象名，例如不要写“新建国家”“新建类型”。
 - Modal 内的 `<Form>` 统一加 `size="small"`，会自动级联到内部所有 Input/Select/Checkbox 等控件，不用逐个加。
+
+## 表格约定
+
+- Ant Design `Table` 横向内容超出时，由表格主体负责滚动，优先配置 `scroll={{ x: 'max-content' }}` 或明确的 `scroll.x`。
+- 表格存在操作列时，操作列固定在右侧，配置 `fixed: 'right'`，并给出稳定 `width`，避免横向滚动后操作入口丢失。
+- 每列都应设置合理 `width`，表头通过 `whiteSpace: 'nowrap'` 或同等方式保持一行展示；不要让表头换行撑高表格。
 
 ## 其他
 

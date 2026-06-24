@@ -85,7 +85,9 @@ export default function CountryPage() {
     value: item.id,
   }))
   const nationalPowerInfoOptions = STANDARD_SPEC_INFOS.map((item) => ({
-    label: item.code,
+    label: `${item.type[language] ?? item.type.en} - ${
+      item.parameter[language] ?? item.parameter.en
+    }`,
     value: item.id,
   }))
   const officialLanguageOptions = GLOBAL_LANGUAGES.map((item) => ({

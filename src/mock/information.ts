@@ -17,7 +17,9 @@ export interface ServiceInfoItem {
 export interface StandardSpecInfoItem {
   id: string
   code: string
-  plugStandard: LocalizedInfoText
+  type: LocalizedInfoText
+  parameter: LocalizedInfoText
+  description: LocalizedInfoText
 }
 
 export interface SecurityRiskInfoItem {
@@ -136,16 +138,388 @@ export const SERVICE_INFOS: ServiceInfoItem[] = [
   },
 ]
 
+const STANDARD_SPEC_TYPE_VOLTAGE: LocalizedInfoText = {
+  zh: '电压',
+  en: 'Voltage',
+  ja: '電圧',
+  ko: '전압',
+  th: 'แรงดันไฟฟ้า',
+}
+
+const STANDARD_SPEC_TYPE_PLUG: LocalizedInfoText = {
+  zh: '插头',
+  en: 'Plug',
+  ja: 'プラグ',
+  ko: '플러그',
+  th: 'ปลั๊ก',
+}
+
+const createUniformSpecText = (text: string): LocalizedInfoText => ({
+  zh: text,
+  en: text,
+  ja: text,
+  ko: text,
+  th: text,
+})
+
+const createPlugParameter = (letter: string): LocalizedInfoText => ({
+  zh: `${letter} 型`,
+  en: `Type ${letter}`,
+  ja: `${letter} タイプ`,
+  ko: `${letter} 타입`,
+  th: `ประเภท ${letter}`,
+})
+
 export const STANDARD_SPEC_INFOS: StandardSpecInfoItem[] = [
   {
-    id: 'standard-plug-basic',
-    code: 'STANDARD-PLUG',
-    plugStandard: {
-      zh: '维护目的地常用插头类型、电压频率和是否需要转换插头。',
-      en: 'Maintain common plug types, voltage/frequency, and whether a travel adapter is required.',
-      ja: '目的地で一般的なプラグ形状、電圧・周波数、変換プラグ要否を管理します。',
-      ko: '목적지의 일반적인 플러그 유형, 전압/주파수, 변환 플러그 필요 여부를 관리합니다.',
-      th: 'บันทึกประเภทปลั๊กที่ใช้ทั่วไป แรงดัน/ความถี่ และความจำเป็นในการใช้อะแดปเตอร์',
+    id: 'standard-voltage-100v-50hz',
+    code: 'VOLTAGE4810297356',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('100V / 50Hz'),
+    description: {
+      zh: '日本东部等地区常见的低压制式，单电压设备需确认兼容性。',
+      en: 'Low-voltage standard seen in eastern Japan and similar areas; single-voltage devices should be checked for compatibility.',
+      ja: '東日本などで見られる低電圧規格です。単一電圧機器は互換性を確認してください。',
+      ko: '일본 동부 등에서 볼 수 있는 저전압 규격으로 단일 전압 기기는 호환성을 확인해야 합니다.',
+      th: 'มาตรฐานแรงดันต่ำที่พบในญี่ปุ่นตะวันออกและพื้นที่ใกล้เคียง ควรตรวจสอบอุปกรณ์แรงดันเดียวก่อนใช้งาน',
+    },
+  },
+  {
+    id: 'standard-voltage-100v-60hz',
+    code: 'VOLTAGE7306159842',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('100V / 60Hz'),
+    description: {
+      zh: '日本西部等地区常见的低压制式，频率相关设备需额外关注。',
+      en: 'Low-voltage standard seen in western Japan and similar areas; frequency-sensitive devices need extra attention.',
+      ja: '西日本などで見られる低電圧規格です。周波数に敏感な機器は注意が必要です。',
+      ko: '일본 서부 등에서 볼 수 있는 저전압 규격으로 주파수 민감 기기는 추가 확인이 필요합니다.',
+      th: 'มาตรฐานแรงดันต่ำที่พบในญี่ปุ่นตะวันตกและพื้นที่ใกล้เคียง อุปกรณ์ที่ไวต่อความถี่ควรตรวจสอบเป็นพิเศษ',
+    },
+  },
+  {
+    id: 'standard-voltage-110v-60hz',
+    code: 'VOLTAGE2947610583',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('110V / 60Hz'),
+    description: {
+      zh: '北美、加勒比及部分亚洲目的地常见，可能需要电压转换器。',
+      en: 'Common in North America, the Caribbean, and parts of Asia; a voltage converter may be required.',
+      ja: '北米、カリブ海地域、アジアの一部で一般的です。電圧変換器が必要な場合があります。',
+      ko: '북미, 카리브해 및 아시아 일부 지역에서 일반적이며 전압 변환기가 필요할 수 있습니다.',
+      th: 'พบได้ในอเมริกาเหนือ แคริบเบียน และบางพื้นที่ของเอเชีย อาจต้องใช้อุปกรณ์แปลงแรงดัน',
+    },
+  },
+  {
+    id: 'standard-voltage-115v-60hz',
+    code: 'VOLTAGE8651203947',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('115V / 60Hz'),
+    description: {
+      zh: '部分美洲、加勒比及岛屿地区可见，按目的地实际供电确认。',
+      en: 'Seen in parts of the Americas, Caribbean, and island destinations; confirm against the destination supply.',
+      ja: '米州、カリブ海地域、島しょ部の一部で見られます。目的地の実際の供給を確認してください。',
+      ko: '미주, 카리브해 및 섬 지역 일부에서 볼 수 있으며 목적지 실제 공급 기준을 확인하세요.',
+      th: 'พบได้ในบางพื้นที่ของอเมริกา แคริบเบียน และเกาะต่าง ๆ ควรตรวจสอบไฟฟ้าจริงของปลายทาง',
+    },
+  },
+  {
+    id: 'standard-voltage-120v-60hz',
+    code: 'VOLTAGE5093841762',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('120V / 60Hz'),
+    description: {
+      zh: '美国、加拿大、墨西哥等目的地常见，常与 A/B 型插头搭配。',
+      en: 'Common in the United States, Canada, Mexico, and similar destinations; often paired with Type A/B plugs.',
+      ja: '米国、カナダ、メキシコなどで一般的で、A/B タイプのプラグと組み合わせられます。',
+      ko: '미국, 캐나다, 멕시코 등에서 일반적이며 A/B 타입 플러그와 함께 사용됩니다.',
+      th: 'พบได้ทั่วไปในสหรัฐอเมริกา แคนาดา เม็กซิโก และพื้นที่ใกล้เคียง มักใช้กับปลั๊กประเภท A/B',
+    },
+  },
+  {
+    id: 'standard-voltage-127v-60hz',
+    code: 'VOLTAGE1472609358',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('127V / 60Hz'),
+    description: {
+      zh: '巴西、墨西哥等部分地区可见，需与当地城市供电标准核对。',
+      en: 'Seen in parts of Brazil, Mexico, and similar regions; verify against the city-level supply standard.',
+      ja: 'ブラジル、メキシコなどの一部地域で見られます。都市単位の供給規格を確認してください。',
+      ko: '브라질, 멕시코 등 일부 지역에서 볼 수 있으며 도시별 공급 기준을 확인해야 합니다.',
+      th: 'พบได้ในบางพื้นที่ของบราซิล เม็กซิโก และภูมิภาคใกล้เคียง ควรตรวจสอบมาตรฐานไฟฟ้าระดับเมือง',
+    },
+  },
+  {
+    id: 'standard-voltage-220v-50hz',
+    code: 'VOLTAGE6925038147',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('220V / 50Hz'),
+    description: {
+      zh: '中国、欧洲、东南亚及多地常见，游客需确认设备是否支持 220V 输入。',
+      en: 'Common in China, Europe, Southeast Asia, and many regions; travelers should confirm 220V input support.',
+      ja: '中国、欧州、東南アジアなど多くの地域で一般的です。220V 入力対応を確認してください。',
+      ko: '중국, 유럽, 동남아 등 여러 지역에서 일반적이며 220V 입력 지원 여부를 확인해야 합니다.',
+      th: 'พบได้ทั่วไปในจีน ยุโรป เอเชียตะวันออกเฉียงใต้ และหลายภูมิภาค ควรตรวจสอบว่าอุปกรณ์รองรับ 220V หรือไม่',
+    },
+  },
+  {
+    id: 'standard-voltage-220v-60hz',
+    code: 'VOLTAGE3187462059',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('220V / 60Hz'),
+    description: {
+      zh: '韩国、菲律宾、秘鲁等目的地可见，频率敏感设备需确认兼容。',
+      en: 'Seen in South Korea, the Philippines, Peru, and similar destinations; frequency-sensitive devices should be checked.',
+      ja: '韓国、フィリピン、ペルーなどで見られます。周波数に敏感な機器は互換性を確認してください。',
+      ko: '한국, 필리핀, 페루 등에서 볼 수 있으며 주파수 민감 기기는 호환성을 확인해야 합니다.',
+      th: 'พบได้ในเกาหลีใต้ ฟิลิปปินส์ เปรู และปลายทางใกล้เคียง อุปกรณ์ที่ไวต่อความถี่ควรตรวจสอบความเข้ากันได้',
+    },
+  },
+  {
+    id: 'standard-voltage-230v-50hz',
+    code: 'VOLTAGE9541806273',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('230V / 50Hz'),
+    description: {
+      zh: '欧洲、非洲、大洋洲及多数 230V 国家常见，是全球高压制式主流之一。',
+      en: 'Common across Europe, Africa, Oceania, and many 230V countries; one of the dominant higher-voltage systems.',
+      ja: '欧州、アフリカ、オセアニア、多くの 230V 採用国で一般的な高電圧系統です。',
+      ko: '유럽, 아프리카, 오세아니아 및 다수의 230V 국가에서 일반적인 고전압 체계입니다.',
+      th: 'พบได้ทั่วไปในยุโรป แอฟริกา โอเชียเนีย และหลายประเทศที่ใช้ 230V เป็นระบบแรงดันสูงหลัก',
+    },
+  },
+  {
+    id: 'standard-voltage-230v-60hz',
+    code: 'VOLTAGE2768490315',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('230V / 60Hz'),
+    description: {
+      zh: '少数 230V 地区采用 60Hz，建议按国家和城市明细确认。',
+      en: 'Used by a smaller set of 230V regions with 60Hz; confirm by country and city details.',
+      ja: '一部の 230V 地域で 60Hz が使われます。国・都市別の詳細を確認してください。',
+      ko: '일부 230V 지역에서 60Hz를 사용하므로 국가 및 도시별 세부 정보를 확인하세요.',
+      th: 'ใช้ในบางพื้นที่ที่เป็น 230V และ 60Hz ควรตรวจสอบรายละเอียดตามประเทศและเมือง',
+    },
+  },
+  {
+    id: 'standard-voltage-240v-50hz',
+    code: 'VOLTAGE8031597462',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('240V / 50Hz'),
+    description: {
+      zh: '英国、澳大利亚、新西兰及相关地区常见，常与 G/I 型插头搭配。',
+      en: 'Common in the United Kingdom, Australia, New Zealand, and related regions; often paired with Type G/I plugs.',
+      ja: '英国、オーストラリア、ニュージーランドなどで一般的で、G/I タイプのプラグと組み合わせられます。',
+      ko: '영국, 호주, 뉴질랜드 등에서 일반적이며 G/I 타입 플러그와 함께 사용되는 경우가 많습니다.',
+      th: 'พบได้ทั่วไปในสหราชอาณาจักร ออสเตรเลีย นิวซีแลนด์ และพื้นที่เกี่ยวข้อง มักใช้กับปลั๊กประเภท G/I',
+    },
+  },
+  {
+    id: 'standard-voltage-240v-60hz',
+    code: 'VOLTAGE4217063985',
+    type: STANDARD_SPEC_TYPE_VOLTAGE,
+    parameter: createUniformSpecText('240V / 60Hz'),
+    description: {
+      zh: '少数美洲和加勒比地区可见，需结合目的地插头和设备输入范围确认。',
+      en: 'Seen in a small number of Americas and Caribbean destinations; confirm with plug type and device input range.',
+      ja: '米州やカリブ海地域の一部で見られます。プラグ形状と機器入力範囲を合わせて確認してください。',
+      ko: '미주 및 카리브해 일부 지역에서 볼 수 있으며 플러그 유형과 기기 입력 범위를 함께 확인하세요.',
+      th: 'พบได้ในบางปลายทางในอเมริกาและแคริบเบียน ควรตรวจสอบร่วมกับประเภทปลั๊กและช่วงอินพุตของอุปกรณ์',
+    },
+  },
+  {
+    id: 'standard-plug-type-a',
+    code: 'PLUG6049182735',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('A'),
+    description: {
+      zh: '两扁脚无接地插头，常见于北美、日本、中国台湾等目的地。',
+      en: 'Two flat pins without grounding, common in North America, Japan, Taiwan, and similar destinations.',
+      ja: '接地なしの平行2本ピンで、北米、日本、台湾などで一般的です。',
+      ko: '접지가 없는 납작한 2핀 플러그로 북미, 일본, 대만 등에서 일반적입니다.',
+      th: 'ปลั๊กขาแบนสองขาไม่มีสายดิน พบได้ทั่วไปในอเมริกาเหนือ ญี่ปุ่น ไต้หวัน และปลายทางใกล้เคียง',
+    },
+  },
+  {
+    id: 'standard-plug-type-b',
+    code: 'PLUG9274051863',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('B'),
+    description: {
+      zh: '两扁脚加圆形接地脚，常见于北美、日本部分接地插座。',
+      en: 'Two flat pins plus a round grounding pin, common in North America and grounded Japanese outlets.',
+      ja: '平行2本ピンに丸型接地ピンを加えた形で、北米や日本の接地付きコンセントで一般的です。',
+      ko: '납작한 2핀과 원형 접지 핀이 있는 형태로 북미와 일본의 접지 콘센트에서 일반적입니다.',
+      th: 'ปลั๊กขาแบนสองขาพร้อมขากราวด์กลม พบได้ทั่วไปในอเมริกาเหนือและเต้ารับมีกราวด์ของญี่ปุ่น',
+    },
+  },
+  {
+    id: 'standard-plug-type-c',
+    code: 'PLUG3158704926',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('C'),
+    description: {
+      zh: '两圆脚欧规插头，广泛用于欧洲、亚洲、非洲和南美多地。',
+      en: 'Two round pins, widely used across Europe, Asia, Africa, and parts of South America.',
+      ja: '丸型2本ピンの欧州系プラグで、欧州、アジア、アフリカ、南米の一部で広く使われます。',
+      ko: '둥근 2핀 유럽식 플러그로 유럽, 아시아, 아프리카, 남미 일부에서 널리 사용됩니다.',
+      th: 'ปลั๊กขากลมสองขาแบบยุโรป ใช้แพร่หลายในยุโรป เอเชีย แอฟริกา และบางพื้นที่ของอเมริกาใต้',
+    },
+  },
+  {
+    id: 'standard-plug-type-d',
+    code: 'PLUG7482916053',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('D'),
+    description: {
+      zh: '三圆脚大三角布局，常见于印度、尼泊尔、斯里兰卡等地区。',
+      en: 'Three round pins in a large triangular layout, common in India, Nepal, Sri Lanka, and similar regions.',
+      ja: '大きな三角配置の丸型3本ピンで、インド、ネパール、スリランカなどで一般的です。',
+      ko: '큰 삼각형 배열의 둥근 3핀 플러그로 인도, 네팔, 스리랑카 등에서 일반적입니다.',
+      th: 'ปลั๊กขากลมสามขาแบบสามเหลี่ยมขนาดใหญ่ พบได้ทั่วไปในอินเดีย เนปาล ศรีลังกา และพื้นที่ใกล้เคียง',
+    },
+  },
+  {
+    id: 'standard-plug-type-e',
+    code: 'PLUG1865309742',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('E'),
+    description: {
+      zh: '法式接地插座系统，两圆脚并使用插座接地针。',
+      en: 'French-style grounded socket system with two round pins and a socket earth pin.',
+      ja: '丸型2本ピンとコンセント側の接地ピンを使うフランス式接地システムです。',
+      ko: '둥근 2핀과 콘센트 접지 핀을 사용하는 프랑스식 접지 시스템입니다.',
+      th: 'ระบบเต้ารับมีกราวด์แบบฝรั่งเศส ใช้ขากลมสองขาและขากราวด์ที่เต้ารับ',
+    },
+  },
+  {
+    id: 'standard-plug-type-f',
+    code: 'PLUG5397026814',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('F'),
+    description: {
+      zh: 'Schuko 侧边接地夹系统，常见于德国、西班牙、荷兰等欧洲国家。',
+      en: 'Schuko side-grounding system, common in Germany, Spain, the Netherlands, and other European countries.',
+      ja: '側面接地クリップを持つ Schuko 系で、ドイツ、スペイン、オランダなどで一般的です。',
+      ko: '측면 접지 클립을 사용하는 Schuko 방식으로 독일, 스페인, 네덜란드 등에서 일반적입니다.',
+      th: 'ระบบ Schuko ที่มีคลิปกราวด์ด้านข้าง พบได้ทั่วไปในเยอรมนี สเปน เนเธอร์แลนด์ และยุโรปหลายประเทศ',
+    },
+  },
+  {
+    id: 'standard-plug-type-g',
+    code: 'PLUG2704185963',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('G'),
+    description: {
+      zh: '三矩形脚英规插头，常见于英国、爱尔兰、新加坡、马来西亚等地。',
+      en: 'British three rectangular pins, common in the United Kingdom, Ireland, Singapore, Malaysia, and similar destinations.',
+      ja: '英国式の長方形3本ピンで、英国、アイルランド、シンガポール、マレーシアなどで一般的です。',
+      ko: '영국식 직사각형 3핀 플러그로 영국, 아일랜드, 싱가포르, 말레이시아 등에서 일반적입니다.',
+      th: 'ปลั๊กอังกฤษขาสี่เหลี่ยมสามขา พบได้ทั่วไปในสหราชอาณาจักร ไอร์แลนด์ สิงคโปร์ มาเลเซีย และพื้นที่ใกล้เคียง',
+    },
+  },
+  {
+    id: 'standard-plug-type-h',
+    code: 'PLUG8619357402',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('H'),
+    description: {
+      zh: '以色列标准插头，现代版本为三圆脚布局。',
+      en: 'Israeli standard plug, with the modern version using three round pins.',
+      ja: 'イスラエル標準のプラグで、現行型は丸型3本ピンです。',
+      ko: '이스라엘 표준 플러그로 현대식은 둥근 3핀 구조입니다.',
+      th: 'ปลั๊กมาตรฐานอิสราเอล รุ่นปัจจุบันใช้ขากลมสามขา',
+    },
+  },
+  {
+    id: 'standard-plug-type-i',
+    code: 'PLUG4937201586',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('I'),
+    description: {
+      zh: '两斜扁脚或三脚布局，常见于澳大利亚、新西兰、中国、阿根廷等地。',
+      en: 'Two angled flat pins or grounded three-pin layout, common in Australia, New Zealand, China, Argentina, and similar destinations.',
+      ja: '斜めの平型2本ピンまたは接地付き3本ピンで、オーストラリア、ニュージーランド、中国、アルゼンチンなどで一般的です。',
+      ko: '비스듬한 납작 2핀 또는 접지형 3핀 구조로 호주, 뉴질랜드, 중국, 아르헨티나 등에서 일반적입니다.',
+      th: 'ปลั๊กขาแบนเอียงสองขาหรือสามขาพร้อมกราวด์ พบได้ทั่วไปในออสเตรเลีย นิวซีแลนด์ จีน อาร์เจนตินา และพื้นที่ใกล้เคียง',
+    },
+  },
+  {
+    id: 'standard-plug-type-j',
+    code: 'PLUG7081649352',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('J'),
+    description: {
+      zh: '瑞士标准三圆脚插头，接地脚偏移。',
+      en: 'Swiss three round-pin standard with an offset grounding pin.',
+      ja: 'スイス標準の丸型3本ピンで、接地ピンがオフセットされています。',
+      ko: '스위스 표준 둥근 3핀 플러그로 접지 핀이 어긋나 있습니다.',
+      th: 'ปลั๊กมาตรฐานสวิตเซอร์แลนด์แบบขากลมสามขา โดยขากราวด์เยื้องตำแหน่ง',
+    },
+  },
+  {
+    id: 'standard-plug-type-k',
+    code: 'PLUG1425978036',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('K'),
+    description: {
+      zh: '丹麦标准插头，两圆脚并带独立接地脚。',
+      en: 'Danish standard with two round pins and a separate grounding pin.',
+      ja: 'デンマーク標準で、丸型2本ピンと独立した接地ピンを持ちます。',
+      ko: '덴마크 표준으로 둥근 2핀과 별도 접지 핀이 있습니다.',
+      th: 'ปลั๊กมาตรฐานเดนมาร์ก มีขากลมสองขาและขากราวด์แยกต่างหาก',
+    },
+  },
+  {
+    id: 'standard-plug-type-l',
+    code: 'PLUG6753082914',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('L'),
+    description: {
+      zh: '意大利标准三圆脚直线布局，常见 10A 与 16A 两种规格。',
+      en: 'Italian three round pins in a straight line, commonly available in 10A and 16A variants.',
+      ja: 'イタリア標準の直線配置の丸型3本ピンで、10A と 16A の仕様があります。',
+      ko: '이탈리아 표준 일렬 둥근 3핀 플러그로 10A와 16A 변형이 일반적입니다.',
+      th: 'ปลั๊กมาตรฐานอิตาลีแบบขากลมสามขาเรียงตรง มีรุ่น 10A และ 16A ใช้ทั่วไป',
+    },
+  },
+  {
+    id: 'standard-plug-type-m',
+    code: 'PLUG8305261479',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('M'),
+    description: {
+      zh: '大型三圆脚插头，常见于南非、印度部分高功率场景。',
+      en: 'Large three round-pin plug, common in South Africa and some high-power use cases in India.',
+      ja: '大型の丸型3本ピンで、南アフリカやインドの一部高出力用途で使われます。',
+      ko: '큰 둥근 3핀 플러그로 남아프리카와 인도 일부 고출력 용도에서 사용됩니다.',
+      th: 'ปลั๊กขากลมสามขาขนาดใหญ่ พบในแอฟริกาใต้และงานกำลังไฟสูงบางกรณีในอินเดีย',
+    },
+  },
+  {
+    id: 'standard-plug-type-n',
+    code: 'PLUG2597416803',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('N'),
+    description: {
+      zh: '巴西及 IEC 60906-1 相关三圆脚标准，亦用于南非新标准场景。',
+      en: 'Brazilian and IEC 60906-1-related three round-pin standard, also used in newer South African installations.',
+      ja: 'ブラジルおよび IEC 60906-1 系の丸型3本ピン規格で、南アフリカの新しい設備でも使われます。',
+      ko: '브라질 및 IEC 60906-1 관련 둥근 3핀 표준으로 남아프리카의 신규 설비에서도 사용됩니다.',
+      th: 'มาตรฐานขากลมสามขาของบราซิลและกลุ่ม IEC 60906-1 ใช้ในระบบใหม่บางส่วนของแอฟริกาใต้ด้วย',
+    },
+  },
+  {
+    id: 'standard-plug-type-o',
+    code: 'PLUG5170398624',
+    type: STANDARD_SPEC_TYPE_PLUG,
+    parameter: createPlugParameter('O'),
+    description: {
+      zh: '泰国 TIS 166-2549 标准，兼容两脚或三脚使用场景需按插座确认。',
+      en: 'Thai TIS 166-2549 standard; two-pin and three-pin compatibility should be confirmed by socket.',
+      ja: 'タイの TIS 166-2549 規格です。2ピン/3ピンの互換性はコンセントで確認してください。',
+      ko: '태국 TIS 166-2549 표준으로 2핀 및 3핀 호환성은 콘센트 기준으로 확인해야 합니다.',
+      th: 'มาตรฐานไทย TIS 166-2549 ความเข้ากันได้ของปลั๊กสองขาและสามขาควรตรวจสอบตามเต้ารับ',
     },
   },
 ]
