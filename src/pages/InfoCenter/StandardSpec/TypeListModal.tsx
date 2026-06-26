@@ -14,12 +14,13 @@ const noWrapColumnProps = {
   onCell: () => ({ style: noWrapColumnStyle }),
   onHeaderCell: () => ({ style: noWrapColumnStyle }),
 };
-const orangeOutlineButtonStyle = {
-  borderColor: '#fa8c16',
-  color: '#fa8c16',
+export const STANDARD_SPEC_TYPE_THEME_COLOR = '#52c41a';
+const typeThemeOutlineButtonStyle = {
+  borderColor: STANDARD_SPEC_TYPE_THEME_COLOR,
+  color: STANDARD_SPEC_TYPE_THEME_COLOR,
 };
 const typeCreateButtonStyle = {
-  ...orangeOutlineButtonStyle,
+  ...typeThemeOutlineButtonStyle,
   marginBottom: 16,
 };
 
@@ -187,6 +188,7 @@ export default function TypeListModal({
         open={open}
         onCancel={onCancel}
         footer={null}
+        themeColor={STANDARD_SPEC_TYPE_THEME_COLOR}
         width={640}
       >
         <Button
@@ -215,6 +217,7 @@ export default function TypeListModal({
         onCancel={closeTypeCreateModal}
         okButtonProps={{ size: 'small' }}
         cancelButtonProps={{ size: 'small' }}
+        themeColor={STANDARD_SPEC_TYPE_THEME_COLOR}
       >
         <Form form={typeForm} layout="vertical" size="small">
           <DataFormItem

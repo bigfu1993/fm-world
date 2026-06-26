@@ -26,6 +26,7 @@ const DEFAULT_DISPLAY_ZOOM = 8
 const MIN_DISPLAY_ZOOM = 0.8
 const MAX_DISPLAY_ZOOM = 100
 const DISPLAY_ZOOM_TEXT_COLOR = '#1677ff'
+const CLICKABLE_NAME_TEXT_COLOR = '#1677ff'
 
 interface EditingDisplayZoom {
   code: string
@@ -143,13 +144,27 @@ export default function CountryPage() {
 
   const columns: ColumnsType<CountryData> = [
     {
-      title: <LanguageLabel langKey={language} labelKey="countryCode" />,
+      title: <LanguageLabel langKey={language} labelKey="code" />,
       dataIndex: 'code',
     },
     {
-      title: <LanguageLabel langKey={language} labelKey="countryName" />,
+      title: <LanguageLabel langKey={language} labelKey="name" />,
       dataIndex: 'code',
-      render: (_, record) => <LanguageText langKey={language} map={record} />,
+      render: (_, record) => (
+        <Button
+          type="link"
+          size="small"
+          onClick={() => openInfoBindingModal(record)}
+          style={{
+            color: CLICKABLE_NAME_TEXT_COLOR,
+            fontWeight: 600,
+            height: 'auto',
+            padding: 0,
+          }}
+        >
+          <LanguageText langKey={language} map={record} />
+        </Button>
+      ),
     },
     {
       title: (

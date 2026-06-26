@@ -30,6 +30,7 @@ import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore';
 import type { LanguageCode } from '@/types/system';
 import { renderTableEmptyPlaceholder } from '@/utils/table';
 import TypeListModal, {
+  STANDARD_SPEC_TYPE_THEME_COLOR,
   normalizeCodePrefix,
   standardSpecInitialTypes,
   type StandardSpecTypeFilter,
@@ -41,9 +42,9 @@ const noWrapColumnProps = {
   onCell: () => ({ style: noWrapColumnStyle }),
   onHeaderCell: () => ({ style: noWrapColumnStyle }),
 };
-const orangePrimaryButtonStyle = {
-  backgroundColor: '#fa8c16',
-  borderColor: '#fa8c16',
+const typeListPrimaryButtonStyle = {
+  backgroundColor: STANDARD_SPEC_TYPE_THEME_COLOR,
+  borderColor: STANDARD_SPEC_TYPE_THEME_COLOR,
 };
 const toolbarDividerStyle = {
   height: 24,
@@ -471,7 +472,7 @@ export default function StandardSpecPage() {
           type="primary"
           icon={<UnorderedListOutlined />}
           onClick={() => setTypeModalOpen(true)}
-          style={orangePrimaryButtonStyle}
+          style={typeListPrimaryButtonStyle}
         >
           <LanguageLabel langKey={language} labelKey="standardSpecTypeList" />
         </Button>

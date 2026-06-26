@@ -5,9 +5,9 @@ import type { Point, Landmark } from '@/types/point';
 export const PERMISSIONS: Permission[] = [
   { code: 'dashboard:view', label: '查看首页', group: '仪表盘' },
   { code: 'publish:manage', label: '发布中心', group: '发布中心' },
+  { code: 'standardSpec:manage', label: '国标信息', group: '信息中心' },
   { code: 'traffic:manage', label: '交通信息', group: '信息中心' },
   { code: 'communication:manage', label: '通讯信息', group: '信息中心' },
-  { code: 'standardSpec:manage', label: '国标信息', group: '信息中心' },
   { code: 'serviceInfo:manage', label: '服务信息', group: '信息中心' },
   { code: 'securityRisk:manage', label: '治安风险', group: '信息中心' },
   { code: 'cultureCustoms:manage', label: '文化习俗', group: '信息中心' },

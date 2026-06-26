@@ -54,9 +54,11 @@ src/
 - `Select.options` 展示多语言业务数据时，`label` 使用 `<LanguageText langKey={language} map={data} />`，不要提前取 `data[language]` 字符串；下拉展示需和顶部语言选择保持一致：当前语言为非英文时展示“当前语言主文案 + 英文副文案”，英文时只展示英文主文案。筛选类单选 `Select` 可给 option 额外提供纯文本字段，并通过 `optionLabelProp` 让选择框内已选值展示纯文本，避免已选值区域渲染双语节点。
 - 创建类按钮和创建态标题统一展示为“新建”，不要拼接具体业务对象名，例如不要写“新建国家”“新建类型”。
 - 弹窗统一使用 `src/components/DraggableModal`，不要直接从 antd 使用 `Modal`；项目弹窗均需支持拖拽移动、不显示 mask，并且不展示右上角关闭图标。
-- 弹窗默认 footer 的“确定”按钮颜色由 `DraggableModal` 统一固定为绿色，页面内不要重复配置确定按钮颜色。
+- 弹窗标题统一由 `DraggableModal` 样式设置为 `18px` 字号；标题、弹窗内主按钮、`Form.Item` 标题短竖线、输入框/数字输入/下拉框 hover 与 focus 边框、Radio/Checkbox hover 与 checked 激活色优先使用 `DraggableModal` 的 `themeColor` 入参，未传时默认蓝色 `#1677ff`。
+- 弹窗默认 footer 的“确定”按钮颜色由 `DraggableModal` 根据主题色统一配置，页面内不要重复配置确定按钮颜色。
 - 弹窗 footer 按钮文案统一使用 `LanguageLabel` 组件；`DraggableModal` 已默认用 `confirm`、`cancel` 渲染确定/取消，若自定义 footer 或自定义 `okText`/`cancelText`，也必须传入 `LanguageLabel` 节点。
 - Modal 内的按钮、下拉、输入框、表格统一使用小一号尺寸：`<Form>` 加 `size="small"`，弹窗内 `Select` 显式加 `size="small"`，弹窗内自定义 `Button` 和 `Table` 显式加 `size="small"`，Modal 默认 footer 按钮通过 `okButtonProps={{ size: 'small' }}` 和 `cancelButtonProps={{ size: 'small' }}` 配置。
+- 弹窗内 `Form.Item` 标题前统一由 `DraggableModal` 样式展示 4px 宽、12px 高的主题色短竖线，竖线与标题文字保持 10px 间距；页面内不要为了标题装饰额外添加 DOM。弹窗内容子树中继续打开 `DraggableModal` 时会继承当前主题色；兄弟节点方式渲染的二级弹窗需显式传递相同 `themeColor`。
 - `Input`、`InputNumber` 字号由 `src/App.tsx` 的 Ant Design `ConfigProvider.theme.components` 统一配置为 `12`，页面和组件内不要重复写控件 `fontSize`；`Select` 不配置选择框 `fontSize`，只保留 `optionFontSize` 用于下拉选项字号，避免影响默认选择框高度。
 - `Input`、`InputNumber`、`Select` 尺寸只按是否处于弹窗场景区分：非弹窗场景不单独写 `size`，使用 Ant Design 默认尺寸；弹窗内输入类控件通过 Form 小尺寸或控件自身 `size="small"` 保持一致。
 - 组件 DOM 层级保持克制：不要为了“占位”或习惯性包裹额外添加 `div`、`Space`、`Card`、隐藏 `Form.Item` 等节点；单子节点不需要布局能力时直接返回子节点，多子节点优先用 `Fragment`，只有存在间距、滚动、定位、对齐、表单绑定或语义容器需求时才添加真实 DOM 容器。

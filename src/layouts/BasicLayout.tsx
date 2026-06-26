@@ -97,6 +97,12 @@ export default function BasicLayout() {
       icon: <InfoCircleOutlined />,
       label: <LanguageLabel langKey={language} labelKey="informationCenter" />,
       children: [
+        hasPermission('standardSpec:manage') && {
+          key: '/info-center/standard-specs',
+          label: (
+            <LanguageLabel langKey={language} labelKey="standardSpecification" />
+          ),
+        },
         hasPermission('traffic:manage') && {
           key: '/info-center/traffic',
           label: <LanguageLabel langKey={language} labelKey="trafficInformation" />,
@@ -105,12 +111,6 @@ export default function BasicLayout() {
           key: '/info-center/communication',
           label: (
             <LanguageLabel langKey={language} labelKey="communicationInformation" />
-          ),
-        },
-        hasPermission('standardSpec:manage') && {
-          key: '/info-center/standard-specs',
-          label: (
-            <LanguageLabel langKey={language} labelKey="standardSpecification" />
           ),
         },
         hasPermission('serviceInfo:manage') && {

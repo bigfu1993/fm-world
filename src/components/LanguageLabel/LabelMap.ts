@@ -40,6 +40,8 @@ export const labelMap = {
   edit: { zh: '编辑', en: 'Edit', ja: '編集', ko: '편집', th: 'แก้ไข' },
   delete: { zh: '删除', en: 'Delete', ja: '削除', ko: '삭제', th: 'ลบ' },
   search: { zh: '搜索', en: 'Search', ja: '検索', ko: '검색', th: 'ค้นหา' },
+  code: { zh: '编码', en: 'Code', ja: 'コード', ko: '코드', th: 'รหัส' },
+  name: { zh: '名称', en: 'Name', ja: '名称', ko: '이름', th: 'ชื่อ' },
   confirm: { zh: '确定', en: 'Confirm', ja: '確定', ko: '확인', th: 'ยืนยัน' },
   cancel: { zh: '取消', en: 'Cancel', ja: 'キャンセル', ko: '취소', th: 'ยกเลิก' },
   defaultTag: { zh: '默认', en: 'Default', ja: 'デフォルト', ko: '기본', th: 'ค่าเริ่มต้น' },

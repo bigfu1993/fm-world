@@ -2,3 +2,73 @@
   cursor: move;
   user-select: none;
 }
+
+.draggable-modal-panel .ant-modal-title,
+.draggable-modal-panel .ant-modal-title * {
+  color: var(--draggable-modal-theme-color, #1677ff) !important;
+  font-size: 18px !important;
+}
+
+.draggable-modal-panel .ant-btn-primary:not(:disabled),
+.draggable-modal-panel .ant-btn-primary:not(:disabled):hover,
+.draggable-modal-panel .ant-btn-primary:not(:disabled):focus-visible {
+  background-color: var(--draggable-modal-theme-color, #1677ff) !important;
+  border-color: var(--draggable-modal-theme-color, #1677ff) !important;
+  color: #fff !important;
+}
+
+.draggable-modal-panel .ant-input:hover,
+.draggable-modal-panel .ant-input:focus,
+.draggable-modal-panel .ant-input-focused,
+.draggable-modal-panel .ant-input-affix-wrapper:not(.ant-input-affix-wrapper-disabled):hover,
+.draggable-modal-panel .ant-input-affix-wrapper-focused,
+.draggable-modal-panel .ant-input-number:not(.ant-input-number-disabled):hover,
+.draggable-modal-panel .ant-input-number-focused,
+.draggable-modal-panel .ant-select:not(.ant-select-disabled):not(.ant-select-customize-input):hover .ant-select-selector,
+.draggable-modal-panel .ant-select-focused:not(.ant-select-disabled):not(.ant-select-customize-input) .ant-select-selector {
+  border-color: var(--draggable-modal-theme-color, #1677ff) !important;
+}
+
+.draggable-modal-panel .ant-checkbox-wrapper:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-inner,
+.draggable-modal-panel .ant-checkbox:not(.ant-checkbox-disabled):hover .ant-checkbox-inner,
+.draggable-modal-panel .ant-checkbox-input:focus-visible + .ant-checkbox-inner {
+  border-color: var(--draggable-modal-theme-color, #1677ff) !important;
+}
+
+.draggable-modal-panel .ant-checkbox-checked .ant-checkbox-inner,
+.draggable-modal-panel .ant-checkbox-indeterminate .ant-checkbox-inner {
+  background-color: var(--draggable-modal-theme-color, #1677ff) !important;
+  border-color: var(--draggable-modal-theme-color, #1677ff) !important;
+}
+
+.draggable-modal-panel .ant-radio-wrapper:not(.ant-radio-wrapper-disabled):hover .ant-radio-inner,
+.draggable-modal-panel .ant-radio:not(.ant-radio-disabled):hover .ant-radio-inner,
+.draggable-modal-panel .ant-radio-input:focus-visible + .ant-radio-inner,
+.draggable-modal-panel .ant-radio-checked .ant-radio-inner {
+  border-color: var(--draggable-modal-theme-color, #1677ff) !important;
+}
+
+.draggable-modal-panel .ant-radio-checked .ant-radio-inner::after {
+  background-color: var(--draggable-modal-theme-color, #1677ff) !important;
+}
+
+.draggable-modal-panel .ant-radio-button-wrapper:not(.ant-radio-button-wrapper-disabled):hover,
+.draggable-modal-panel .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+  border-color: var(--draggable-modal-theme-color, #1677ff) !important;
+  color: var(--draggable-modal-theme-color, #1677ff) !important;
+}
+
+.draggable-modal-panel .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)::before {
+  background-color: var(--draggable-modal-theme-color, #1677ff) !important;
+}
+
+.draggable-modal-panel .ant-form-item-label > label {
+  background-image: linear-gradient(
+    var(--draggable-modal-theme-color, #1677ff),
+    var(--draggable-modal-theme-color, #1677ff)
+  );
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 4px 12px;
+  padding-inline-start: 14px;
+}

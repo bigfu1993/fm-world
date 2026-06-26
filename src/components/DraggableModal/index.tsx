@@ -1,15 +1,19 @@
 import { Modal } from 'antd';
 import type { ModalProps } from 'antd';
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import { createContext } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import LanguageLabel from '@/components/LanguageLabel';
 import { selectCurrentLanguage, useAuthStore } from '@/store/useAuthStore';
 import './index.css';
 
-const modalOkButtonStyle = {
-  backgroundColor: '#52c41a',
-  borderColor: '#52c41a',
+const DEFAULT_MODAL_THEME_COLOR = '#1677ff';
+const DraggableModalThemeContext = createContext(DEFAULT_MODAL_THEME_COLOR);
+
+const getModalOkButtonStyle = (themeColor: string): CSSProperties => ({
+  backgroundColor: themeColor,
+  borderColor: themeColor,
   color: '#fff',
-};
+});
 
 interface DragPosition {
   x: number;
@@ -22,15 +26,22 @@ interface DragState {
   startPosition: DragPosition;
 }
 
+interface DraggableModalProps extends ModalProps {
+  themeColor?: string;
+}
+
 export default function DraggableModal({
   afterClose,
   cancelText,
   modalRender,
   okButtonProps,
   okText,
+  themeColor,
   ...modalProps
-}: ModalProps) {
+}: DraggableModalProps) {
   const language = useAuthStore(selectCurrentLanguage);
+  const inheritedThemeColor = useContext(DraggableModalThemeContext);
+  const modalThemeColor = themeColor ?? inheritedThemeColor;
   const [position, setPosition] = useState<DragPosition>({ x: 0, y: 0 });
   const dragStateRef = useRef<DragState | null>(null);
 
@@ -94,17 +105,24 @@ export default function DraggableModal({
         ...okButtonProps,
         style: {
           ...okButtonProps?.style,
-          ...modalOkButtonStyle,
+          ...getModalOkButtonStyle(modalThemeColor),
         },
       }}
       modalRender={(node) => (
-        <div
-          className="draggable-modal-panel"
-          onPointerDown={startDragging}
-          style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
+        <DraggableModalThemeContext.Provider
+          value={modalThemeColor}
         >
-          {modalRender ? modalRender(node) : node}
-        </div>
+          <div
+            className="draggable-modal-panel"
+            onPointerDown={startDragging}
+            style={{
+              '--draggable-modal-theme-color': modalThemeColor,
+              transform: `translate(${position.x}px, ${position.y}px)`,
+            } as CSSProperties}
+          >
+            {modalRender ? modalRender(node) : node}
+          </div>
+        </DraggableModalThemeContext.Provider>
       )}
     />
   );
