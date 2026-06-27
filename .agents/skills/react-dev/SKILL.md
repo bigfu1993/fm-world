@@ -46,7 +46,7 @@ src/
 - 注意事项模块归属信息中心，对外菜单名使用“注意事项”，内部路由保留 `/info-center/security-risk`，权限 code 保留 `securityRisk:manage`。
 - 紧急处理模块已从信息中心移除，不再注册菜单、路由和权限入口。
 - 点位类型管理归属点位管理页内，地标类型管理归属地标管理页内，通过页面内“类型列表”弹窗维护，不再注册信息中心独立菜单、路由和权限入口；类型列表列统一为 `code / name / value`，code 为类型记录业务编码，name 为多语言类型名称，value 为点位/地标记录实际保存和匹配的业务类型值。
-- 语言、货币、交通列表数据列统一为 `code / 名称 / value / 补充`；国标列表数据列统一为 `code / 类型 / 名称 / value / 补充`。语言、货币和国标的 value 与补充暂无业务数据时按表格空值规范显示 `-`，交通的 value 展示具体交通方式前缀，国标的名称展示原“标准”列内容；电话类国标名称统一展示为“国家/地区 + 国际区号前缀 + 本地号码”，例如 `中国 +86 110`；国标弹窗需同步维护名称与补充；国标类型列表列统一为 `code / name / value`，code 为类型记录业务编码，name 为多语言类型名称，value 为国标条目编码前缀。
+- 语言、货币、交通列表数据列统一为 `code / 名称 / value / 补充`；国标列表数据列统一为 `code / 类型 / 名称 / value / 补充`。语言、货币和国标的 value 与补充暂无业务数据时按表格空值规范显示 `-`，交通的 value 展示具体交通方式前缀，国标的名称展示原“标准”列内容；电话类国标名称统一展示为“国际区号前缀 + 本地号码”，例如 `+86 110`；国标弹窗需同步维护名称与补充；国标类型列表列统一为 `code / name / value`，code 为类型记录业务编码，name 为多语言类型名称，value 为国标条目编码前缀。
 
 ## 接口调用
 
@@ -70,7 +70,7 @@ src/
 - 弹窗标题统一由 `DraggableModal` 样式设置为 `18px` 字号；标题、弹窗内主按钮、`Form.Item` 标题短竖线、输入框/数字输入/下拉框 hover 与 focus 边框、Slider 激活色、Radio/Checkbox hover 与 checked 激活色优先使用 `DraggableModal` 的 `themeColor` 入参，未传时默认蓝色 `#1677ff`。
 - 弹窗默认 footer 的“确定”按钮颜色由 `DraggableModal` 根据主题色统一配置，页面内不要重复配置确定按钮颜色。
 - 弹窗 footer 按钮文案统一使用 `LanguageLabel` 组件；`DraggableModal` 已默认用 `confirm`、`cancel` 渲染确定/取消，若自定义 footer 或自定义 `okText`/`cancelText`，也必须传入 `LanguageLabel` 节点。
-- Modal 内的按钮、下拉、输入框、表格统一使用小一号尺寸：`<Form>` 加 `size="small"`，弹窗内 `Select`、`Input`、`InputNumber`、自定义 `Button` 和 `Table` 显式加 `size="small"`，Modal 默认 footer 按钮通过 `okButtonProps={{ size: 'small' }}` 和 `cancelButtonProps={{ size: 'small' }}` 配置。
+- Modal 内的按钮、下拉、输入框、表格统一使用小一号尺寸：`<Form>` 加 `size="small"`，弹窗内 `Select`、`Input`、`InputNumber`、自定义 `Button` 和 `Table` 显式加 `size="small"`，Modal 默认 footer 按钮通过 `okButtonProps={{ size: 'small' }}` 和 `cancelButtonProps={{ size: 'small' }}` 配置；弹窗内 `Form.Item` 间距通过全局样式覆盖为 `14px`，比 Ant Design 默认 `24px` 缩小 `10px`。
 - 弹窗内 `Form.Item` 标题前统一由 `DraggableModal` 样式展示 4px 宽、12px 高的主题色短竖线，竖线与标题文字保持 10px 间距；页面内不要为了标题装饰额外添加 DOM。弹窗内容子树中继续打开 `DraggableModal` 时会继承当前主题色；兄弟节点方式渲染的二级弹窗需显式传递相同 `themeColor`。
 - `Input`、`InputNumber`、`Select` 字号由 `src/App.tsx` 的 Ant Design `ConfigProvider.theme.components` 统一配置为 `12`，页面和组件内不要重复写控件 `fontSize`；`Select` 同时配置选择框正文 `fontSize` 与下拉选项 `optionFontSize`，弹窗内选择框正文与 option 字号保持一致。
 - `Input`、`InputNumber`、`Select` 尺寸只按是否处于弹窗场景区分：非弹窗场景不单独写 `size`，使用 Ant Design 默认尺寸；弹窗内输入类控件显式配置 `size="small"`，与下拉框尺寸保持一致。

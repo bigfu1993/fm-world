@@ -26,3 +26,7 @@ body,
 .ant-modal .ant-select-dropdown .ant-select-item-option-content {
   font-size: 12px;
 }
+
+.ant-modal .ant-form-item {
+  margin-bottom: 14px;
+}

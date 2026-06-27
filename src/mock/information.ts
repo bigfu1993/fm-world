@@ -536,73 +536,11 @@ const createPlugParameter = (letter: string): LocalizedInfoText => ({
   th: `ประเภท ${letter}`,
 })
 
-const STANDARD_PHONE_COUNTRY_CHINA: LocalizedInfoText = {
-  zh: '中国',
-  en: 'China',
-  ja: '中国',
-  ko: '중국',
-  th: 'จีน',
-}
-
-const STANDARD_PHONE_COUNTRY_JAPAN: LocalizedInfoText = {
-  zh: '日本',
-  en: 'Japan',
-  ja: '日本',
-  ko: '일본',
-  th: 'ญี่ปุ่น',
-}
-
-const STANDARD_PHONE_COUNTRY_SOUTH_KOREA: LocalizedInfoText = {
-  zh: '韩国',
-  en: 'South Korea',
-  ja: '韓国',
-  ko: '한국',
-  th: 'เกาหลีใต้',
-}
-
-const STANDARD_PHONE_COUNTRY_UNITED_STATES: LocalizedInfoText = {
-  zh: '美国',
-  en: 'United States',
-  ja: 'アメリカ',
-  ko: '미국',
-  th: 'สหรัฐอเมริกา',
-}
-
-const STANDARD_PHONE_COUNTRY_UNITED_KINGDOM: LocalizedInfoText = {
-  zh: '英国',
-  en: 'United Kingdom',
-  ja: 'イギリス',
-  ko: '영국',
-  th: 'สหราชอาณาจักร',
-}
-
-const STANDARD_PHONE_COUNTRY_AUSTRALIA: LocalizedInfoText = {
-  zh: '澳大利亚',
-  en: 'Australia',
-  ja: 'オーストラリア',
-  ko: '호주',
-  th: 'ออสเตรเลีย',
-}
-
-const STANDARD_PHONE_COUNTRY_GERMANY: LocalizedInfoText = {
-  zh: '德国',
-  en: 'Germany',
-  ja: 'ドイツ',
-  ko: '독일',
-  th: 'เยอรมนี',
-}
-
 const createPhoneParameter = (
-  country: LocalizedInfoText,
   countryCallingCode: string,
   localPhoneNumber: string,
-): LocalizedInfoText => ({
-  zh: `${country.zh} ${countryCallingCode} ${localPhoneNumber}`,
-  en: `${country.en} ${countryCallingCode} ${localPhoneNumber}`,
-  ja: `${country.ja} ${countryCallingCode} ${localPhoneNumber}`,
-  ko: `${country.ko} ${countryCallingCode} ${localPhoneNumber}`,
-  th: `${country.th} ${countryCallingCode} ${localPhoneNumber}`,
-})
+): LocalizedInfoText =>
+  createUniformSpecText(`${countryCallingCode} ${localPhoneNumber}`)
 
 const EMPTY_STANDARD_SPEC_SUPPLEMENT = createUniformSpecText('')
 
@@ -772,218 +710,154 @@ export const STANDARD_SPEC_INFOS: StandardSpecInfoItem[] = [
     id: 'standard-tel-police-110',
     code: 'STANDARD_10495827360',
     type: STANDARD_SPEC_TYPE_POLICE_PHONE,
-    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '110'),
+    parameter: createPhoneParameter('+86', '110'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-police-112',
     code: 'STANDARD_58270419360',
     type: STANDARD_SPEC_TYPE_POLICE_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_SOUTH_KOREA,
-      '+82',
-      '112',
-    ),
+    parameter: createPhoneParameter('+82', '112'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-police-911',
     code: 'STANDARD_73920486150',
     type: STANDARD_SPEC_TYPE_POLICE_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_UNITED_STATES,
-      '+1',
-      '911',
-    ),
+    parameter: createPhoneParameter('+1', '911'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-police-999',
     code: 'STANDARD_26059381740',
     type: STANDARD_SPEC_TYPE_POLICE_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_UNITED_KINGDOM,
-      '+44',
-      '999',
-    ),
+    parameter: createPhoneParameter('+44', '999'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-police-000',
     code: 'STANDARD_68195042730',
     type: STANDARD_SPEC_TYPE_POLICE_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_AUSTRALIA,
-      '+61',
-      '000',
-    ),
+    parameter: createPhoneParameter('+61', '000'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-fire-119',
     code: 'STANDARD_48261973500',
     type: STANDARD_SPEC_TYPE_FIRE_PHONE,
-    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '119'),
+    parameter: createPhoneParameter('+86', '119'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-fire-112',
     code: 'STANDARD_93720518460',
     type: STANDARD_SPEC_TYPE_FIRE_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_GERMANY,
-      '+49',
-      '112',
-    ),
+    parameter: createPhoneParameter('+49', '112'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-fire-911',
     code: 'STANDARD_61597028430',
     type: STANDARD_SPEC_TYPE_FIRE_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_UNITED_STATES,
-      '+1',
-      '911',
-    ),
+    parameter: createPhoneParameter('+1', '911'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-fire-999',
     code: 'STANDARD_20468159730',
     type: STANDARD_SPEC_TYPE_FIRE_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_UNITED_KINGDOM,
-      '+44',
-      '999',
-    ),
+    parameter: createPhoneParameter('+44', '999'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-fire-000',
     code: 'STANDARD_75823910460',
     type: STANDARD_SPEC_TYPE_FIRE_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_AUSTRALIA,
-      '+61',
-      '000',
-    ),
+    parameter: createPhoneParameter('+61', '000'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-hospital-120',
     code: 'STANDARD_39582710460',
     type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
-    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '120'),
+    parameter: createPhoneParameter('+86', '120'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-hospital-119',
     code: 'STANDARD_84726190530',
     type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
-    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_JAPAN, '+81', '119'),
+    parameter: createPhoneParameter('+81', '119'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-hospital-112',
     code: 'STANDARD_62047395810',
     type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_GERMANY,
-      '+49',
-      '112',
-    ),
+    parameter: createPhoneParameter('+49', '112'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-hospital-911',
     code: 'STANDARD_15963827400',
     type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_UNITED_STATES,
-      '+1',
-      '911',
-    ),
+    parameter: createPhoneParameter('+1', '911'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-hospital-999',
     code: 'STANDARD_70492851630',
     type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_UNITED_KINGDOM,
-      '+44',
-      '999',
-    ),
+    parameter: createPhoneParameter('+44', '999'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-hospital-000',
     code: 'STANDARD_28615094370',
     type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_AUSTRALIA,
-      '+61',
-      '000',
-    ),
+    parameter: createPhoneParameter('+61', '000'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-traffic-accident-122',
     code: 'STANDARD_51490827360',
     type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
-    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '122'),
+    parameter: createPhoneParameter('+86', '122'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-traffic-accident-110',
     code: 'STANDARD_80376194520',
     type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
-    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '110'),
+    parameter: createPhoneParameter('+86', '110'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-traffic-accident-112',
     code: 'STANDARD_24719563800',
     type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_GERMANY,
-      '+49',
-      '112',
-    ),
+    parameter: createPhoneParameter('+49', '112'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-traffic-accident-911',
     code: 'STANDARD_69042715380',
     type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_UNITED_STATES,
-      '+1',
-      '911',
-    ),
+    parameter: createPhoneParameter('+1', '911'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-traffic-accident-999',
     code: 'STANDARD_13286049750',
     type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_UNITED_KINGDOM,
-      '+44',
-      '999',
-    ),
+    parameter: createPhoneParameter('+44', '999'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-tel-traffic-accident-000',
     code: 'STANDARD_97530421860',
     type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
-    parameter: createPhoneParameter(
-      STANDARD_PHONE_COUNTRY_AUSTRALIA,
-      '+61',
-      '000',
-    ),
+    parameter: createPhoneParameter('+61', '000'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
 ]
