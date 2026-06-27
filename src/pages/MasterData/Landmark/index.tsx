@@ -1,7 +1,8 @@
-import { Button, Form, Input, Popconfirm, Select, Space, Table, message } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Button, Divider, Form, Input, Popconfirm, Select, Space, Table, message } from 'antd'
+import { PlusOutlined, UnorderedListOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import DraggableModal from '@/components/DraggableModal'
+import TypeListManagerModal from '@/components/TypeListManagerModal'
 import { listPoints } from '@/api/point'
 import {
   createLandmark,
@@ -10,7 +11,7 @@ import {
   updateLandmark,
   type LandmarkFormData,
 } from '@/api/landmark'
-import { LANDMARK_TYPES } from '@/mock/landmarkTypes'
+import { LANDMARK_TYPES, type LandmarkType } from '@/mock/landmarkTypes'
 import type { Landmark, Point } from '@/types/point'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
@@ -23,6 +24,13 @@ import type { LocalizedText } from '@/types/destination'
 type LandmarkEditorFormData = Omit<LandmarkFormData, 'name'> & {
   name: DataFormItemValue
 }
+
+const TYPE_LIST_THEME_COLOR = '#52c41a'
+const typeListButtonStyle = {
+  backgroundColor: TYPE_LIST_THEME_COLOR,
+  borderColor: TYPE_LIST_THEME_COLOR,
+}
+const toolbarDividerStyle = { height: 24 }
 
 function createLabelDataFormValue(content: LocalizedText): DataFormItemValue {
   return {
@@ -46,7 +54,9 @@ export default function LandmarkPage() {
   const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [typeModalOpen, setTypeModalOpen] = useState(false)
   const [editing, setEditing] = useState<Landmark | null>(null)
+  const [landmarkTypes, setLandmarkTypes] = useState<LandmarkType[]>(LANDMARK_TYPES)
   const [form] = Form.useForm<LandmarkEditorFormData>()
 
   const fetchData = async () => {
@@ -69,8 +79,8 @@ export default function LandmarkPage() {
     label: <LanguageText langKey={language} map={{ ...p.name }} />,
   }))
 
-  const landmarkTypeOptions = LANDMARK_TYPES.map((t) => ({
-    value: t.code,
+  const landmarkTypeOptions = landmarkTypes.map((t) => ({
+    value: t.value,
     label: <LanguageText langKey={language} map={t} />,
   }))
 
@@ -139,7 +149,7 @@ export default function LandmarkPage() {
       title: <LanguageLabel langKey={language} labelKey="landmarkType" />,
       dataIndex: 'landmarkType',
       render: (landmarkType: string) => {
-        const type = LANDMARK_TYPES.find((t) => t.code === landmarkType)
+        const type = landmarkTypes.find((t) => t.value === landmarkType)
         return type ? <LanguageText langKey={language} map={type} /> : landmarkType
       },
     },
@@ -170,6 +180,15 @@ export default function LandmarkPage() {
   return (
     <>
       <Space style={{ marginBottom: 16 }}>
+        <Button
+          type="primary"
+          icon={<UnorderedListOutlined />}
+          onClick={() => setTypeModalOpen(true)}
+          style={typeListButtonStyle}
+        >
+          <LanguageLabel langKey={language} labelKey="standardSpecTypeList" />
+        </Button>
+        <Divider type="vertical" style={toolbarDividerStyle} />
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
           <LanguageLabel langKey={language} labelKey="newLandmark" />
         </Button>
@@ -238,6 +257,14 @@ export default function LandmarkPage() {
           </Form.Item>
         </Form>
       </DraggableModal>
+      <TypeListManagerModal
+        open={typeModalOpen}
+        language={language}
+        types={landmarkTypes}
+        codePrefix="LANDMARK_TYPE"
+        onCancel={() => setTypeModalOpen(false)}
+        onTypesChange={setLandmarkTypes}
+      />
     </>
   )
 }

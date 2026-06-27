@@ -6,7 +6,6 @@ import {
   Select,
   Space,
   Table,
-  Tag,
   theme,
 } from 'antd';
 import { PlusOutlined, UnorderedListOutlined } from '@ant-design/icons';
@@ -16,7 +15,6 @@ import LanguageText from '@/components/LanguageText';
 import { getLabel } from '@/components/LanguageLabel/LabelMap';
 import DraggableModal from '@/components/DraggableModal';
 import DataFormItem, {
-  DATA_FORM_ITEM_TYPE_LABEL_KEYS,
   defaultDataFormItemValue,
   type DataFormItemValue,
 } from '@/components/DataFormItem';
@@ -31,7 +29,6 @@ import type { LanguageCode } from '@/types/system';
 import { renderTableEmptyPlaceholder } from '@/utils/table';
 import TypeListModal, {
   STANDARD_SPEC_TYPE_THEME_COLOR,
-  normalizeCodePrefix,
   standardSpecInitialTypes,
   type StandardSpecTypeFilter,
   type StandardSpecTypeItem,
@@ -73,7 +70,7 @@ function getStandardSpecTypeKey(
 ): StandardSpecTypeFilter {
   return (
     standardSpecTypes.find((typeItem) => typeItem.name.en === item.type.en)
-      ?.key ?? item.type.en.toLowerCase()
+      ?.code ?? item.type.en.toLowerCase()
   );
 }
 
@@ -81,7 +78,7 @@ function getStandardSpecTypeByKey(
   standardSpecTypes: StandardSpecTypeItem[],
   typeKey: StandardSpecTypeFilter,
 ) {
-  return standardSpecTypes.find((item) => item.key === typeKey);
+  return standardSpecTypes.find((item) => item.code === typeKey);
 }
 
 function createLocalizedText(value: string): StandardSpecInfoItem['parameter'] {
@@ -202,6 +199,9 @@ function getStandardSpecSupplementValue(
   item: StandardSpecInfoItem,
 ): DataFormItemValue {
   if (!item.supplement) {
+    if (!hasLocalizedDisplayContent(item.description)) {
+      return { ...defaultDataFormItemValue };
+    }
     return {
       type: 'label',
       content: item.description,
@@ -221,10 +221,10 @@ function getStandardSpecSupplementDisplayMap(
     : item.description;
 }
 
-function hasSupplementDisplayContent(item: StandardSpecInfoItem): boolean {
-  return Object.values(getStandardSpecSupplementDisplayMap(item)).some(
-    (value) => value.trim(),
-  );
+function hasLocalizedDisplayContent(
+  value: StandardSpecInfoItem['description'],
+): boolean {
+  return Object.values(value).some((text) => text.trim());
 }
 
 function createFallbackStandardSpecTypeName(
@@ -237,21 +237,16 @@ function createFallbackStandardSpecTypeName(
   };
 }
 
-function createRandomDigits(length = 10): string {
+function createRandomDigits(length = 11): string {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('');
 }
 
 function createStandardSpecCode(
-  typeKey: StandardSpecTypeFilter,
-  standardSpecTypes: StandardSpecTypeItem[],
   existingCodes: Set<string>,
 ): string {
-  const codePrefix =
-    getStandardSpecTypeByKey(standardSpecTypes, typeKey)?.codePrefix ??
-    normalizeCodePrefix(typeKey);
   let code = '';
   do {
-    code = `${codePrefix}${createRandomDigits()}`;
+    code = `STANDARD_${createRandomDigits()}`;
   } while (existingCodes.has(code));
   return code;
 }
@@ -282,23 +277,21 @@ export default function StandardSpecPage() {
   const typeFilterOptions = standardSpecTypes.map((item) => ({
     label: <LanguageText langKey={language} map={item.name} />,
     selectedLabel: item.name[language] ?? item.name.en,
-    value: item.key,
+    value: item.code,
   }));
 
-  const generateCode = (typeKey: StandardSpecTypeFilter) =>
+  const generateCode = () =>
     createStandardSpecCode(
-      typeKey,
-      standardSpecTypes,
       new Set(standardSpecs.map((item) => item.code)),
     );
 
   const openCreateModal = () => {
-    const typeKey = typeFilter ?? standardSpecTypes[0]?.key ?? 'type';
+    const typeKey = typeFilter ?? standardSpecTypes[0]?.code ?? 'type';
     setFormMode('create');
     setEditingSpec(null);
     editForm.resetFields();
     editForm.setFieldsValue({
-      code: generateCode(typeKey),
+      code: generateCode(),
       typeKey,
       parameter: { ...defaultDataFormItemValue },
       supplement: { ...defaultDataFormItemValue },
@@ -320,7 +313,7 @@ export default function StandardSpecPage() {
 
   const refreshCreateCode = (typeKey: StandardSpecTypeFilter) => {
     if (formMode !== 'create') return;
-    editForm.setFieldValue('code', generateCode(typeKey));
+    editForm.setFieldValue('code', generateCode());
   };
 
   const closeEditModal = () => {
@@ -337,6 +330,9 @@ export default function StandardSpecPage() {
     );
     const supplement = normalizeDataFormInfo(values.supplement);
     const supplementDisplayMap = getDataFormDisplayTextMap(supplement.content);
+    const nextSupplement = hasLocalizedDisplayContent(supplementDisplayMap)
+      ? supplement
+      : undefined;
     if (editingSpec) {
       setStandardSpecs((prev) =>
         prev.map((item) =>
@@ -346,7 +342,7 @@ export default function StandardSpecPage() {
                 parameter: parameterDisplayMap,
                 parameterInfo,
                 description: supplementDisplayMap,
-                supplement,
+                supplement: nextSupplement,
               }
             : item,
         ),
@@ -356,7 +352,7 @@ export default function StandardSpecPage() {
       const code =
         values.code && !existingCodes.has(values.code)
           ? values.code
-          : generateCode(values.typeKey);
+          : generateCode();
       const newStandardSpec: StandardSpecInfoItem = {
         id: `standard-${code.toLowerCase()}`,
         code,
@@ -366,7 +362,7 @@ export default function StandardSpecPage() {
         parameter: parameterDisplayMap,
         parameterInfo,
         description: supplementDisplayMap,
-        supplement,
+        supplement: nextSupplement,
       };
       setStandardSpecs((prev) => [newStandardSpec, ...prev]);
     }
@@ -396,25 +392,23 @@ export default function StandardSpecPage() {
   const columns: ColumnsType<StandardSpecInfoItem> = [
     {
       ...noWrapColumnProps,
+      title: <LanguageLabel langKey={language} labelKey="code" />,
+      dataIndex: 'code',
+      width: 180,
+    },
+    {
+      ...noWrapColumnProps,
       title: <LanguageLabel langKey={language} labelKey="standardSpecType" />,
       dataIndex: 'type',
-      width: 140,
+      width: 220,
       render: (_, record) => (
         <LanguageText langKey={language} map={record.type} />
       ),
     },
     {
       ...noWrapColumnProps,
-      title: <LanguageLabel langKey={language} labelKey="standardSpecCode" />,
-      dataIndex: 'code',
-      width: 180,
-    },
-    {
-      ...noWrapColumnProps,
-      title: (
-        <LanguageLabel langKey={language} labelKey="standardSpecParameter" />
-      ),
-      dataIndex: 'parameter',
+      title: <LanguageLabel langKey={language} labelKey="name" />,
+      key: 'name',
       width: 220,
       render: (_, record) => {
         const parameterMap = getStandardSpecParameterDisplayMap(record);
@@ -425,29 +419,20 @@ export default function StandardSpecPage() {
     },
     {
       ...noWrapColumnProps,
-      title: (
-        <LanguageLabel langKey={language} labelKey="standardSpecDescription" />
-      ),
-      dataIndex: 'description',
-      width: 420,
+      title: <LanguageLabel langKey={language} labelKey="value" />,
+      key: 'value',
+      width: 160,
+      render: () => renderTableEmptyPlaceholder(null),
+    },
+    {
+      ...noWrapColumnProps,
+      title: <LanguageLabel langKey={language} labelKey="supplement" />,
+      key: 'supplement',
+      width: 160,
       render: (_, record) => {
-        if (!hasSupplementDisplayContent(record)) {
-          return renderTableEmptyPlaceholder(null);
-        }
-        const supplement = getStandardSpecSupplementValue(record);
-        return (
-          <Space size={6}>
-            <Tag>
-              {getLabel(
-                DATA_FORM_ITEM_TYPE_LABEL_KEYS[supplement.type],
-                language,
-              )}
-            </Tag>
-            <LanguageText
-              langKey={language}
-              map={getStandardSpecSupplementDisplayMap(record)}
-            />
-          </Space>
+        const supplementMap = getStandardSpecSupplementDisplayMap(record);
+        return renderTableEmptyPlaceholder(
+          supplementMap[language] ?? supplementMap.en,
         );
       },
     },
@@ -527,7 +512,7 @@ export default function StandardSpecPage() {
           <Form.Item
             name="code"
             label={
-              <LanguageLabel langKey={language} labelKey="standardSpecCode" />
+              <LanguageLabel langKey={language} labelKey="code" />
             }
             rules={[{ required: true }]}
           >
@@ -551,29 +536,16 @@ export default function StandardSpecPage() {
             name="parameter"
             langKey={language}
             label={
-              <LanguageLabel
-                langKey={language}
-                labelKey="standardSpecParameter"
-              />
+              <LanguageLabel langKey={language} labelKey="name" />
             }
             required
-            requiredMessage={getLabel(
-              'pleaseInputStandardSpecParameter',
-              language,
-            )}
+            requiredMessage={getLabel('pleaseInputName', language)}
           />
           <DataFormItem
             name="supplement"
             langKey={language}
             type={['text', 'label', 'file']}
-            label={
-              <LanguageLabel
-                langKey={language}
-                labelKey="standardSpecDescription"
-              />
-            }
-            required
-            requiredMessage={getLabel('pleaseInputSupplementContent', language)}
+            label={<LanguageLabel langKey={language} labelKey="supplement" />}
           />
         </Form>
       </DraggableModal>

@@ -22,6 +22,7 @@ body,
 .ant-modal .ant-input-number-input,
 .ant-modal .ant-select-selector .ant-select-selection-item,
 .ant-modal .ant-select-selector .ant-select-selection-placeholder,
+.ant-modal .ant-select-selector .ant-select-selection-search-input,
 .ant-modal .ant-select-dropdown .ant-select-item-option-content {
   font-size: 12px;
 }

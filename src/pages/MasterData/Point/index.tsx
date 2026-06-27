@@ -1,7 +1,8 @@
-import { Button, Form, Input, InputNumber, Popconfirm, Row, Col, Select, Space, Switch, Table, message } from 'antd'
-import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
+import { Button, Divider, Form, Input, InputNumber, Popconfirm, Row, Col, Select, Space, Switch, Table, message } from 'antd'
+import { PlusOutlined, MinusCircleOutlined, UnorderedListOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import DraggableModal from '@/components/DraggableModal'
+import TypeListManagerModal from '@/components/TypeListManagerModal'
 import {
   createPoint,
   listPoints,
@@ -10,7 +11,7 @@ import {
   type PointFormData,
 } from '@/api/point'
 import { CITIES } from '@/mock/cities'
-import { POINT_TYPES } from '@/mock/pointTypes'
+import { POINT_TYPES, type PointType } from '@/mock/pointTypes'
 import type { Point } from '@/types/point'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
 import LanguageLabel from '@/components/LanguageLabel'
@@ -23,6 +24,13 @@ import type { LocalizedText } from '@/types/destination'
 type PointEditorFormData = Omit<PointFormData, 'name'> & {
   name: DataFormItemValue
 }
+
+const TYPE_LIST_THEME_COLOR = '#52c41a'
+const typeListButtonStyle = {
+  backgroundColor: TYPE_LIST_THEME_COLOR,
+  borderColor: TYPE_LIST_THEME_COLOR,
+}
+const toolbarDividerStyle = { height: 24 }
 
 function CoordinatesInput({
   langKey,
@@ -193,7 +201,9 @@ export default function PointPage() {
   const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [typeModalOpen, setTypeModalOpen] = useState(false)
   const [editing, setEditing] = useState<Point | null>(null)
+  const [pointTypes, setPointTypes] = useState<PointType[]>(POINT_TYPES)
   const [form] = Form.useForm<PointEditorFormData>()
   const pointType = Form.useWatch('pointType', form)
 
@@ -215,8 +225,8 @@ export default function PointPage() {
     label: <LanguageText langKey={language} map={city} />,
   }))
 
-  const pointTypeOptions = POINT_TYPES.map((t) => ({
-    value: t.code,
+  const pointTypeOptions = pointTypes.map((t) => ({
+    value: t.value,
     label: <LanguageText langKey={language} map={t} />,
   }))
 
@@ -286,7 +296,7 @@ export default function PointPage() {
       title: <LanguageLabel langKey={language} labelKey="pointType" />,
       dataIndex: 'pointType',
       render: (pointTypeCode: string) => {
-        const type = POINT_TYPES.find((t) => t.code === pointTypeCode)
+        const type = pointTypes.find((t) => t.value === pointTypeCode)
         return type ? <LanguageText langKey={language} map={type} /> : pointTypeCode
       },
     },
@@ -320,6 +330,15 @@ export default function PointPage() {
   return (
     <>
       <Space style={{ marginBottom: 16 }}>
+        <Button
+          type="primary"
+          icon={<UnorderedListOutlined />}
+          onClick={() => setTypeModalOpen(true)}
+          style={typeListButtonStyle}
+        >
+          <LanguageLabel langKey={language} labelKey="standardSpecTypeList" />
+        </Button>
+        <Divider type="vertical" style={toolbarDividerStyle} />
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
           <LanguageLabel langKey={language} labelKey="newPoint" />
         </Button>
@@ -410,6 +429,14 @@ export default function PointPage() {
           </Row>
         </Form>
       </DraggableModal>
+      <TypeListManagerModal
+        open={typeModalOpen}
+        language={language}
+        types={pointTypes}
+        codePrefix="POINT_TYPE"
+        onCancel={() => setTypeModalOpen(false)}
+        onTypesChange={setPointTypes}
+      />
     </>
   )
 }

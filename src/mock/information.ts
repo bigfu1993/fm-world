@@ -3,6 +3,7 @@ import type { LanguageCode } from '@/types/system'
 export interface InformationItem {
   id: string
   code: string
+  value?: string
   name: Record<LanguageCode, string>
 }
 
@@ -57,6 +58,12 @@ export interface CultureCustomInfoItem {
   sensitiveBehaviors: LocalizedInfoText
 }
 
+export interface ReligionInfoItem {
+  id: string
+  code: string
+  name: LocalizedInfoText
+}
+
 export interface CurrencyPaymentInfoItem {
   id: string
   code: string
@@ -65,11 +72,10 @@ export interface CurrencyPaymentInfoItem {
   tippingCulture: LocalizedInfoText
 }
 
-export interface EmergencyHandlingInfoItem {
+export interface CurrencyInfoItem {
   id: string
   code: string
-  policeEmergency: LocalizedInfoText
-  fireEmergency: LocalizedInfoText
+  name: LocalizedInfoText
 }
 
 export const COMMUNICATION_INFOS: InformationItem[] = [
@@ -110,36 +116,344 @@ export const COMMUNICATION_INFOS: InformationItem[] = [
 
 export const INTERCITY_TRAFFIC_INFOS: InformationItem[] = [
   {
-    id: 'traffic-rail',
-    code: 'TRAFFIC-RAIL',
+    id: 'traffic-airplane',
+    code: 'TRAFFIC_10492837561',
+    value: 'AIRPLANE',
     name: {
-      zh: '铁路 / 高铁',
-      en: 'Rail / High-Speed Rail',
-      ja: '鉄道 / 高速鉄道',
-      ko: '철도 / 고속철도',
-      th: 'รถไฟ / รถไฟความเร็วสูง',
+      zh: '飞机',
+      en: 'Airplane',
+      ja: '飛行機',
+      ko: '비행기',
+      th: 'เครื่องบิน',
     },
   },
   {
-    id: 'traffic-flight',
-    code: 'TRAFFIC-FLIGHT',
+    id: 'traffic-railway',
+    code: 'TRAFFIC_58392017462',
+    value: 'RAILWAY',
     name: {
-      zh: '国内航班',
-      en: 'Domestic Flight',
-      ja: '国内線',
-      ko: '국내선 항공',
-      th: 'เที่ยวบินภายในประเทศ',
+      zh: '铁路',
+      en: 'Railway',
+      ja: '鉄道',
+      ko: '철도',
+      th: 'รถไฟ',
     },
   },
   {
     id: 'traffic-bus',
-    code: 'TRAFFIC-BUS',
+    code: 'TRAFFIC_73104928650',
+    value: 'BUS',
     name: {
-      zh: '城际巴士',
-      en: 'Intercity Bus',
-      ja: '都市間バス',
-      ko: '시외버스',
-      th: 'รถบัสระหว่างเมือง',
+      zh: '巴士',
+      en: 'Bus',
+      ja: 'バス',
+      ko: '버스',
+      th: 'รถบัส',
+    },
+  },
+  {
+    id: 'traffic-subway',
+    code: 'TRAFFIC_29061473815',
+    value: 'SUBWAY',
+    name: {
+      zh: '地铁',
+      en: 'Subway',
+      ja: '地下鉄',
+      ko: '지하철',
+      th: 'รถไฟใต้ดิน',
+    },
+  },
+  {
+    id: 'traffic-public-bus',
+    code: 'TRAFFIC_64820591734',
+    value: 'PUBLIC_BUS',
+    name: {
+      zh: '公交',
+      en: 'Public Bus',
+      ja: '路線バス',
+      ko: '시내버스',
+      th: 'รถโดยสารประจำทาง',
+    },
+  },
+  {
+    id: 'traffic-taxi',
+    code: 'TRAFFIC_90517362841',
+    value: 'TAXI',
+    name: {
+      zh: '出租',
+      en: 'Taxi',
+      ja: 'タクシー',
+      ko: '택시',
+      th: 'แท็กซี่',
+    },
+  },
+  {
+    id: 'traffic-online-taxi',
+    code: 'TRAFFIC_37624850912',
+    value: 'ONLINE_TAXI',
+    name: {
+      zh: '互联网出租',
+      en: 'Ride-Hailing',
+      ja: '配車サービス',
+      ko: '차량 호출',
+      th: 'รถเรียกผ่านแอป',
+    },
+  },
+  {
+    id: 'traffic-car-rental',
+    code: 'TRAFFIC_81260495730',
+    value: 'CAR_RENTAL',
+    name: {
+      zh: '租车',
+      en: 'Car Rental',
+      ja: 'レンタカー',
+      ko: '렌터카',
+      th: 'รถเช่า',
+    },
+  },
+  {
+    id: 'traffic-electric-bike',
+    code: 'TRAFFIC_46019382751',
+    value: 'ELECTRIC_BIKE',
+    name: {
+      zh: '电动车',
+      en: 'Electric Bike',
+      ja: '電動自転車',
+      ko: '전기 자전거',
+      th: 'จักรยานไฟฟ้า',
+    },
+  },
+  {
+    id: 'traffic-bicycle',
+    code: 'TRAFFIC_21973840566',
+    value: 'BICYCLE',
+    name: {
+      zh: '自行车',
+      en: 'Bicycle',
+      ja: '自転車',
+      ko: '자전거',
+      th: 'จักรยาน',
+    },
+  },
+  {
+    id: 'traffic-motorcycle',
+    code: 'TRAFFIC_59281730468',
+    value: 'MOTORCYCLE',
+    name: {
+      zh: '摩托车',
+      en: 'Motorcycle',
+      ja: 'オートバイ',
+      ko: '오토바이',
+      th: 'รถจักรยานยนต์',
+    },
+  },
+  {
+    id: 'traffic-private-agreement',
+    code: 'TRAFFIC_73468192055',
+    value: 'PRIVATE_AGREEMENT',
+    name: {
+      zh: '私人协议',
+      en: 'Private Agreement',
+      ja: 'プライベート契約',
+      ko: '개인 계약',
+      th: 'ข้อตกลงส่วนตัว',
+    },
+  },
+]
+
+export const CURRENCY_INFOS: CurrencyInfoItem[] = [
+  {
+    id: 'currency-cny',
+    code: 'CURRENCY_73849261045',
+    name: {
+      zh: '人民币',
+      en: 'Chinese Yuan',
+      ja: '人民元',
+      ko: '중국 위안',
+      th: 'หยวนจีน',
+    },
+  },
+  {
+    id: 'currency-usd',
+    code: 'CURRENCY_20594718362',
+    name: {
+      zh: '美元',
+      en: 'US Dollar',
+      ja: '米ドル',
+      ko: '미국 달러',
+      th: 'ดอลลาร์สหรัฐ',
+    },
+  },
+  {
+    id: 'currency-eur',
+    code: 'CURRENCY_91473620581',
+    name: {
+      zh: '欧元',
+      en: 'Euro',
+      ja: 'ユーロ',
+      ko: '유로',
+      th: 'ยูโร',
+    },
+  },
+  {
+    id: 'currency-gbp',
+    code: 'CURRENCY_48261039574',
+    name: {
+      zh: '英镑',
+      en: 'Pound Sterling',
+      ja: '英ポンド',
+      ko: '영국 파운드',
+      th: 'ปอนด์สเตอร์ลิง',
+    },
+  },
+  {
+    id: 'currency-jpy',
+    code: 'CURRENCY_65019384726',
+    name: {
+      zh: '日元',
+      en: 'Japanese Yen',
+      ja: '日本円',
+      ko: '일본 엔',
+      th: 'เยนญี่ปุ่น',
+    },
+  },
+  {
+    id: 'currency-krw',
+    code: 'CURRENCY_39752068149',
+    name: {
+      zh: '韩元',
+      en: 'South Korean Won',
+      ja: '韓国ウォン',
+      ko: '한국 원',
+      th: 'วอนเกาหลีใต้',
+    },
+  },
+  {
+    id: 'currency-thb',
+    code: 'CURRENCY_82640195730',
+    name: {
+      zh: '泰铢',
+      en: 'Thai Baht',
+      ja: 'タイバーツ',
+      ko: '태국 바트',
+      th: 'บาทไทย',
+    },
+  },
+  {
+    id: 'currency-hkd',
+    code: 'CURRENCY_17483926058',
+    name: {
+      zh: '港币',
+      en: 'Hong Kong Dollar',
+      ja: '香港ドル',
+      ko: '홍콩 달러',
+      th: 'ดอลลาร์ฮ่องกง',
+    },
+  },
+  {
+    id: 'currency-mop',
+    code: 'CURRENCY_56391847205',
+    name: {
+      zh: '澳门元',
+      en: 'Macanese Pataca',
+      ja: 'マカオ・パタカ',
+      ko: '마카오 파타카',
+      th: 'ปาตากามาเก๊า',
+    },
+  },
+  {
+    id: 'currency-sgd',
+    code: 'CURRENCY_70928461538',
+    name: {
+      zh: '新加坡元',
+      en: 'Singapore Dollar',
+      ja: 'シンガポールドル',
+      ko: '싱가포르 달러',
+      th: 'ดอลลาร์สิงคโปร์',
+    },
+  },
+  {
+    id: 'currency-myr',
+    code: 'CURRENCY_34187502694',
+    name: {
+      zh: '马来西亚林吉特',
+      en: 'Malaysian Ringgit',
+      ja: 'マレーシアリンギット',
+      ko: '말레이시아 링깃',
+      th: 'ริงกิตมาเลเซีย',
+    },
+  },
+  {
+    id: 'currency-aud',
+    code: 'CURRENCY_95826041736',
+    name: {
+      zh: '澳元',
+      en: 'Australian Dollar',
+      ja: '豪ドル',
+      ko: '호주 달러',
+      th: 'ดอลลาร์ออสเตรเลีย',
+    },
+  },
+  {
+    id: 'currency-cad',
+    code: 'CURRENCY_62051739482',
+    name: {
+      zh: '加元',
+      en: 'Canadian Dollar',
+      ja: 'カナダドル',
+      ko: '캐나다 달러',
+      th: 'ดอลลาร์แคนาดา',
+    },
+  },
+]
+
+export const ENTRY_POLICY_INFOS: InformationItem[] = [
+  {
+    id: 'entry-policy-visa-free',
+    code: 'ENTRY_POLICY_18473920561',
+    value: 'VISA_FREE',
+    name: {
+      zh: '免签',
+      en: 'Visa-Free',
+      ja: 'ビザ免除',
+      ko: '무비자',
+      th: 'ยกเว้นวีซ่า',
+    },
+  },
+  {
+    id: 'entry-policy-e-visa',
+    code: 'ENTRY_POLICY_67294051833',
+    value: 'E_VISA',
+    name: {
+      zh: '电子签',
+      en: 'E-Visa',
+      ja: '電子ビザ',
+      ko: '전자비자',
+      th: 'วีซ่าอิเล็กทรอนิกส์',
+    },
+  },
+  {
+    id: 'entry-policy-visa-on-arrival',
+    code: 'ENTRY_POLICY_50381629472',
+    value: 'VISA_ON_ARRIVAL',
+    name: {
+      zh: '落地签',
+      en: 'Visa on Arrival',
+      ja: '到着ビザ',
+      ko: '도착비자',
+      th: 'วีซ่าเมื่อเดินทางถึง',
+    },
+  },
+  {
+    id: 'entry-policy-visa-required',
+    code: 'ENTRY_POLICY_92746138054',
+    value: 'VISA_REQUIRED',
+    name: {
+      zh: '需提前签证',
+      en: 'Visa Required in Advance',
+      ja: '事前ビザが必要',
+      ko: '사전 비자 필요',
+      th: 'ต้องขอวีซ่าล่วงหน้า',
     },
   },
 ]
@@ -174,6 +488,38 @@ const STANDARD_SPEC_TYPE_PLUG: LocalizedInfoText = {
   th: 'ปลั๊ก',
 }
 
+const STANDARD_SPEC_TYPE_POLICE_PHONE: LocalizedInfoText = {
+  zh: '警察电话',
+  en: 'Police Phone',
+  ja: '警察電話',
+  ko: '경찰 전화',
+  th: 'เบอร์ตำรวจ',
+}
+
+const STANDARD_SPEC_TYPE_FIRE_PHONE: LocalizedInfoText = {
+  zh: '火警电话',
+  en: 'Fire Phone',
+  ja: '消防電話',
+  ko: '소방 전화',
+  th: 'เบอร์ดับเพลิง',
+}
+
+const STANDARD_SPEC_TYPE_HOSPITAL_PHONE: LocalizedInfoText = {
+  zh: '急救电话',
+  en: 'Hospital Phone',
+  ja: '救急電話',
+  ko: '응급 전화',
+  th: 'เบอร์ฉุกเฉินทางการแพทย์',
+}
+
+const STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE: LocalizedInfoText = {
+  zh: '交通事故电话',
+  en: 'Traffic Accident Phone',
+  ja: '交通事故電話',
+  ko: '교통사고 전화',
+  th: 'เบอร์แจ้งอุบัติเหตุจราจร',
+}
+
 const createUniformSpecText = (text: string): LocalizedInfoText => ({
   zh: text,
   en: text,
@@ -190,196 +536,454 @@ const createPlugParameter = (letter: string): LocalizedInfoText => ({
   th: `ประเภท ${letter}`,
 })
 
+const STANDARD_PHONE_COUNTRY_CHINA: LocalizedInfoText = {
+  zh: '中国',
+  en: 'China',
+  ja: '中国',
+  ko: '중국',
+  th: 'จีน',
+}
+
+const STANDARD_PHONE_COUNTRY_JAPAN: LocalizedInfoText = {
+  zh: '日本',
+  en: 'Japan',
+  ja: '日本',
+  ko: '일본',
+  th: 'ญี่ปุ่น',
+}
+
+const STANDARD_PHONE_COUNTRY_SOUTH_KOREA: LocalizedInfoText = {
+  zh: '韩国',
+  en: 'South Korea',
+  ja: '韓国',
+  ko: '한국',
+  th: 'เกาหลีใต้',
+}
+
+const STANDARD_PHONE_COUNTRY_UNITED_STATES: LocalizedInfoText = {
+  zh: '美国',
+  en: 'United States',
+  ja: 'アメリカ',
+  ko: '미국',
+  th: 'สหรัฐอเมริกา',
+}
+
+const STANDARD_PHONE_COUNTRY_UNITED_KINGDOM: LocalizedInfoText = {
+  zh: '英国',
+  en: 'United Kingdom',
+  ja: 'イギリス',
+  ko: '영국',
+  th: 'สหราชอาณาจักร',
+}
+
+const STANDARD_PHONE_COUNTRY_AUSTRALIA: LocalizedInfoText = {
+  zh: '澳大利亚',
+  en: 'Australia',
+  ja: 'オーストラリア',
+  ko: '호주',
+  th: 'ออสเตรเลีย',
+}
+
+const STANDARD_PHONE_COUNTRY_GERMANY: LocalizedInfoText = {
+  zh: '德国',
+  en: 'Germany',
+  ja: 'ドイツ',
+  ko: '독일',
+  th: 'เยอรมนี',
+}
+
+const createPhoneParameter = (
+  country: LocalizedInfoText,
+  countryCallingCode: string,
+  localPhoneNumber: string,
+): LocalizedInfoText => ({
+  zh: `${country.zh} ${countryCallingCode} ${localPhoneNumber}`,
+  en: `${country.en} ${countryCallingCode} ${localPhoneNumber}`,
+  ja: `${country.ja} ${countryCallingCode} ${localPhoneNumber}`,
+  ko: `${country.ko} ${countryCallingCode} ${localPhoneNumber}`,
+  th: `${country.th} ${countryCallingCode} ${localPhoneNumber}`,
+})
+
 const EMPTY_STANDARD_SPEC_SUPPLEMENT = createUniformSpecText('')
 
 export const STANDARD_SPEC_INFOS: StandardSpecInfoItem[] = [
   {
-    id: 'standard-voltage-100v-50hz',
-    code: 'VOLTAGE4810297356',
+    id: 'standard-voltage-100v',
+    code: 'STANDARD_48102973560',
     type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('100V / 50Hz'),
+    parameter: createUniformSpecText('100V'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
-    id: 'standard-voltage-100v-60hz',
-    code: 'VOLTAGE7306159842',
+    id: 'standard-voltage-110v',
+    code: 'STANDARD_29476105830',
     type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('100V / 60Hz'),
+    parameter: createUniformSpecText('110V'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
-    id: 'standard-voltage-110v-60hz',
-    code: 'VOLTAGE2947610583',
+    id: 'standard-voltage-115v',
+    code: 'STANDARD_86512039470',
     type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('110V / 60Hz'),
+    parameter: createUniformSpecText('115V'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
-    id: 'standard-voltage-115v-60hz',
-    code: 'VOLTAGE8651203947',
+    id: 'standard-voltage-120v',
+    code: 'STANDARD_50938417620',
     type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('115V / 60Hz'),
+    parameter: createUniformSpecText('120V'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
-    id: 'standard-voltage-120v-60hz',
-    code: 'VOLTAGE5093841762',
+    id: 'standard-voltage-127v',
+    code: 'STANDARD_14726093580',
     type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('120V / 60Hz'),
+    parameter: createUniformSpecText('127V'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
-    id: 'standard-voltage-127v-60hz',
-    code: 'VOLTAGE1472609358',
+    id: 'standard-voltage-220v',
+    code: 'STANDARD_69250381470',
     type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('127V / 60Hz'),
+    parameter: createUniformSpecText('220V'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
-    id: 'standard-voltage-220v-50hz',
-    code: 'VOLTAGE6925038147',
+    id: 'standard-voltage-230v',
+    code: 'STANDARD_95418062730',
     type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('220V / 50Hz'),
+    parameter: createUniformSpecText('230V'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
-    id: 'standard-voltage-220v-60hz',
-    code: 'VOLTAGE3187462059',
+    id: 'standard-voltage-240v',
+    code: 'STANDARD_80315974620',
     type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('220V / 60Hz'),
-    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
-  },
-  {
-    id: 'standard-voltage-230v-50hz',
-    code: 'VOLTAGE9541806273',
-    type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('230V / 50Hz'),
-    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
-  },
-  {
-    id: 'standard-voltage-230v-60hz',
-    code: 'VOLTAGE2768490315',
-    type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('230V / 60Hz'),
-    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
-  },
-  {
-    id: 'standard-voltage-240v-50hz',
-    code: 'VOLTAGE8031597462',
-    type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('240V / 50Hz'),
-    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
-  },
-  {
-    id: 'standard-voltage-240v-60hz',
-    code: 'VOLTAGE4217063985',
-    type: STANDARD_SPEC_TYPE_VOLTAGE,
-    parameter: createUniformSpecText('240V / 60Hz'),
+    parameter: createUniformSpecText('240V'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-a',
-    code: 'PLUG6049182735',
+    code: 'STANDARD_60491827350',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('A'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-b',
-    code: 'PLUG9274051863',
+    code: 'STANDARD_92740518630',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('B'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-c',
-    code: 'PLUG3158704926',
+    code: 'STANDARD_31587049260',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('C'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-d',
-    code: 'PLUG7482916053',
+    code: 'STANDARD_74829160530',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('D'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-e',
-    code: 'PLUG1865309742',
+    code: 'STANDARD_18653097420',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('E'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-f',
-    code: 'PLUG5397026814',
+    code: 'STANDARD_53970268140',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('F'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-g',
-    code: 'PLUG2704185963',
+    code: 'STANDARD_27041859630',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('G'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-h',
-    code: 'PLUG8619357402',
+    code: 'STANDARD_86193574020',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('H'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-i',
-    code: 'PLUG4937201586',
+    code: 'STANDARD_49372015860',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('I'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-j',
-    code: 'PLUG7081649352',
+    code: 'STANDARD_70816493520',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('J'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-k',
-    code: 'PLUG1425978036',
+    code: 'STANDARD_14259780360',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('K'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-l',
-    code: 'PLUG6753082914',
+    code: 'STANDARD_67530829140',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('L'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-m',
-    code: 'PLUG8305261479',
+    code: 'STANDARD_83052614790',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('M'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-n',
-    code: 'PLUG2597416803',
+    code: 'STANDARD_25974168030',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('N'),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
   {
     id: 'standard-plug-type-o',
-    code: 'PLUG5170398624',
+    code: 'STANDARD_51703986240',
     type: STANDARD_SPEC_TYPE_PLUG,
     parameter: createPlugParameter('O'),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-police-110',
+    code: 'STANDARD_10495827360',
+    type: STANDARD_SPEC_TYPE_POLICE_PHONE,
+    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '110'),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-police-112',
+    code: 'STANDARD_58270419360',
+    type: STANDARD_SPEC_TYPE_POLICE_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_SOUTH_KOREA,
+      '+82',
+      '112',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-police-911',
+    code: 'STANDARD_73920486150',
+    type: STANDARD_SPEC_TYPE_POLICE_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_UNITED_STATES,
+      '+1',
+      '911',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-police-999',
+    code: 'STANDARD_26059381740',
+    type: STANDARD_SPEC_TYPE_POLICE_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_UNITED_KINGDOM,
+      '+44',
+      '999',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-police-000',
+    code: 'STANDARD_68195042730',
+    type: STANDARD_SPEC_TYPE_POLICE_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_AUSTRALIA,
+      '+61',
+      '000',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-fire-119',
+    code: 'STANDARD_48261973500',
+    type: STANDARD_SPEC_TYPE_FIRE_PHONE,
+    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '119'),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-fire-112',
+    code: 'STANDARD_93720518460',
+    type: STANDARD_SPEC_TYPE_FIRE_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_GERMANY,
+      '+49',
+      '112',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-fire-911',
+    code: 'STANDARD_61597028430',
+    type: STANDARD_SPEC_TYPE_FIRE_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_UNITED_STATES,
+      '+1',
+      '911',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-fire-999',
+    code: 'STANDARD_20468159730',
+    type: STANDARD_SPEC_TYPE_FIRE_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_UNITED_KINGDOM,
+      '+44',
+      '999',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-fire-000',
+    code: 'STANDARD_75823910460',
+    type: STANDARD_SPEC_TYPE_FIRE_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_AUSTRALIA,
+      '+61',
+      '000',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-hospital-120',
+    code: 'STANDARD_39582710460',
+    type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
+    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '120'),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-hospital-119',
+    code: 'STANDARD_84726190530',
+    type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
+    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_JAPAN, '+81', '119'),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-hospital-112',
+    code: 'STANDARD_62047395810',
+    type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_GERMANY,
+      '+49',
+      '112',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-hospital-911',
+    code: 'STANDARD_15963827400',
+    type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_UNITED_STATES,
+      '+1',
+      '911',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-hospital-999',
+    code: 'STANDARD_70492851630',
+    type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_UNITED_KINGDOM,
+      '+44',
+      '999',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-hospital-000',
+    code: 'STANDARD_28615094370',
+    type: STANDARD_SPEC_TYPE_HOSPITAL_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_AUSTRALIA,
+      '+61',
+      '000',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-traffic-accident-122',
+    code: 'STANDARD_51490827360',
+    type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
+    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '122'),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-traffic-accident-110',
+    code: 'STANDARD_80376194520',
+    type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
+    parameter: createPhoneParameter(STANDARD_PHONE_COUNTRY_CHINA, '+86', '110'),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-traffic-accident-112',
+    code: 'STANDARD_24719563800',
+    type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_GERMANY,
+      '+49',
+      '112',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-traffic-accident-911',
+    code: 'STANDARD_69042715380',
+    type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_UNITED_STATES,
+      '+1',
+      '911',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-traffic-accident-999',
+    code: 'STANDARD_13286049750',
+    type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_UNITED_KINGDOM,
+      '+44',
+      '999',
+    ),
+    description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
+  },
+  {
+    id: 'standard-tel-traffic-accident-000',
+    code: 'STANDARD_97530421860',
+    type: STANDARD_SPEC_TYPE_TRAFFIC_ACCIDENT_PHONE,
+    parameter: createPhoneParameter(
+      STANDARD_PHONE_COUNTRY_AUSTRALIA,
+      '+61',
+      '000',
+    ),
     description: EMPTY_STANDARD_SPEC_SUPPLEMENT,
   },
 ]
@@ -433,6 +1037,20 @@ export const CULTURE_CUSTOM_INFOS: CultureCustomInfoItem[] = [
   },
 ]
 
+export const RELIGION_INFOS: ReligionInfoItem[] = [
+  {
+    id: 'religion-general',
+    code: 'RELIGION_48290517364',
+    name: {
+      zh: '宗教习俗',
+      en: 'Religious Customs',
+      ja: '宗教習慣',
+      ko: '종교 관습',
+      th: 'ธรรมเนียมทางศาสนา',
+    },
+  },
+]
+
 export const CURRENCY_PAYMENT_INFOS: CurrencyPaymentInfoItem[] = [
   {
     id: 'payment-general',
@@ -457,27 +1075,6 @@ export const CURRENCY_PAYMENT_INFOS: CurrencyPaymentInfoItem[] = [
       ja: 'チップ文化は大きく異なるため、国やサービス別に必要性、目安、支払い方法を確認してください。',
       ko: '팁 문화는 크게 다르므로 국가와 서비스 상황별 필요 여부, 권장 비율, 결제 방식을 확인하세요.',
       th: 'วัฒนธรรมการให้ทิปแตกต่างกันมาก ควรตรวจสอบว่าจำเป็นหรือไม่ อัตราแนะนำ และวิธีจ่ายตามประเทศและบริการ',
-    },
-  },
-]
-
-export const EMERGENCY_HANDLING_INFOS: EmergencyHandlingInfoItem[] = [
-  {
-    id: 'emergency-general',
-    code: 'EMERGENCY-GENERAL',
-    policeEmergency: {
-      zh: '遇到盗抢、人身威胁或证件遗失，应立即联系当地警方并保留报案记录。',
-      en: 'For theft, personal threats, or lost documents, contact local police immediately and keep the police report.',
-      ja: '盗難、身の危険、証明書紛失時は直ちに現地警察へ連絡し、届出記録を保管してください。',
-      ko: '절도, 신변 위협, 서류 분실 시 즉시 현지 경찰에 연락하고 신고 기록을 보관하세요.',
-      th: 'หากถูกโจรกรรม ถูกคุกคาม หรือเอกสารหาย ควรติดต่อ ตำรวจ ทันทีและเก็บบันทึกการแจ้งความไว้',
-    },
-    fireEmergency: {
-      zh: '遇到火情、爆炸或建筑疏散，应优先离开危险区域，再联系消防或酒店/场馆工作人员。',
-      en: 'For fire, explosion, or building evacuation, leave the danger area first, then contact fire services or venue staff.',
-      ja: '火災、爆発、建物避難時はまず危険区域から離れ、消防または施設スタッフへ連絡してください。',
-      ko: '화재, 폭발, 건물 대피 상황에서는 먼저 위험 지역을 벗어난 뒤 소방 또는 시설 직원에게 연락하세요.',
-      th: 'เมื่อเกิดเหตุไฟไหม้ ระเบิด หรืออพยพอาคาร ให้ออกจากพื้นที่เสี่ยงก่อน แล้วติดต่อดับเพลิงหรือเจ้าหน้าที่สถานที่',
     },
   },
 ]

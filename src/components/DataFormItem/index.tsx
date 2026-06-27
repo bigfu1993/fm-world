@@ -80,7 +80,7 @@ function useAvailableLanguages(): GlobalLanguage[] {
   const globalLanguages = useGlobalLanguages();
   const accountLanguages = useAuthStore((s) => s.user?.languages) ?? [];
   return globalLanguages.filter((g) =>
-    accountLanguages.includes(g.code as LanguageCode),
+    accountLanguages.includes(g.localeCode as LanguageCode),
   );
 }
 
@@ -95,7 +95,7 @@ function DataFormLanguageRows({
     <>
       {availableLanguages.map((lang) => (
         <div
-          key={lang.code}
+          key={lang.localeCode}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -108,11 +108,11 @@ function DataFormLanguageRows({
           </span>
           <Input
             disabled={disabled}
-            value={value?.[lang.code as LanguageCode]}
+            value={value?.[lang.localeCode as LanguageCode]}
             onChange={(event) =>
               onChange?.({
                 ...value,
-                [lang.code]: event.target.value,
+                [lang.localeCode]: event.target.value,
               } as LocalizedText)
             }
           />

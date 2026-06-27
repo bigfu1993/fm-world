@@ -23,6 +23,7 @@ const antdTheme: ThemeConfig = {
       inputFontSizeSM: CONTROL_FONT_SIZE,
     },
     Select: {
+      fontSize: CONTROL_FONT_SIZE,
       optionFontSize: CONTROL_FONT_SIZE,
     },
   },

@@ -1,4 +1,4 @@
-import { Button, Form, Table } from 'antd';
+import { Button, Form, Input, Table } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import DraggableModal from '@/components/DraggableModal';
@@ -27,13 +27,14 @@ const typeCreateButtonStyle = {
 export type StandardSpecTypeFilter = string;
 
 export interface StandardSpecTypeItem {
-  key: string;
-  codePrefix: string;
+  code: string;
+  value: string;
   name: StandardSpecInfoItem['type'];
 }
 
 interface StandardSpecTypeForm {
-  codePrefix: DataFormItemValue;
+  code: string;
+  value: DataFormItemValue;
   name: DataFormItemValue;
 }
 
@@ -47,8 +48,8 @@ interface TypeListModalProps {
 
 export const standardSpecInitialTypes: StandardSpecTypeItem[] = [
   {
-    key: 'voltage',
-    codePrefix: 'VOLTAGE',
+    code: 'STANDARD_TYPE_10492837561',
+    value: 'VOLTAGE',
     name: {
       zh: '电压',
       en: 'Voltage',
@@ -58,8 +59,8 @@ export const standardSpecInitialTypes: StandardSpecTypeItem[] = [
     },
   },
   {
-    key: 'plug',
-    codePrefix: 'PLUG',
+    code: 'STANDARD_TYPE_58392017462',
+    value: 'PLUG',
     name: {
       zh: '插头',
       en: 'Plug',
@@ -68,14 +69,59 @@ export const standardSpecInitialTypes: StandardSpecTypeItem[] = [
       th: 'ปลั๊ก',
     },
   },
+  {
+    code: 'STANDARD_TYPE_73104928650',
+    value: 'TEL_POLICE',
+    name: {
+      zh: '警察电话',
+      en: 'Police Phone',
+      ja: '警察電話',
+      ko: '경찰 전화',
+      th: 'เบอร์ตำรวจ',
+    },
+  },
+  {
+    code: 'STANDARD_TYPE_29061473815',
+    value: 'TEL_FIRE',
+    name: {
+      zh: '火警电话',
+      en: 'Fire Phone',
+      ja: '消防電話',
+      ko: '소방 전화',
+      th: 'เบอร์ดับเพลิง',
+    },
+  },
+  {
+    code: 'STANDARD_TYPE_64820591734',
+    value: 'TEL_HOSPITAL',
+    name: {
+      zh: '急救电话',
+      en: 'Hospital Phone',
+      ja: '救急電話',
+      ko: '응급 전화',
+      th: 'เบอร์ฉุกเฉินทางการแพทย์',
+    },
+  },
+  {
+    code: 'STANDARD_TYPE_90517362841',
+    value: 'TEL_TRAFFIC_ACCIDENT',
+    name: {
+      zh: '交通事故电话',
+      en: 'Traffic Accident Phone',
+      ja: '交通事故電話',
+      ko: '교통사고 전화',
+      th: 'เบอร์แจ้งอุบัติเหตุจราจร',
+    },
+  },
 ];
 
-export function normalizeCodePrefix(value: string): string {
+export function normalizeStandardSpecTypeValue(value: string): string {
   return (
     value
       .trim()
       .toUpperCase()
-      .replace(/[^A-Z0-9]/g, '') || 'TYPE'
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'TYPE'
   );
 }
 
@@ -109,9 +155,21 @@ function getTypeNameContent(
   return content;
 }
 
-function getTypeCodePrefixContent(value: DataFormItemValue | undefined) {
+function getTypeValueContent(value: DataFormItemValue | undefined) {
   const content = value?.content;
   return typeof content === 'string' ? content : '';
+}
+
+function createRandomDigits(length = 11): string {
+  return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('');
+}
+
+function createStandardSpecTypeCode(existingCodes: Set<string>): string {
+  let code = '';
+  do {
+    code = `STANDARD_TYPE_${createRandomDigits()}`;
+  } while (existingCodes.has(code));
+  return code;
 }
 
 export default function TypeListModal({
@@ -126,6 +184,12 @@ export default function TypeListModal({
 
   const openTypeCreateModal = () => {
     typeForm.resetFields();
+    typeForm.setFieldValue(
+      'code',
+      createStandardSpecTypeCode(
+        new Set(standardSpecTypes.map((item) => item.code)),
+      ),
+    );
     setTypeCreateModalOpen(true);
   };
 
@@ -136,22 +200,22 @@ export default function TypeListModal({
 
   const saveStandardSpecType = async () => {
     const values = await typeForm.validateFields();
-    const codePrefix = normalizeCodePrefix(
-      getTypeCodePrefixContent(values.codePrefix),
+    const value = normalizeStandardSpecTypeValue(
+      getTypeValueContent(values.value),
     );
-    if (standardSpecTypes.some((item) => item.codePrefix === codePrefix)) {
+    if (standardSpecTypes.some((item) => item.value === value)) {
       typeForm.setFields([
         {
-          name: ['codePrefix', 'content'],
-          errors: [getLabel('standardSpecTypeCodeExists', language)],
+          name: ['value', 'content'],
+          errors: [getLabel('valueExists', language)],
         },
       ]);
       return;
     }
     const newType: StandardSpecTypeItem = {
-      key: codePrefix.toLowerCase(),
-      codePrefix,
-      name: completeLocalizedText(getTypeNameContent(values.name), codePrefix),
+      code: values.code,
+      value,
+      name: completeLocalizedText(getTypeNameContent(values.name), value),
     };
     onStandardSpecTypesChange([newType, ...standardSpecTypes]);
     closeTypeCreateModal();
@@ -160,22 +224,24 @@ export default function TypeListModal({
   const typeColumns: ColumnsType<StandardSpecTypeItem> = [
     {
       ...noWrapColumnProps,
-      title: (
-        <LanguageLabel langKey={language} labelKey="standardSpecTypeCode" />
-      ),
-      dataIndex: 'codePrefix',
-      width: 160,
+      title: <LanguageLabel langKey={language} labelKey="code" />,
+      dataIndex: 'code',
+      width: 220,
     },
     {
       ...noWrapColumnProps,
-      title: (
-        <LanguageLabel langKey={language} labelKey="standardSpecTypeName" />
-      ),
+      title: <LanguageLabel langKey={language} labelKey="name" />,
       dataIndex: 'name',
-      width: 220,
+      width: 280,
       render: (_, record) => (
         <LanguageText langKey={language} map={record.name} />
       ),
+    },
+    {
+      ...noWrapColumnProps,
+      title: <LanguageLabel langKey={language} labelKey="value" />,
+      dataIndex: 'value',
+      width: 220,
     },
   ];
 
@@ -189,7 +255,7 @@ export default function TypeListModal({
         onCancel={onCancel}
         footer={null}
         themeColor={STANDARD_SPEC_TYPE_THEME_COLOR}
-        width={640}
+        width={860}
       >
         <Button
           size="small"
@@ -200,12 +266,11 @@ export default function TypeListModal({
           <LanguageLabel langKey={language} labelKey="newStandardSpecType" />
         </Button>
         <Table
-          rowKey="key"
+          rowKey="code"
           columns={typeColumns}
           dataSource={standardSpecTypes}
           size="small"
           pagination={false}
-          scroll={{ x: 'max-content' }}
         />
       </DraggableModal>
       <DraggableModal
@@ -218,39 +283,31 @@ export default function TypeListModal({
         okButtonProps={{ size: 'small' }}
         cancelButtonProps={{ size: 'small' }}
         themeColor={STANDARD_SPEC_TYPE_THEME_COLOR}
+        width={720}
       >
         <Form form={typeForm} layout="vertical" size="small">
+          <Form.Item
+            name="code"
+            label={<LanguageLabel langKey={language} labelKey="code" />}
+            rules={[{ required: true }]}
+          >
+            <Input disabled />
+          </Form.Item>
           <DataFormItem
-            name="codePrefix"
+            name="value"
             langKey={language}
             type={['text']}
-            label={
-              <LanguageLabel
-                langKey={language}
-                labelKey="standardSpecTypeCode"
-              />
-            }
+            label={<LanguageLabel langKey={language} labelKey="value" />}
             required
-            requiredMessage={getLabel(
-              'pleaseInputStandardSpecTypeCode',
-              language,
-            )}
+            requiredMessage={getLabel('pleaseInputValue', language)}
           />
           <DataFormItem
             langKey={language}
             name="name"
             type={['label']}
-            label={
-              <LanguageLabel
-                langKey={language}
-                labelKey="standardSpecTypeName"
-              />
-            }
+            label={<LanguageLabel langKey={language} labelKey="name" />}
             required
-            requiredMessage={getLabel(
-              'pleaseInputStandardSpecTypeName',
-              language,
-            )}
+            requiredMessage={getLabel('pleaseInputName', language)}
           />
         </Form>
       </DraggableModal>

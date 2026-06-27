@@ -41,7 +41,6 @@ export default function BasicLayout() {
     },
     (hasPermission('country:manage') ||
       hasPermission('city:manage') ||
-      hasPermission('language:manage') ||
       hasPermission('province:manage') ||
       hasPermission('point:manage') ||
       hasPermission('landmark:manage')) && {
@@ -49,12 +48,6 @@ export default function BasicLayout() {
       icon: <GlobalOutlined />,
       label: <LanguageLabel langKey={language} labelKey="masterData" />,
       children: [
-        hasPermission('language:manage') && {
-          key: '/master-data/languages',
-          label: (
-            <LanguageLabel langKey={language} labelKey="languageManagement" />
-          ),
-        },
         hasPermission('country:manage') && {
           key: '/master-data/countries',
           label: (
@@ -85,27 +78,35 @@ export default function BasicLayout() {
     },
     (hasPermission('traffic:manage') ||
       hasPermission('communication:manage') ||
+      hasPermission('language:manage') ||
+      hasPermission('currencyInfo:manage') ||
       hasPermission('standardSpec:manage') ||
       hasPermission('serviceInfo:manage') ||
       hasPermission('securityRisk:manage') ||
-      hasPermission('cultureCustoms:manage') ||
-      hasPermission('currencyPayment:manage') ||
-      hasPermission('emergencyHandling:manage') ||
-      hasPermission('pointType:manage') ||
-      hasPermission('landmarkType:manage')) && {
+      hasPermission('cultureCustoms:manage')) && {
       key: 'info-center',
       icon: <InfoCircleOutlined />,
       label: <LanguageLabel langKey={language} labelKey="informationCenter" />,
       children: [
-        hasPermission('standardSpec:manage') && {
-          key: '/info-center/standard-specs',
+        hasPermission('language:manage') && {
+          key: '/info-center/languages',
+          label: <LanguageLabel langKey={language} labelKey="languageField" />,
+        },
+        hasPermission('currencyInfo:manage') && {
+          key: '/info-center/currencies',
           label: (
-            <LanguageLabel langKey={language} labelKey="standardSpecification" />
+            <LanguageLabel langKey={language} labelKey="currencyInformation" />
           ),
         },
         hasPermission('traffic:manage') && {
           key: '/info-center/traffic',
           label: <LanguageLabel langKey={language} labelKey="trafficInformation" />,
+        },
+        hasPermission('standardSpec:manage') && {
+          key: '/info-center/standard-specs',
+          label: (
+            <LanguageLabel langKey={language} labelKey="standardSpecification" />
+          ),
         },
         hasPermission('communication:manage') && {
           key: '/info-center/communication',
@@ -126,28 +127,6 @@ export default function BasicLayout() {
         hasPermission('cultureCustoms:manage') && {
           key: '/info-center/culture-customs',
           label: <LanguageLabel langKey={language} labelKey="cultureCustoms" />,
-        },
-        hasPermission('currencyPayment:manage') && {
-          key: '/info-center/currency-payment',
-          label: <LanguageLabel langKey={language} labelKey="currencyPayment" />,
-        },
-        hasPermission('emergencyHandling:manage') && {
-          key: '/info-center/emergency-handling',
-          label: (
-            <LanguageLabel langKey={language} labelKey="emergencyHandling" />
-          ),
-        },
-        hasPermission('pointType:manage') && {
-          key: '/info-center/point-types',
-          label: (
-            <LanguageLabel langKey={language} labelKey="pointTypeManagement" />
-          ),
-        },
-        hasPermission('landmarkType:manage') && {
-          key: '/info-center/landmark-types',
-          label: (
-            <LanguageLabel langKey={language} labelKey="landmarkTypeManagement" />
-          ),
         },
       ].filter(Boolean) as MenuProps['items'],
     },
@@ -214,8 +193,15 @@ export default function BasicLayout() {
               onChange={setCurrentLanguage}
               style={{ width: 120 }}
               options={availableLanguages.map((code) => {
-                const lang = GLOBAL_LANGUAGES.find((l) => l.code === code)
-                return { value: code, label: lang ? <LanguageText langKey={language} map={lang} /> : code }
+                const lang = GLOBAL_LANGUAGES.find((l) => l.localeCode === code)
+                return {
+                  value: code,
+                  label: lang ? (
+                    <LanguageText langKey={language} map={lang} />
+                  ) : (
+                    code
+                  ),
+                }
               })}
             />
           </div>

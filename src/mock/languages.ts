@@ -1,11 +1,13 @@
 export interface GlobalLanguage {
   code: string
+  localeCode: string
   [otherLanguageCode: string]: string
 }
 
 export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
   {
-    code: 'en',
+    code: 'LANGUAGE_48172639058',
+    localeCode: 'en',
     en: 'English',
     zh: '英语',
     hi: 'अंग्रेज़ी',
@@ -36,7 +38,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'Burmese',
   },
   {
-    code: 'zh',
+    code: 'LANGUAGE_92740518364',
+    localeCode: 'zh',
     zh: '中文',
     en: 'Chinese',
     hi: 'चीनी',
@@ -67,7 +70,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: '缅甸语',
   },
   {
-    code: 'hi',
+    code: 'LANGUAGE_31587049267',
+    localeCode: 'hi',
     hi: 'हिन्दी',
     en: 'Hindi',
     zh: '印地语',
@@ -98,7 +102,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'बर्मी',
   },
   {
-    code: 'es',
+    code: 'LANGUAGE_74829160532',
+    localeCode: 'es',
     es: 'Español',
     en: 'Spanish',
     zh: '西班牙语',
@@ -129,7 +134,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'birmano',
   },
   {
-    code: 'fr',
+    code: 'LANGUAGE_18653097428',
+    localeCode: 'fr',
     fr: 'Français',
     en: 'French',
     zh: '法语',
@@ -160,7 +166,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'birman',
   },
   {
-    code: 'ar',
+    code: 'LANGUAGE_53970268145',
+    localeCode: 'ar',
     ar: 'العربية',
     en: 'Arabic',
     zh: '阿拉伯语',
@@ -191,7 +198,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'البورمية',
   },
   {
-    code: 'bn',
+    code: 'LANGUAGE_27041859639',
+    localeCode: 'bn',
     bn: 'বাংলা',
     en: 'Bengali',
     zh: '孟加拉语',
@@ -222,7 +230,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'বার্মিজ',
   },
   {
-    code: 'pt',
+    code: 'LANGUAGE_86193574026',
+    localeCode: 'pt',
     pt: 'Português',
     en: 'Portuguese',
     zh: '葡萄牙语',
@@ -253,7 +262,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'birmanês',
   },
   {
-    code: 'ru',
+    code: 'LANGUAGE_49372015864',
+    localeCode: 'ru',
     ru: 'Русский',
     en: 'Russian',
     zh: '俄语',
@@ -284,7 +294,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'бирманский',
   },
   {
-    code: 'ur',
+    code: 'LANGUAGE_70816493527',
+    localeCode: 'ur',
     ur: 'اردو',
     en: 'Urdu',
     zh: '乌尔都语',
@@ -315,7 +326,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'برمی',
   },
   {
-    code: 'id',
+    code: 'LANGUAGE_14259780368',
+    localeCode: 'id',
     id: 'Bahasa Indonesia',
     en: 'Indonesian',
     zh: '印度尼西亚语',
@@ -346,7 +358,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'Myanmar',
   },
   {
-    code: 'de',
+    code: 'LANGUAGE_67530829143',
+    localeCode: 'de',
     de: 'Deutsch',
     en: 'German',
     zh: '德语',
@@ -377,7 +390,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'Birmanisch',
   },
   {
-    code: 'ja',
+    code: 'LANGUAGE_83052614795',
+    localeCode: 'ja',
     ja: '日本語',
     en: 'Japanese',
     zh: '日语',
@@ -408,7 +422,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'ビルマ語',
   },
   {
-    code: 'sw',
+    code: 'LANGUAGE_25974168034',
+    localeCode: 'sw',
     sw: 'Kiswahili',
     en: 'Swahili',
     zh: '斯瓦希里语',
@@ -439,7 +454,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'Kibama',
   },
   {
-    code: 'mr',
+    code: 'LANGUAGE_51703986241',
+    localeCode: 'mr',
     mr: 'मराठी',
     en: 'Marathi',
     zh: '马拉地语',
@@ -470,7 +486,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'बर्मी',
   },
   {
-    code: 'te',
+    code: 'LANGUAGE_60491827350',
+    localeCode: 'te',
     te: 'తెలుగు',
     en: 'Telugu',
     zh: '泰卢固语',
@@ -501,7 +518,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'బర్మీస్',
   },
   {
-    code: 'tr',
+    code: 'LANGUAGE_29476105831',
+    localeCode: 'tr',
     tr: 'Türkçe',
     en: 'Turkish',
     zh: '土耳其语',
@@ -532,7 +550,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'Birmanca',
   },
   {
-    code: 'ta',
+    code: 'LANGUAGE_86512039472',
+    localeCode: 'ta',
     ta: 'தமிழ்',
     en: 'Tamil',
     zh: '泰米尔语',
@@ -563,7 +582,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'பர்மீஸ்',
   },
   {
-    code: 'vi',
+    code: 'LANGUAGE_50938417623',
+    localeCode: 'vi',
     vi: 'Tiếng Việt',
     en: 'Vietnamese',
     zh: '越南语',
@@ -594,7 +614,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'Tiếng Miến Điện',
   },
   {
-    code: 'ko',
+    code: 'LANGUAGE_14726093584',
+    localeCode: 'ko',
     ko: '한국어',
     en: 'Korean',
     zh: '韩语',
@@ -625,7 +646,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: '미얀마어',
   },
   {
-    code: 'th',
+    code: 'LANGUAGE_69250381475',
+    localeCode: 'th',
     th: 'ภาษาไทย',
     en: 'Thai',
     zh: '泰语',
@@ -656,7 +678,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'ထိုင်း',
   },
   {
-    code: 'ms',
+    code: 'LANGUAGE_95418062736',
+    localeCode: 'ms',
     ms: 'Bahasa Melayu',
     en: 'Malay',
     zh: '马来语',
@@ -687,7 +710,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'မလေး',
   },
   {
-    code: 'fa',
+    code: 'LANGUAGE_80315974627',
+    localeCode: 'fa',
     fa: 'فارسی',
     en: 'Persian',
     zh: '波斯语',
@@ -718,7 +742,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'ပါရှန်',
   },
   {
-    code: 'it',
+    code: 'LANGUAGE_10495827361',
+    localeCode: 'it',
     it: 'italiano',
     en: 'Italian',
     zh: '意大利语',
@@ -749,7 +774,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'အီတလီ',
   },
   {
-    code: 'pl',
+    code: 'LANGUAGE_58270419362',
+    localeCode: 'pl',
     pl: 'polski',
     en: 'Polish',
     zh: '波兰语',
@@ -780,7 +806,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'ပိုလန်',
   },
   {
-    code: 'nl',
+    code: 'LANGUAGE_73920486153',
+    localeCode: 'nl',
     nl: 'Nederlands',
     en: 'Dutch',
     zh: '荷兰语',
@@ -811,7 +838,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'ဒတ်ခ်ျ',
   },
   {
-    code: 'tl',
+    code: 'LANGUAGE_26059381744',
+    localeCode: 'tl',
     tl: 'Filipino',
     en: 'Filipino',
     zh: '菲律宾语',
@@ -842,7 +870,8 @@ export const GLOBAL_LANGUAGES: GlobalLanguage[] = [
     my: 'ဖိလစ်ပိုင်',
   },
   {
-    code: 'my',
+    code: 'LANGUAGE_68195042735',
+    localeCode: 'my',
     my: 'မြန်မာ',
     en: 'Burmese',
     zh: '缅甸语',
