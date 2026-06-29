@@ -79,11 +79,11 @@ export default function BasicLayout() {
     (hasPermission('traffic:manage') ||
       hasPermission('communication:manage') ||
       hasPermission('language:manage') ||
-      hasPermission('currencyInfo:manage') ||
+      hasPermission('payment:manage') ||
       hasPermission('standardSpec:manage') ||
       hasPermission('serviceInfo:manage') ||
       hasPermission('securityRisk:manage') ||
-      hasPermission('cultureCustoms:manage')) && {
+      hasPermission('cultureInfo:manage')) && {
       key: 'info-center',
       icon: <InfoCircleOutlined />,
       label: <LanguageLabel langKey={language} labelKey="informationCenter" />,
@@ -92,11 +92,9 @@ export default function BasicLayout() {
           key: '/info-center/languages',
           label: <LanguageLabel langKey={language} labelKey="languageField" />,
         },
-        hasPermission('currencyInfo:manage') && {
-          key: '/info-center/currencies',
-          label: (
-            <LanguageLabel langKey={language} labelKey="currencyInformation" />
-          ),
+        hasPermission('payment:manage') && {
+          key: '/info-center/payment',
+          label: <LanguageLabel langKey={language} labelKey="paymentInformation" />,
         },
         hasPermission('traffic:manage') && {
           key: '/info-center/traffic',
@@ -107,6 +105,10 @@ export default function BasicLayout() {
           label: (
             <LanguageLabel langKey={language} labelKey="standardSpecification" />
           ),
+        },
+        hasPermission('cultureInfo:manage') && {
+          key: '/info-center/culture',
+          label: <LanguageLabel langKey={language} labelKey="cultureCustoms" />,
         },
         hasPermission('communication:manage') && {
           key: '/info-center/communication',
@@ -123,10 +125,6 @@ export default function BasicLayout() {
         hasPermission('securityRisk:manage') && {
           key: '/info-center/security-risk',
           label: <LanguageLabel langKey={language} labelKey="securityRisk" />,
-        },
-        hasPermission('cultureCustoms:manage') && {
-          key: '/info-center/culture-customs',
-          label: <LanguageLabel langKey={language} labelKey="cultureCustoms" />,
         },
       ].filter(Boolean) as MenuProps['items'],
     },

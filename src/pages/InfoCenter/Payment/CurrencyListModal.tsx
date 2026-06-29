@@ -1,10 +1,10 @@
-import { Input, Table } from 'antd'
+import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import DraggableModal from '@/components/DraggableModal'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
-import { getLabel } from '@/components/LanguageLabel/LabelMap'
-import { CURRENCY_INFOS, type CurrencyInfoItem } from '@/mock/information'
-import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
+import type { CurrencyInfoItem } from '@/mock/information'
+import type { LanguageCode } from '@/types/system'
 import { renderTableEmptyPlaceholder } from '@/utils/table'
 
 const noWrapColumnStyle = { whiteSpace: 'nowrap' } as const
@@ -13,10 +13,21 @@ const noWrapColumnProps = {
   onHeaderCell: () => ({ style: noWrapColumnStyle }),
 }
 
-export default function CurrencyInfoPage() {
-  const language = useAuthStore(selectCurrentLanguage)
-  const [keyword, setKeyword] = useState('')
+export const PAYMENT_CURRENCY_LIST_THEME_COLOR = '#52c41a'
 
+interface CurrencyListModalProps {
+  open: boolean
+  language: LanguageCode
+  currencies: CurrencyInfoItem[]
+  onCancel: () => void
+}
+
+export default function CurrencyListModal({
+  open,
+  language,
+  currencies,
+  onCancel,
+}: CurrencyListModalProps) {
   const columns: ColumnsType<CurrencyInfoItem> = [
     {
       ...noWrapColumnProps,
@@ -29,14 +40,16 @@ export default function CurrencyInfoPage() {
       title: <LanguageLabel langKey={language} labelKey="name" />,
       dataIndex: 'name',
       width: 220,
-      render: (_, record) => <LanguageText langKey={language} map={record.name} />,
+      render: (_, record) => (
+        <LanguageText langKey={language} map={record.name} />
+      ),
     },
     {
       ...noWrapColumnProps,
       title: <LanguageLabel langKey={language} labelKey="value" />,
       key: 'value',
-      width: 160,
-      render: () => renderTableEmptyPlaceholder(null),
+      width: 140,
+      render: (_, record) => renderTableEmptyPlaceholder(record.value),
     },
     {
       ...noWrapColumnProps,
@@ -47,29 +60,22 @@ export default function CurrencyInfoPage() {
     },
   ]
 
-  const keywordLower = keyword.trim().toLowerCase()
-  const dataSource = keywordLower
-    ? CURRENCY_INFOS.filter((item) =>
-        [item.code, ...Object.values(item.name)].some((value) =>
-          value.toLowerCase().includes(keywordLower),
-        ),
-      )
-    : CURRENCY_INFOS
-
   return (
-    <>
-      <Input
-        placeholder={getLabel('searchByCurrencyName', language)}
-        value={keyword}
-        onChange={(event) => setKeyword(event.target.value)}
-        style={{ width: 200, marginBottom: 16 }}
-      />
+    <DraggableModal
+      title={<LanguageLabel langKey={language} labelKey="currencyList" />}
+      open={open}
+      onCancel={onCancel}
+      footer={null}
+      width={860}
+      themeColor={PAYMENT_CURRENCY_LIST_THEME_COLOR}
+    >
       <Table
         rowKey="id"
+        size="small"
         columns={columns}
-        dataSource={dataSource}
-        scroll={{ x: 'max-content' }}
+        dataSource={currencies}
+        pagination={{ pageSize: 10, showSizeChanger: true }}
       />
-    </>
+    </DraggableModal>
   )
 }

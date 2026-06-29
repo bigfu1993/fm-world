@@ -36,7 +36,7 @@ export default function LanguagePage() {
       title: <LanguageLabel langKey={language} labelKey="value" />,
       key: 'value',
       width: 160,
-      render: () => renderTableEmptyPlaceholder(null),
+      render: (_, record) => renderTableEmptyPlaceholder(record.localeCode),
     },
     {
       ...noWrapColumnProps,

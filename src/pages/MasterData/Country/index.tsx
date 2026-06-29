@@ -3,6 +3,7 @@ import {
   Form,
   Input,
   InputNumber,
+  Radio,
   Select,
   Slider,
   Table,
@@ -11,14 +12,20 @@ import type { ColumnsType } from 'antd/es/table'
 import type { ReactNode } from 'react'
 import { COUNTRIES, type CountryData } from '@/db/countries'
 import {
+  CLIMATE_INFOS,
   COMMUNICATION_INFOS,
-  CULTURE_CUSTOM_INFOS,
-  CURRENCY_PAYMENT_INFOS,
+  CUSTOMS_RESTRICTION_INFOS,
+  CULTURE_INFOS,
   CURRENCY_INFOS,
+  DRIVING_LICENSE_INFOS,
   ENTRY_POLICY_INFOS,
-  RELIGION_INFOS,
+  NETWORK_INFOS,
+  PAYMENT_METHOD_INFOS,
   SECURITY_RISK_INFOS,
   STANDARD_SPEC_INFOS,
+  TIMEZONE_INFOS,
+  TRAFFIC_RULE_INFOS,
+  type CultureInfoItem,
   type StandardSpecInfoItem,
 } from '@/mock/information'
 import { GLOBAL_LANGUAGES } from '@/mock/languages'
@@ -34,15 +41,15 @@ const MAX_DISPLAY_ZOOM = 100
 const DEFAULT_SAFETY_LEVEL = 50
 const MIN_SAFETY_LEVEL = 0
 const MAX_SAFETY_LEVEL = 100
-const INFO_BINDING_MODAL_WIDTH = 1400
+const INFO_BINDING_MODAL_WIDTH = 1700
 const INFO_BINDING_MODAL_HORIZONTAL_PADDING = 48
 const INFO_BINDING_MODAL_COLUMN_GAP = 32
 const INFO_BINDING_MODAL_COLUMN_SHRINK = 80
 const infoBindingModalBaseColumnWidth =
   (INFO_BINDING_MODAL_WIDTH -
     INFO_BINDING_MODAL_HORIZONTAL_PADDING -
-    INFO_BINDING_MODAL_COLUMN_GAP * 3) /
-  4
+    INFO_BINDING_MODAL_COLUMN_GAP * 4) /
+  5
 const infoBindingModalNarrowColumnWidth =
   infoBindingModalBaseColumnWidth - INFO_BINDING_MODAL_COLUMN_SHRINK
 const DISPLAY_ZOOM_TEXT_COLOR = '#1677ff'
@@ -52,6 +59,7 @@ const infoBindingModalFormLayoutStyle = {
   gridTemplateColumns: [
     `${infoBindingModalNarrowColumnWidth}px`,
     `${infoBindingModalNarrowColumnWidth}px`,
+    'minmax(0, 1fr)',
     'minmax(0, 1fr)',
     'minmax(0, 1fr)',
   ].join(' '),
@@ -64,11 +72,14 @@ const infoBindingModalBasicColumnStyle = {
 const infoBindingModalStandardColumnStyle = {
   gridColumn: '2 / 3',
 } as const
-const infoBindingModalNoticeColumnStyle = {
+const infoBindingModalEntryColumnStyle = {
   gridColumn: '3 / 4',
 } as const
 const infoBindingModalCultureColumnStyle = {
   gridColumn: '4 / 5',
+} as const
+const infoBindingModalSafetyColumnStyle = {
+  gridColumn: '5 / 6',
 } as const
 const infoBindingModalSectionTitleStyle = {
   fontSize: 14,
@@ -77,6 +88,12 @@ const infoBindingModalSectionTitleStyle = {
 const safetyLevelSliderStyle = {
   width: 'calc(100% - 60px)',
   margin: '0 auto',
+} as const
+const trafficRuleRadioGroupStyle = {
+  display: 'flex',
+  flexDirection: 'row',
+  flexWrap: 'nowrap',
+  gap: 12,
 } as const
 const SAFETY_LEVEL_MARK_FONT_SIZE = 10
 const safetyLevelMarkValues = [0, 50, 100] as const
@@ -93,32 +110,50 @@ interface EditingDisplayZoom {
 
 interface CountryInfoBindingForm {
   displayZoom?: number | null
-  safetyLevel?: number
+  foodSafetyLevel?: number
+  waterSafetyLevel?: number
+  publicSecurityLevel?: number
   communicationInfoId?: string
   currencyInfoId?: string
+  timezoneInfoId?: string
+  climateInfoId?: string
   standardSpecInfoIds?: Record<string, string | undefined>
   officialLanguageCodes?: string[]
   entryPolicyInfoId?: string
+  customsRestrictionInfoId?: string
+  networkInfoId?: string
+  paymentMethodInfoIds?: string[]
+  trafficRuleInfoId?: string
+  drivingLicenseInfoId?: string
   securityRiskInfoId?: string
-  cultureCustomInfoId?: string
-  tippingCultureInfoId?: string
-  religionInfoId?: string
+  cultureInfoIds?: Record<string, string[] | undefined>
 }
 
 interface CountryInfoBindingState {
-  safetyLevel?: number
+  foodSafetyLevel?: number
+  waterSafetyLevel?: number
+  publicSecurityLevel?: number
   communicationInfoId?: string
   currencyInfoId?: string
+  timezoneInfoId?: string
+  climateInfoId?: string
   standardSpecInfoIds?: Record<string, string | undefined>
   officialLanguageCodes?: string[]
   entryPolicyInfoId?: string
+  customsRestrictionInfoId?: string
+  networkInfoId?: string
+  paymentMethodInfoIds?: string[]
+  trafficRuleInfoId?: string
+  drivingLicenseInfoId?: string
   securityRiskInfoId?: string
-  cultureCustomInfoId?: string
-  tippingCultureInfoId?: string
-  religionInfoId?: string
+  cultureInfoIds?: Record<string, string[] | undefined>
 }
 
 function getStandardSpecTypeFieldKey(type: StandardSpecInfoItem['type']) {
+  return type.en.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+}
+
+function getCultureInfoTypeFieldKey(type: CultureInfoItem['type']) {
   return type.en.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 }
 
@@ -147,7 +182,7 @@ export default function CountryPage() {
   const informationPopupContainer = (triggerNode: HTMLElement) =>
     triggerNode.parentElement ?? document.body
   const communicationInfoOptions = COMMUNICATION_INFOS.map((item) => ({
-    label: item.name[language] ?? item.name.en,
+    label: <LanguageText langKey={language} map={item.name} />,
     value: item.id,
   }))
   const currencyInfoOptions = CURRENCY_INFOS.map((item) => ({
@@ -159,6 +194,36 @@ export default function CountryPage() {
     value: item.id,
   }))
   const entryPolicyInfoOptions = ENTRY_POLICY_INFOS.map((item) => ({
+    label: <LanguageText langKey={language} map={item.name} />,
+    value: item.id,
+  }))
+  const timezoneInfoOptions = TIMEZONE_INFOS.map((item) => ({
+    label: <LanguageText langKey={language} map={item.name} />,
+    value: item.id,
+  }))
+  const climateInfoOptions = CLIMATE_INFOS.map((item) => ({
+    label: <LanguageText langKey={language} map={item.name} />,
+    value: item.id,
+  }))
+  const customsRestrictionInfoOptions = CUSTOMS_RESTRICTION_INFOS.map(
+    (item) => ({
+      label: <LanguageText langKey={language} map={item.name} />,
+      value: item.id,
+    }),
+  )
+  const networkInfoOptions = NETWORK_INFOS.map((item) => ({
+    label: <LanguageText langKey={language} map={item.name} />,
+    value: item.id,
+  }))
+  const paymentMethodInfoOptions = PAYMENT_METHOD_INFOS.map((item) => ({
+    label: <LanguageText langKey={language} map={item.name} />,
+    value: item.id,
+  }))
+  const trafficRuleInfoOptions = TRAFFIC_RULE_INFOS.map((item) => ({
+    label: <LanguageText langKey={language} map={item.name} />,
+    value: item.id,
+  }))
+  const drivingLicenseInfoOptions = DRIVING_LICENSE_INFOS.map((item) => ({
     label: <LanguageText langKey={language} map={item.name} />,
     value: item.id,
   }))
@@ -195,18 +260,32 @@ export default function CountryPage() {
     label: `${item[language] ?? item.en ?? item.localeCode} (${item.code})`,
     value: item.localeCode,
   }))
-  const cultureCustomInfoOptions = CULTURE_CUSTOM_INFOS.map((item) => ({
-    label: item.code,
-    value: item.id,
-  }))
-  const tippingCultureInfoOptions = CURRENCY_PAYMENT_INFOS.map((item) => ({
-    label: <LanguageText langKey={language} map={item.tippingCulture} />,
-    value: item.id,
-  }))
-  const religionInfoOptions = RELIGION_INFOS.map((item) => ({
-    label: <LanguageText langKey={language} map={item.name} />,
-    value: item.id,
-  }))
+  const cultureInfoTypes = CULTURE_INFOS.reduce<CultureInfoItem['type'][]>(
+    (types, item) => {
+      const typeKey = getCultureInfoTypeFieldKey(item.type)
+      if (
+        types.some(
+          (typeItem) => getCultureInfoTypeFieldKey(typeItem) === typeKey,
+        )
+      ) {
+        return types
+      }
+      return [...types, item.type]
+    },
+    [],
+  )
+  const cultureInfoOptionsByTypeKey = cultureInfoTypes.reduce<
+    Record<string, { label: ReactNode; value: string }[]>
+  >((optionsByTypeKey, typeItem) => {
+    const typeKey = getCultureInfoTypeFieldKey(typeItem)
+    optionsByTypeKey[typeKey] = CULTURE_INFOS
+      .filter((item) => getCultureInfoTypeFieldKey(item.type) === typeKey)
+      .map((item) => ({
+        label: <LanguageText langKey={language} map={item.name} />,
+        value: item.id,
+      }))
+    return optionsByTypeKey
+  }, {})
   const safetyLevelMarks = safetyLevelMarkValues.reduce<
     Record<number, ReactNode>
   >((marks, value, index) => {
@@ -225,7 +304,9 @@ export default function CountryPage() {
     setBindingCountry(country)
     bindingForm.resetFields()
     bindingForm.setFieldsValue({
-      safetyLevel: DEFAULT_SAFETY_LEVEL,
+      foodSafetyLevel: DEFAULT_SAFETY_LEVEL,
+      waterSafetyLevel: DEFAULT_SAFETY_LEVEL,
+      publicSecurityLevel: DEFAULT_SAFETY_LEVEL,
       ...infoBindingByCode[country.code],
       displayZoom: getDisplayZoom(country.code),
     })
@@ -448,27 +529,27 @@ export default function CountryPage() {
               />
             </Form.Item>
             <Form.Item
-              name="entryPolicyInfoId"
-              label={<LanguageLabel langKey={language} labelKey="entryPolicy" />}
+              name="timezoneInfoId"
+              label={<LanguageLabel langKey={language} labelKey="timezone" />}
             >
               <Select
                 size="small"
                 allowClear
-                options={entryPolicyInfoOptions}
-                placeholder={getLabel('pleaseSelectEntryPolicy', language)}
+                options={timezoneInfoOptions}
+                placeholder={getLabel('pleaseSelectTimezone', language)}
                 getPopupContainer={informationPopupContainer}
               />
             </Form.Item>
             <Form.Item
-              name="safetyLevel"
-              label={<LanguageLabel langKey={language} labelKey="safetyLevel" />}
+              name="climateInfoId"
+              label={<LanguageLabel langKey={language} labelKey="climate" />}
             >
-              <Slider
-                min={MIN_SAFETY_LEVEL}
-                max={MAX_SAFETY_LEVEL}
-                step={1}
-                marks={safetyLevelMarks}
-                style={safetyLevelSliderStyle}
+              <Select
+                size="small"
+                allowClear
+                options={climateInfoOptions}
+                placeholder={getLabel('pleaseSelectClimate', language)}
+                getPopupContainer={informationPopupContainer}
               />
             </Form.Item>
             <Form.Item
@@ -492,26 +573,6 @@ export default function CountryPage() {
                 fontSize={14}
               />
             </h3>
-            <Form.Item
-              name="communicationInfoId"
-              label={
-                <LanguageLabel
-                  langKey={language}
-                  labelKey="communication"
-                />
-              }
-            >
-              <Select
-                size="small"
-                allowClear
-                options={communicationInfoOptions}
-                placeholder={getLabel(
-                  'pleaseSelectCommunicationInformation',
-                  language,
-                )}
-                getPopupContainer={informationPopupContainer}
-              />
-            </Form.Item>
             {standardSpecTypes.map((typeItem) => {
               const typeKey = getStandardSpecTypeFieldKey(typeItem)
               return (
@@ -531,7 +592,143 @@ export default function CountryPage() {
               )
             })}
           </div>
-          <div style={infoBindingModalNoticeColumnStyle}>
+          <div style={infoBindingModalEntryColumnStyle}>
+            <h3 style={infoBindingModalSectionTitleStyle}>
+              <LanguageLabel
+                langKey={language}
+                labelKey="entryInformation"
+                fontSize={14}
+              />
+            </h3>
+            <Form.Item
+              name="entryPolicyInfoId"
+              label={<LanguageLabel langKey={language} labelKey="entryPolicy" />}
+            >
+              <Select
+                size="small"
+                allowClear
+                options={entryPolicyInfoOptions}
+                placeholder={getLabel('pleaseSelectEntryPolicy', language)}
+                getPopupContainer={informationPopupContainer}
+              />
+            </Form.Item>
+            <Form.Item
+              name="customsRestrictionInfoId"
+              label={
+                <LanguageLabel langKey={language} labelKey="customsRestriction" />
+              }
+            >
+              <Select
+                size="small"
+                allowClear
+                options={customsRestrictionInfoOptions}
+                placeholder={getLabel('pleaseSelectCustomsRestriction', language)}
+                getPopupContainer={informationPopupContainer}
+              />
+            </Form.Item>
+            <Form.Item
+              name="communicationInfoId"
+              label={
+                <LanguageLabel langKey={language} labelKey="travelCommunication" />
+              }
+            >
+              <Select
+                size="small"
+                allowClear
+                options={communicationInfoOptions}
+                placeholder={getLabel(
+                  'pleaseSelectTravelCommunication',
+                  language,
+                )}
+                getPopupContainer={informationPopupContainer}
+              />
+            </Form.Item>
+            <Form.Item
+              name="networkInfoId"
+              label={
+                <LanguageLabel langKey={language} labelKey="networkInformation" />
+              }
+            >
+              <Select
+                size="small"
+                allowClear
+                options={networkInfoOptions}
+                placeholder={getLabel(
+                  'pleaseSelectNetworkInformation',
+                  language,
+                )}
+                getPopupContainer={informationPopupContainer}
+              />
+            </Form.Item>
+            <Form.Item
+              name="paymentMethodInfoIds"
+              label={<LanguageLabel langKey={language} labelKey="payment" />}
+            >
+              <Select
+                size="small"
+                allowClear
+                mode="multiple"
+                options={paymentMethodInfoOptions}
+                placeholder={getLabel('pleaseSelectPayment', language)}
+                getPopupContainer={informationPopupContainer}
+              />
+            </Form.Item>
+            <Form.Item
+              name="trafficRuleInfoId"
+              label={
+                <LanguageLabel langKey={language} labelKey="trafficRules" />
+              }
+            >
+              <Radio.Group
+                size="small"
+                options={trafficRuleInfoOptions}
+                style={trafficRuleRadioGroupStyle}
+              />
+            </Form.Item>
+            <Form.Item
+              name="drivingLicenseInfoId"
+              label={
+                <LanguageLabel langKey={language} labelKey="drivingLicense" />
+              }
+            >
+              <Select
+                size="small"
+                allowClear
+                options={drivingLicenseInfoOptions}
+                placeholder={getLabel('pleaseSelectDrivingLicense', language)}
+                getPopupContainer={informationPopupContainer}
+              />
+            </Form.Item>
+          </div>
+          <div style={infoBindingModalCultureColumnStyle}>
+            <h3 style={infoBindingModalSectionTitleStyle}>
+              <LanguageLabel
+                langKey={language}
+                labelKey="cultureCustoms"
+                fontSize={14}
+              />
+            </h3>
+            {cultureInfoTypes.map((typeItem) => {
+              const typeKey = getCultureInfoTypeFieldKey(typeItem)
+              return (
+                <Form.Item
+                  key={typeKey}
+                  name={['cultureInfoIds', typeKey]}
+                  label={<LanguageText langKey={language} map={typeItem} />}
+                >
+                  <Select
+                    size="small"
+                    allowClear
+                    mode="multiple"
+                    options={cultureInfoOptionsByTypeKey[typeKey]}
+                    placeholder={typeItem[language] ?? typeItem.en}
+                    getPopupContainer={informationPopupContainer}
+                  />
+                </Form.Item>
+              )
+            })}
+          </div>
+          <div style={infoBindingModalSafetyColumnStyle}>
             <h3 style={infoBindingModalSectionTitleStyle}>
               <LanguageLabel
                 langKey={language}
@@ -551,53 +748,53 @@ export default function CountryPage() {
                 getPopupContainer={informationPopupContainer}
               />
             </Form.Item>
-          </div>
-          <div style={infoBindingModalCultureColumnStyle}>
             <h3 style={infoBindingModalSectionTitleStyle}>
               <LanguageLabel
                 langKey={language}
-                labelKey="cultureCustoms"
+                labelKey="safetyLevel"
                 fontSize={14}
               />
             </h3>
             <Form.Item
-              name="cultureCustomInfoId"
+              name="foodSafetyLevel"
               label={
-                <LanguageLabel langKey={language} labelKey="cultureCustoms" />
+                <LanguageLabel langKey={language} labelKey="foodSafetyLevel" />
               }
             >
-              <Select
-                size="small"
-                allowClear
-                options={cultureCustomInfoOptions}
-                placeholder={getLabel('pleaseSelectCultureCustoms', language)}
-                getPopupContainer={informationPopupContainer}
+              <Slider
+                min={MIN_SAFETY_LEVEL}
+                max={MAX_SAFETY_LEVEL}
+                step={1}
+                marks={safetyLevelMarks}
+                style={safetyLevelSliderStyle}
               />
             </Form.Item>
             <Form.Item
-              name="tippingCultureInfoId"
+              name="waterSafetyLevel"
               label={
-                <LanguageLabel langKey={language} labelKey="tippingCulture" />
+                <LanguageLabel langKey={language} labelKey="waterSafetyLevel" />
               }
             >
-              <Select
-                size="small"
-                allowClear
-                options={tippingCultureInfoOptions}
-                placeholder={getLabel('pleaseSelectTippingCulture', language)}
-                getPopupContainer={informationPopupContainer}
+              <Slider
+                min={MIN_SAFETY_LEVEL}
+                max={MAX_SAFETY_LEVEL}
+                step={1}
+                marks={safetyLevelMarks}
+                style={safetyLevelSliderStyle}
               />
             </Form.Item>
             <Form.Item
-              name="religionInfoId"
-              label={<LanguageLabel langKey={language} labelKey="religion" />}
+              name="publicSecurityLevel"
+              label={
+                <LanguageLabel langKey={language} labelKey="publicSecurityLevel" />
+              }
             >
-              <Select
-                size="small"
-                allowClear
-                options={religionInfoOptions}
-                placeholder={getLabel('pleaseSelectReligion', language)}
-                getPopupContainer={informationPopupContainer}
+              <Slider
+                min={MIN_SAFETY_LEVEL}
+                max={MAX_SAFETY_LEVEL}
+                step={1}
+                marks={safetyLevelMarks}
+                style={safetyLevelSliderStyle}
               />
             </Form.Item>
           </div>

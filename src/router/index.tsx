@@ -12,7 +12,7 @@ import ProvincePage from '@/pages/MasterData/Province'
 import PointPage from '@/pages/MasterData/Point'
 import LandmarkPage from '@/pages/MasterData/Landmark'
 import LanguagePage from '@/pages/InfoCenter/Language'
-import CurrencyInfoPage from '@/pages/InfoCenter/Currency'
+import PaymentInfoPage from '@/pages/InfoCenter/Payment'
 import TrafficInfoPage from '@/pages/InfoCenter/Traffic'
 import CommunicationInfoPage from '@/pages/InfoCenter/Communication'
 import StandardSpecPage from '@/pages/InfoCenter/StandardSpec'
@@ -51,13 +51,21 @@ export const router = createBrowserRouter([
         ),
       },
       { path: 'info-center/languages', element: <LanguagePage /> },
-      { path: 'info-center/currencies', element: <CurrencyInfoPage /> },
+      {
+        path: 'info-center/currencies',
+        element: <Navigate to="/info-center/payment" replace />,
+      },
+      { path: 'info-center/payment', element: <PaymentInfoPage /> },
       { path: 'info-center/traffic', element: <TrafficInfoPage /> },
       { path: 'info-center/communication', element: <CommunicationInfoPage /> },
       { path: 'info-center/standard-specs', element: <StandardSpecPage /> },
       { path: 'info-center/service-info', element: <ServiceInfoPage /> },
       { path: 'info-center/security-risk', element: <SecurityRiskPage /> },
-      { path: 'info-center/culture-customs', element: <CultureCustomsPage /> },
+      { path: 'info-center/culture', element: <CultureCustomsPage /> },
+      {
+        path: 'info-center/culture-customs',
+        element: <Navigate to="/info-center/culture" replace />,
+      },
       {
         path: 'info-center/currency-payment',
         element: <Navigate to="/info-center/service-info" replace />,

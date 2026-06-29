@@ -51,17 +51,21 @@ export interface SecurityRiskInfoItem {
   nightStayTime: LocalizedInfoText
 }
 
-export interface CultureCustomInfoItem {
+export interface CultureInfoItem {
   id: string
   code: string
-  regionalTaboos: LocalizedInfoText
-  sensitiveBehaviors: LocalizedInfoText
-}
-
-export interface ReligionInfoItem {
-  id: string
-  code: string
+  type: LocalizedInfoText
   name: LocalizedInfoText
+  nameInfo?: {
+    type: StandardSpecSupplementType
+    content: StandardSpecSupplementContent
+  }
+  value?: string
+  description: LocalizedInfoText
+  supplement?: {
+    type: StandardSpecSupplementType
+    content: StandardSpecSupplementContent
+  }
 }
 
 export interface CurrencyPaymentInfoItem {
@@ -75,8 +79,111 @@ export interface CurrencyPaymentInfoItem {
 export interface CurrencyInfoItem {
   id: string
   code: string
+  value: string
   name: LocalizedInfoText
 }
+
+export const TIMEZONE_INFOS: InformationItem[] = [
+  {
+    id: 'timezone-utc-plus-8',
+    code: 'TIMEZONE_48392057164',
+    value: 'UTC_PLUS_8',
+    name: {
+      zh: 'UTC+8',
+      en: 'UTC+8',
+      ja: 'UTC+8',
+      ko: 'UTC+8',
+      th: 'UTC+8',
+    },
+  },
+  {
+    id: 'timezone-utc-plus-9',
+    code: 'TIMEZONE_75019384625',
+    value: 'UTC_PLUS_9',
+    name: {
+      zh: 'UTC+9',
+      en: 'UTC+9',
+      ja: 'UTC+9',
+      ko: 'UTC+9',
+      th: 'UTC+9',
+    },
+  },
+  {
+    id: 'timezone-utc-zero',
+    code: 'TIMEZONE_62950718340',
+    value: 'UTC_ZERO',
+    name: {
+      zh: 'UTC+0',
+      en: 'UTC+0',
+      ja: 'UTC+0',
+      ko: 'UTC+0',
+      th: 'UTC+0',
+    },
+  },
+  {
+    id: 'timezone-utc-minus-5',
+    code: 'TIMEZONE_81630492750',
+    value: 'UTC_MINUS_5',
+    name: {
+      zh: 'UTC-5',
+      en: 'UTC-5',
+      ja: 'UTC-5',
+      ko: 'UTC-5',
+      th: 'UTC-5',
+    },
+  },
+]
+
+export const CLIMATE_INFOS: InformationItem[] = [
+  {
+    id: 'climate-temperate',
+    code: 'CLIMATE_29485710638',
+    value: 'TEMPERATE',
+    name: {
+      zh: '温带气候',
+      en: 'Temperate Climate',
+      ja: '温帯気候',
+      ko: '온대 기후',
+      th: 'ภูมิอากาศอบอุ่น',
+    },
+  },
+  {
+    id: 'climate-tropical',
+    code: 'CLIMATE_57163820497',
+    value: 'TROPICAL',
+    name: {
+      zh: '热带气候',
+      en: 'Tropical Climate',
+      ja: '熱帯気候',
+      ko: '열대 기후',
+      th: 'ภูมิอากาศเขตร้อน',
+    },
+  },
+  {
+    id: 'climate-mediterranean',
+    code: 'CLIMATE_83049617250',
+    value: 'MEDITERRANEAN',
+    name: {
+      zh: '地中海气候',
+      en: 'Mediterranean Climate',
+      ja: '地中海性気候',
+      ko: '지중해성 기후',
+      th: 'ภูมิอากาศเมดิเตอร์เรเนียน',
+    },
+  },
+  {
+    id: 'climate-arid',
+    code: 'CLIMATE_46291873504',
+    value: 'ARID',
+    name: {
+      zh: '干旱气候',
+      en: 'Arid Climate',
+      ja: '乾燥気候',
+      ko: '건조 기후',
+      th: 'ภูมิอากาศแห้งแล้ง',
+    },
+  },
+]
 
 export const COMMUNICATION_INFOS: InformationItem[] = [
   {
@@ -265,6 +372,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-cny',
     code: 'CURRENCY_73849261045',
+    value: 'CNY',
     name: {
       zh: '人民币',
       en: 'Chinese Yuan',
@@ -276,6 +384,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-usd',
     code: 'CURRENCY_20594718362',
+    value: 'USD',
     name: {
       zh: '美元',
       en: 'US Dollar',
@@ -287,6 +396,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-eur',
     code: 'CURRENCY_91473620581',
+    value: 'EUR',
     name: {
       zh: '欧元',
       en: 'Euro',
@@ -298,6 +408,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-gbp',
     code: 'CURRENCY_48261039574',
+    value: 'GBP',
     name: {
       zh: '英镑',
       en: 'Pound Sterling',
@@ -309,6 +420,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-jpy',
     code: 'CURRENCY_65019384726',
+    value: 'JPY',
     name: {
       zh: '日元',
       en: 'Japanese Yen',
@@ -320,6 +432,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-krw',
     code: 'CURRENCY_39752068149',
+    value: 'KRW',
     name: {
       zh: '韩元',
       en: 'South Korean Won',
@@ -331,6 +444,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-thb',
     code: 'CURRENCY_82640195730',
+    value: 'THB',
     name: {
       zh: '泰铢',
       en: 'Thai Baht',
@@ -342,6 +456,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-hkd',
     code: 'CURRENCY_17483926058',
+    value: 'HKD',
     name: {
       zh: '港币',
       en: 'Hong Kong Dollar',
@@ -353,6 +468,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-mop',
     code: 'CURRENCY_56391847205',
+    value: 'MOP',
     name: {
       zh: '澳门元',
       en: 'Macanese Pataca',
@@ -364,6 +480,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-sgd',
     code: 'CURRENCY_70928461538',
+    value: 'SGD',
     name: {
       zh: '新加坡元',
       en: 'Singapore Dollar',
@@ -375,6 +492,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-myr',
     code: 'CURRENCY_34187502694',
+    value: 'MYR',
     name: {
       zh: '马来西亚林吉特',
       en: 'Malaysian Ringgit',
@@ -386,6 +504,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-aud',
     code: 'CURRENCY_95826041736',
+    value: 'AUD',
     name: {
       zh: '澳元',
       en: 'Australian Dollar',
@@ -397,6 +516,7 @@ export const CURRENCY_INFOS: CurrencyInfoItem[] = [
   {
     id: 'currency-cad',
     code: 'CURRENCY_62051739482',
+    value: 'CAD',
     name: {
       zh: '加元',
       en: 'Canadian Dollar',
@@ -454,6 +574,201 @@ export const ENTRY_POLICY_INFOS: InformationItem[] = [
       ja: '事前ビザが必要',
       ko: '사전 비자 필요',
       th: 'ต้องขอวีซ่าล่วงหน้า',
+    },
+  },
+]
+
+export const CUSTOMS_RESTRICTION_INFOS: InformationItem[] = [
+  {
+    id: 'customs-general-restricted-items',
+    code: 'CUSTOMS_18492057361',
+    value: 'GENERAL_RESTRICTED_ITEMS',
+    name: {
+      zh: '常规禁限物品',
+      en: 'General Restricted Items',
+      ja: '一般的な制限品',
+      ko: '일반 제한 물품',
+      th: 'สิ่งของต้องห้ามทั่วไป',
+    },
+  },
+  {
+    id: 'customs-medicine-declaration',
+    code: 'CUSTOMS_62947105834',
+    value: 'MEDICINE_DECLARATION',
+    name: {
+      zh: '药品携带申报',
+      en: 'Medicine Declaration',
+      ja: '医薬品持ち込み申告',
+      ko: '의약품 반입 신고',
+      th: 'การสำแดงยา',
+    },
+  },
+  {
+    id: 'customs-cash-limit',
+    code: 'CUSTOMS_80519374620',
+    value: 'CASH_LIMIT',
+    name: {
+      zh: '现金携带额度',
+      en: 'Cash Carrying Limit',
+      ja: '現金持ち込み上限',
+      ko: '현금 반입 한도',
+      th: 'วงเงินพกพาเงินสด',
+    },
+  },
+]
+
+export const NETWORK_INFOS: InformationItem[] = [
+  {
+    id: 'network-open',
+    code: 'NETWORK_51720498361',
+    value: 'OPEN',
+    name: {
+      zh: '网络开放',
+      en: 'Open Internet',
+      ja: 'オープンなインターネット',
+      ko: '개방형 인터넷',
+      th: 'อินเทอร์เน็ตเปิด',
+    },
+  },
+  {
+    id: 'network-real-name',
+    code: 'NETWORK_30492857163',
+    value: 'REAL_NAME_REQUIRED',
+    name: {
+      zh: '上网实名制',
+      en: 'Real-Name Registration Required',
+      ja: '実名登録が必要',
+      ko: '실명 등록 필요',
+      th: 'ต้องลงทะเบียนชื่อจริง',
+    },
+  },
+  {
+    id: 'network-service-restricted',
+    code: 'NETWORK_69281740531',
+    value: 'SERVICE_RESTRICTED',
+    name: {
+      zh: '部分服务受限',
+      en: 'Some Services Restricted',
+      ja: '一部サービス制限あり',
+      ko: '일부 서비스 제한',
+      th: 'บางบริการถูกจำกัด',
+    },
+  },
+]
+
+export const PAYMENT_METHOD_INFOS: InformationItem[] = [
+  {
+    id: 'payment-method-cash',
+    code: 'PAYMENT_48290517364',
+    value: 'CASH',
+    name: {
+      zh: '现金',
+      en: 'Cash',
+      ja: '現金',
+      ko: '현금',
+      th: 'เงินสด',
+    },
+  },
+  {
+    id: 'payment-method-credit-card',
+    code: 'PAYMENT_73918462057',
+    value: 'CREDIT_CARD',
+    name: {
+      zh: '信用卡',
+      en: 'Credit Card',
+      ja: 'クレジットカード',
+      ko: '신용카드',
+      th: 'บัตรเครดิต',
+    },
+  },
+  {
+    id: 'payment-method-debit-card',
+    code: 'PAYMENT_20654891370',
+    value: 'DEBIT_CARD',
+    name: {
+      zh: '借记卡',
+      en: 'Debit Card',
+      ja: 'デビットカード',
+      ko: '직불카드',
+      th: 'บัตรเดบิต',
+    },
+  },
+  {
+    id: 'payment-method-mobile-payment',
+    code: 'PAYMENT_91570638241',
+    value: 'MOBILE_PAYMENT',
+    name: {
+      zh: '移动支付',
+      en: 'Mobile Payment',
+      ja: 'モバイル決済',
+      ko: '모바일 결제',
+      th: 'การชำระเงินมือถือ',
+    },
+  },
+]
+
+export const TRAFFIC_RULE_INFOS: InformationItem[] = [
+  {
+    id: 'traffic-rule-right-hand',
+    code: 'TRAFFIC_RULE_43091857260',
+    value: 'RIGHT_HAND_TRAFFIC',
+    name: {
+      zh: '右侧',
+      en: 'Right Side',
+      ja: '右側',
+      ko: '우측',
+      th: 'ขวา',
+    },
+  },
+  {
+    id: 'traffic-rule-left-hand',
+    code: 'TRAFFIC_RULE_86720519431',
+    value: 'LEFT_HAND_TRAFFIC',
+    name: {
+      zh: '左侧',
+      en: 'Left Side',
+      ja: '左側',
+      ko: '좌측',
+      th: 'ซ้าย',
+    },
+  },
+]
+
+export const DRIVING_LICENSE_INFOS: InformationItem[] = [
+  {
+    id: 'driving-license-idp',
+    code: 'DRIVING_LICENSE_59402817360',
+    value: 'IDP_OR_TRANSLATION_REQUIRED',
+    name: {
+      zh: '驾照翻译件/国际驾照要求',
+      en: 'IDP or License Translation Required',
+      ja: '国際免許証または翻訳書類が必要',
+      ko: '국제운전면허증 또는 번역본 필요',
+      th: 'ต้องมีใบขับขี่สากลหรือเอกสารแปล',
+    },
+  },
+  {
+    id: 'driving-license-home-license',
+    code: 'DRIVING_LICENSE_72840519360',
+    value: 'HOME_LICENSE_RECOGNIZED',
+    name: {
+      zh: '本国驾照可用',
+      en: 'Home License Recognized',
+      ja: '自国の運転免許証が利用可能',
+      ko: '자국 운전면허증 사용 가능',
+      th: 'ใช้ใบขับขี่ประเทศตนเองได้',
+    },
+  },
+  {
+    id: 'driving-license-self-drive-limited',
+    code: 'DRIVING_LICENSE_31964085722',
+    value: 'SELF_DRIVE_LIMITED',
+    name: {
+      zh: '自驾限制较多',
+      en: 'Self-Drive Restrictions',
+      ja: '自動車運転の制限が多い',
+      ko: '자가 운전 제한 많음',
+      th: 'มีข้อจำกัดในการขับรถเองมาก',
     },
   },
 ]
@@ -890,37 +1205,230 @@ export const SECURITY_RISK_INFOS: SecurityRiskInfoItem[] = [
   },
 ]
 
-export const CULTURE_CUSTOM_INFOS: CultureCustomInfoItem[] = [
+export const CULTURE_INFOS: CultureInfoItem[] = [
   {
-    id: 'culture-general',
-    code: 'CULTURE-GENERAL',
-    regionalTaboos: {
+    id: 'culture-overview',
+    code: 'CULTURE_18492057361',
+    type: {
+      zh: '文化',
+      en: 'Culture',
+      ja: '文化',
+      ko: '문화',
+      th: 'วัฒนธรรม',
+    },
+    name: {
+      zh: '文化概况',
+      en: 'Culture Overview',
+      ja: '文化概要',
+      ko: '문화 개요',
+      th: 'ภาพรวมวัฒนธรรม',
+    },
+    description: {
+      zh: '关注当地历史、价值观、公共礼仪和日常交往方式，避免以游客视角做冒犯性评价。',
+      en: 'Understand local history, values, public etiquette, and daily interaction norms; avoid offensive tourist-centric judgments.',
+      ja: '現地の歴史、価値観、公共マナー、日常的な交流様式を理解し、旅行者視点の失礼な評価は避けてください。',
+      ko: '현지 역사, 가치관, 공공 예절, 일상 교류 방식을 이해하고 여행자 중심의 무례한 평가는 피하세요.',
+      th: 'ควรเข้าใจประวัติ ค่านิยม มารยาทสาธารณะ และวิธีปฏิสัมพันธ์ในชีวิตประจำวันของท้องถิ่น และหลีกเลี่ยงการตัดสินจากมุมนักท่องเที่ยวอย่างไม่เหมาะสม',
+    },
+  },
+  {
+    id: 'culture-public-etiquette',
+    code: 'CULTURE_62947105834',
+    type: {
+      zh: '文化',
+      en: 'Culture',
+      ja: '文化',
+      ko: '문화',
+      th: 'วัฒนธรรม',
+    },
+    name: {
+      zh: '公共礼仪',
+      en: 'Public Etiquette',
+      ja: '公共マナー',
+      ko: '공공 예절',
+      th: 'มารยาทสาธารณะ',
+    },
+    description: {
+      zh: '公共场所应关注排队、音量、个人空间和垃圾分类等规则，减少文化误解。',
+      en: 'Pay attention to queuing, noise level, personal space, and waste-sorting rules in public places to reduce cultural misunderstandings.',
+      ja: '公共の場では行列、声量、個人空間、ごみ分別などのルールに注意し、文化的な誤解を減らしてください。',
+      ko: '공공장소에서는 줄서기, 소음, 개인 공간, 쓰레기 분리수거 규칙을 확인해 문화적 오해를 줄이세요.',
+      th: 'ควรใส่ใจกฎเรื่องการต่อคิว ระดับเสียง พื้นที่ส่วนตัว และการแยกขยะในที่สาธารณะ เพื่อลดความเข้าใจผิดทางวัฒนธรรม',
+    },
+  },
+  {
+    id: 'culture-sensitive-topics',
+    code: 'CULTURE_80519374620',
+    type: {
+      zh: '文化',
+      en: 'Culture',
+      ja: '文化',
+      ko: '문화',
+      th: 'วัฒนธรรม',
+    },
+    name: {
+      zh: '敏感话题',
+      en: 'Sensitive Topics',
+      ja: '敏感な話題',
+      ko: '민감한 주제',
+      th: 'หัวข้ออ่อนไหว',
+    },
+    description: {
+      zh: '避免在公开场合主动讨论政治冲突、历史争议、族群议题或对当地文化做冒犯性判断。',
+      en: 'Avoid initiating public discussions about political conflicts, historical disputes, ethnic issues, or offensive judgments about local culture.',
+      ja: '公共の場で政治的対立、歴史問題、民族的な話題、現地文化への侮辱的判断を自ら話題にすることは避けてください。',
+      ko: '공개된 장소에서 정치적 갈등, 역사 논쟁, 민족 문제, 현지 문화에 대한 모욕적 판단을 먼저 꺼내지 마세요.',
+      th: 'หลีกเลี่ยงการเริ่มพูดคุยในที่สาธารณะเกี่ยวกับความขัดแย้งทางการเมือง ข้อพิพาททางประวัติศาสตร์ ประเด็นชาติพันธุ์ หรือการตัดสินวัฒนธรรมท้องถิ่นอย่างไม่เหมาะสม',
+    },
+  },
+  {
+    id: 'culture-local-customs',
+    code: 'CULTURE_51720498361',
+    type: {
+      zh: '习俗',
+      en: 'Customs',
+      ja: '習慣',
+      ko: '관습',
+      th: 'ธรรมเนียม',
+    },
+    name: {
+      zh: '地区习俗',
+      en: 'Local Customs',
+      ja: '地域の習慣',
+      ko: '지역 관습',
+      th: 'ธรรมเนียมท้องถิ่น',
+    },
+    description: {
       zh: '进入宗教场所、纪念场馆或传统社区时，应遵守着装、拍照和安静礼仪。',
       en: 'Observe dress, photography, and quiet etiquette in religious sites, memorial venues, or traditional communities.',
       ja: '宗教施設、記念施設、伝統的な地域では服装、撮影、静粛マナーを守ってください。',
       ko: '종교 시설, 기념 공간, 전통 공동체에서는 복장, 촬영, 정숙 예절을 지키세요.',
       th: 'เมื่อเข้าศาสนสถาน สถานที่รำลึก หรือชุมชนดั้งเดิม ควรปฏิบัติตามมารยาทเรื่องการแต่งกาย การถ่ายภาพ และความสงบ',
     },
-    sensitiveBehaviors: {
-      zh: '避免公开讨论敏感政治、宗教冲突或对当地习俗做冒犯性评价。',
-      en: 'Avoid public discussion of sensitive politics, religious conflict, or offensive comments on local customs.',
-      ja: '政治的に敏感な話題、宗教対立、現地習慣への侮辱的な発言は避けてください。',
-      ko: '민감한 정치, 종교 갈등, 현지 관습에 대한 모욕적 발언은 피하세요.',
-      th: 'หลีกเลี่ยงการพูดคุยประเด็นการเมืองอ่อนไหว ความขัดแย้งทางศาสนา หรือวิจารณ์วัฒนธรรมท้องถิ่นอย่างไม่เหมาะสม',
+  },
+  {
+    id: 'culture-tipping-customs',
+    code: 'CULTURE_30492857163',
+    type: {
+      zh: '习俗',
+      en: 'Customs',
+      ja: '習慣',
+      ko: '관습',
+      th: 'ธรรมเนียม',
+    },
+    name: {
+      zh: '小费文化',
+      en: 'Tipping Culture',
+      ja: 'チップ文化',
+      ko: '팁 문화',
+      th: 'วัฒนธรรมการให้ทิป',
+    },
+    description: {
+      zh: '小费是习俗类具体项目，应按国家和服务场景确认是否必须、建议比例和支付方式。',
+      en: 'Tipping is maintained as a customs item; confirm whether it is expected, suggested rates, and payment methods by country and service type.',
+      ja: 'チップは習慣カテゴリの具体項目として管理し、国やサービス別に必要性、目安、支払い方法を確認してください。',
+      ko: '팁은 관습 유형의 구체 항목으로 관리하며 국가와 서비스 상황별 필요 여부, 권장 비율, 결제 방식을 확인하세요.',
+      th: 'การให้ทิปเป็นรายการย่อยในหมวดธรรมเนียม ควรตรวจสอบว่าจำเป็นหรือไม่ อัตราแนะนำ และวิธีจ่ายตามประเทศและบริการ',
     },
   },
-]
-
-export const RELIGION_INFOS: ReligionInfoItem[] = [
   {
-    id: 'religion-general',
-    code: 'RELIGION_48290517364',
+    id: 'culture-photo-etiquette',
+    code: 'CULTURE_69281740531',
+    type: {
+      zh: '习俗',
+      en: 'Customs',
+      ja: '習慣',
+      ko: '관습',
+      th: 'ธรรมเนียม',
+    },
+    name: {
+      zh: '拍照礼仪',
+      en: 'Photography Etiquette',
+      ja: '撮影マナー',
+      ko: '촬영 예절',
+      th: 'มารยาทการถ่ายภาพ',
+    },
+    description: {
+      zh: '人物、宗教仪式、政府设施、纪念场所和传统社区拍摄前应确认是否允许并征得同意。',
+      en: 'Confirm permission before photographing people, religious ceremonies, government facilities, memorial sites, and traditional communities.',
+      ja: '人物、宗教儀式、政府施設、記念施設、伝統的な地域を撮影する前に許可を確認し、同意を得てください。',
+      ko: '사람, 종교 의식, 정부 시설, 기념 장소, 전통 공동체를 촬영하기 전 허용 여부를 확인하고 동의를 받으세요.',
+      th: 'ควรตรวจสอบและขออนุญาตก่อนถ่ายภาพบุคคล พิธีกรรมทางศาสนา สถานที่ราชการ สถานที่รำลึก และชุมชนดั้งเดิม',
+    },
+  },
+  {
+    id: 'culture-religious-customs',
+    code: 'CULTURE_43091857260',
+    type: {
+      zh: '宗教',
+      en: 'Religion',
+      ja: '宗教',
+      ko: '종교',
+      th: 'ศาสนา',
+    },
     name: {
       zh: '宗教习俗',
       en: 'Religious Customs',
       ja: '宗教習慣',
       ko: '종교 관습',
       th: 'ธรรมเนียมทางศาสนา',
+    },
+    description: {
+      zh: '避免公开讨论敏感宗教冲突或对当地宗教实践做冒犯性评价。',
+      en: 'Avoid public discussion of sensitive religious conflict or offensive comments on local religious practices.',
+      ja: '宗教的に敏感な対立や現地の宗教実践への侮辱的な発言は避けてください。',
+      ko: '민감한 종교 갈등이나 현지 종교 관습에 대한 모욕적 발언은 피하세요.',
+      th: 'หลีกเลี่ยงการพูดคุยเรื่องความขัดแย้งทางศาสนาอ่อนไหว หรือวิจารณ์การปฏิบัติทางศาสนาท้องถิ่นอย่างไม่เหมาะสม',
+    },
+  },
+  {
+    id: 'culture-religious-dress',
+    code: 'CULTURE_86720519431',
+    type: {
+      zh: '宗教',
+      en: 'Religion',
+      ja: '宗教',
+      ko: '종교',
+      th: 'ศาสนา',
+    },
+    name: {
+      zh: '宗教场所着装',
+      en: 'Religious Site Dress Code',
+      ja: '宗教施設の服装',
+      ko: '종교 시설 복장',
+      th: 'การแต่งกายในศาสนสถาน',
+    },
+    description: {
+      zh: '进入宗教场所前应确认是否需要遮肩、遮膝、脱鞋、遮发或避免暴露服装。',
+      en: 'Before entering religious sites, confirm whether shoulders, knees, hair, or shoes need specific treatment and avoid revealing clothing.',
+      ja: '宗教施設に入る前に、肩や膝、髪を覆う必要、靴を脱ぐ必要、露出の多い服装の可否を確認してください。',
+      ko: '종교 시설에 들어가기 전 어깨, 무릎, 머리 가림, 신발 탈의, 노출 의상 제한 여부를 확인하세요.',
+      th: 'ก่อนเข้าศาสนสถานควรตรวจสอบว่าต้องคลุมไหล่ คลุมเข่า คลุมผม ถอดรองเท้า หรือหลีกเลี่ยงเสื้อผ้าที่เปิดเผยหรือไม่',
+    },
+  },
+  {
+    id: 'culture-dietary-taboos',
+    code: 'CULTURE_59402817360',
+    type: {
+      zh: '宗教',
+      en: 'Religion',
+      ja: '宗教',
+      ko: '종교',
+      th: 'ศาสนา',
+    },
+    name: {
+      zh: '饮食禁忌',
+      en: 'Dietary Taboos',
+      ja: '食事の禁忌',
+      ko: '식생활 금기',
+      th: 'ข้อห้ามด้านอาหาร',
+    },
+    description: {
+      zh: '涉及宗教或传统饮食限制时，应尊重禁食、酒精、肉类、屠宰方式和餐桌礼仪差异。',
+      en: 'Respect fasting, alcohol, meat, slaughtering practices, and table etiquette when religious or traditional dietary restrictions apply.',
+      ja: '宗教的または伝統的な食事制限がある場合、断食、酒類、肉類、屠畜方法、食卓マナーの違いを尊重してください。',
+      ko: '종교적 또는 전통적 식생활 제한이 있는 경우 금식, 주류, 육류, 도축 방식, 식사 예절 차이를 존중하세요.',
+      th: 'เมื่อมีข้อจำกัดด้านอาหารจากศาสนาหรือประเพณี ควรเคารพเรื่องการถือศีลอด แอลกอฮอล์ เนื้อสัตว์ วิธีเชือด และมารยาทบนโต๊ะอาหาร',
     },
   },
 ]
