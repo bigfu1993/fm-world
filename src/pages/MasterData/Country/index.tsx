@@ -30,10 +30,13 @@ import {
 } from '@/mock/information'
 import { GLOBAL_LANGUAGES } from '@/mock/languages'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
+import { useCountryInfoBindingStore } from '@/store/useCountryInfoBindingStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
 import DraggableModal from '@/components/DraggableModal'
+import DataFormItem from '@/components/DataFormItem'
+import type { CustomSupplementInfo } from '@/types/infoBinding'
 
 const DEFAULT_DISPLAY_ZOOM = 8
 const MIN_DISPLAY_ZOOM = 0.8
@@ -81,6 +84,9 @@ const infoBindingModalCultureColumnStyle = {
 const infoBindingModalSafetyColumnStyle = {
   gridColumn: '5 / 6',
 } as const
+const infoBindingModalSupplementStyle = {
+  gridColumn: '1 / -1',
+} as const
 const infoBindingModalSectionTitleStyle = {
   fontSize: 14,
   margin: '0 0 16px',
@@ -109,27 +115,8 @@ interface EditingDisplayZoom {
 }
 
 interface CountryInfoBindingForm {
+  customSupplement?: CustomSupplementInfo
   displayZoom?: number | null
-  foodSafetyLevel?: number
-  waterSafetyLevel?: number
-  publicSecurityLevel?: number
-  communicationInfoId?: string
-  currencyInfoId?: string
-  timezoneInfoId?: string
-  climateInfoId?: string
-  standardSpecInfoIds?: Record<string, string | undefined>
-  officialLanguageCodes?: string[]
-  entryPolicyInfoId?: string
-  customsRestrictionInfoId?: string
-  networkInfoId?: string
-  paymentMethodInfoIds?: string[]
-  trafficRuleInfoId?: string
-  drivingLicenseInfoId?: string
-  securityRiskInfoId?: string
-  cultureInfoIds?: Record<string, string[] | undefined>
-}
-
-interface CountryInfoBindingState {
   foodSafetyLevel?: number
   waterSafetyLevel?: number
   publicSecurityLevel?: number
@@ -165,14 +152,20 @@ function normalizeDisplayZoom(value?: number | null) {
 export default function CountryPage() {
   const language = useAuthStore(selectCurrentLanguage)
   const [keyword, setKeyword] = useState('')
-  const [displayZoomByCode, setDisplayZoomByCode] = useState<
-    Record<string, number>
-  >({})
+  const displayZoomByCode = useCountryInfoBindingStore(
+    (state) => state.displayZoomByCode,
+  )
+  const infoBindingByCode = useCountryInfoBindingStore(
+    (state) => state.infoBindingByCode,
+  )
+  const setDisplayZoom = useCountryInfoBindingStore(
+    (state) => state.setDisplayZoom,
+  )
+  const setCountryInfoBinding = useCountryInfoBindingStore(
+    (state) => state.setInfoBinding,
+  )
   const [editingDisplayZoom, setEditingDisplayZoom] =
     useState<EditingDisplayZoom | null>(null)
-  const [infoBindingByCode, setInfoBindingByCode] = useState<
-    Record<string, CountryInfoBindingState>
-  >({})
   const [bindingCountry, setBindingCountry] = useState<CountryData | null>(null)
   const [bindingModalOpen, setBindingModalOpen] = useState(false)
   const [bindingForm] = Form.useForm<CountryInfoBindingForm>()
@@ -324,24 +317,15 @@ export default function CountryPage() {
     const values = await bindingForm.validateFields()
     const { displayZoom, ...infoBindingValues } = values
     const nextDisplayZoom = normalizeDisplayZoom(displayZoom)
-    setDisplayZoomByCode((prev) => ({
-      ...prev,
-      [bindingCountry.code]: nextDisplayZoom,
-    }))
-    setInfoBindingByCode((prev) => ({
-      ...prev,
-      [bindingCountry.code]: infoBindingValues,
-    }))
+    setDisplayZoom(bindingCountry.code, nextDisplayZoom)
+    setCountryInfoBinding(bindingCountry.code, infoBindingValues)
     closeInfoBindingModal()
   }
 
   const commitDisplayZoomEdit = () => {
     if (!editingDisplayZoom) return
     const nextValue = normalizeDisplayZoom(editingDisplayZoom.value)
-    setDisplayZoomByCode((prev) => ({
-      ...prev,
-      [editingDisplayZoom.code]: nextValue,
-    }))
+    setDisplayZoom(editingDisplayZoom.code, nextValue)
     setEditingDisplayZoom(null)
   }
 
@@ -797,6 +781,19 @@ export default function CountryPage() {
                 style={safetyLevelSliderStyle}
               />
             </Form.Item>
+          </div>
+          <div style={infoBindingModalSupplementStyle}>
+            <DataFormItem
+              name="customSupplement"
+              label={
+                <LanguageLabel
+                  langKey={language}
+                  labelKey="customSupplementInfo"
+                />
+              }
+              langKey={language}
+              type={['label']}
+            />
           </div>
         </Form>
       </DraggableModal>

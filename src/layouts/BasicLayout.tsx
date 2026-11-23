@@ -79,10 +79,17 @@ export default function BasicLayout() {
     (hasPermission('traffic:manage') ||
       hasPermission('communication:manage') ||
       hasPermission('language:manage') ||
+      hasPermission('timezone:manage') ||
+      hasPermission('climate:manage') ||
       hasPermission('payment:manage') ||
+      hasPermission('trafficRule:manage') ||
+      hasPermission('drivingLicense:manage') ||
+      hasPermission('entryPolicy:manage') ||
+      hasPermission('customsRestriction:manage') ||
+      hasPermission('network:manage') ||
       hasPermission('standardSpec:manage') ||
-      hasPermission('serviceInfo:manage') ||
       hasPermission('securityRisk:manage') ||
+      hasPermission('tourismInfo:manage') ||
       hasPermission('cultureInfo:manage')) && {
       key: 'info-center',
       icon: <InfoCircleOutlined />,
@@ -92,6 +99,14 @@ export default function BasicLayout() {
           key: '/info-center/languages',
           label: <LanguageLabel langKey={language} labelKey="languageField" />,
         },
+        hasPermission('timezone:manage') && {
+          key: '/info-center/timezones',
+          label: <LanguageLabel langKey={language} labelKey="timezone" />,
+        },
+        hasPermission('climate:manage') && {
+          key: '/info-center/climates',
+          label: <LanguageLabel langKey={language} labelKey="climate" />,
+        },
         hasPermission('payment:manage') && {
           key: '/info-center/payment',
           label: <LanguageLabel langKey={language} labelKey="paymentInformation" />,
@@ -99,6 +114,22 @@ export default function BasicLayout() {
         hasPermission('traffic:manage') && {
           key: '/info-center/traffic',
           label: <LanguageLabel langKey={language} labelKey="trafficInformation" />,
+        },
+        hasPermission('trafficRule:manage') && {
+          key: '/info-center/traffic-rules',
+          label: <LanguageLabel langKey={language} labelKey="trafficRules" />,
+        },
+        hasPermission('drivingLicense:manage') && {
+          key: '/info-center/driving-licenses',
+          label: <LanguageLabel langKey={language} labelKey="drivingLicense" />,
+        },
+        hasPermission('entryPolicy:manage') && {
+          key: '/info-center/entry-policies',
+          label: <LanguageLabel langKey={language} labelKey="entryPolicy" />,
+        },
+        hasPermission('customsRestriction:manage') && {
+          key: '/info-center/customs-restrictions',
+          label: <LanguageLabel langKey={language} labelKey="customsRestriction" />,
         },
         hasPermission('standardSpec:manage') && {
           key: '/info-center/standard-specs',
@@ -110,17 +141,19 @@ export default function BasicLayout() {
           key: '/info-center/culture',
           label: <LanguageLabel langKey={language} labelKey="cultureCustoms" />,
         },
+        hasPermission('tourismInfo:manage') && {
+          key: '/info-center/tourism-info',
+          label: <LanguageLabel langKey={language} labelKey="tourismInformation" />,
+        },
         hasPermission('communication:manage') && {
           key: '/info-center/communication',
           label: (
             <LanguageLabel langKey={language} labelKey="communicationInformation" />
           ),
         },
-        hasPermission('serviceInfo:manage') && {
-          key: '/info-center/service-info',
-          label: (
-            <LanguageLabel langKey={language} labelKey="serviceInformation" />
-          ),
+        hasPermission('network:manage') && {
+          key: '/info-center/networks',
+          label: <LanguageLabel langKey={language} labelKey="networkInformation" />,
         },
         hasPermission('securityRisk:manage') && {
           key: '/info-center/security-risk',

@@ -241,7 +241,7 @@ function createRandomDigits(length = 11): string {
 }
 
 function createCultureCustomCode(existingCodes: Set<string>): string {
-  let code = ''
+  let code: string
   do {
     code = `CULTURE_${createRandomDigits()}`
   } while (existingCodes.has(code))

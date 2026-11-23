@@ -67,7 +67,7 @@ function createRandomDigits(length = 11): string {
 }
 
 function createTypeCode(prefix: string, existingCodes: Set<string>): string {
-  let code = ''
+  let code: string
   do {
     code = `${prefix}_${createRandomDigits()}`
   } while (existingCodes.has(code))

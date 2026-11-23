@@ -21,12 +21,6 @@ export type StandardSpecSupplementContent =
   | string
   | StandardSpecSupplementFile[]
 
-export interface ServiceInfoItem {
-  id: string
-  code: string
-  rentCarRules: LocalizedInfoText
-}
-
 export interface StandardSpecInfoItem {
   id: string
   code: string
@@ -68,19 +62,35 @@ export interface CultureInfoItem {
   }
 }
 
-export interface CurrencyPaymentInfoItem {
-  id: string
-  code: string
-  mobilePayment: LocalizedInfoText
-  creditCardPayment: LocalizedInfoText
-  tippingCulture: LocalizedInfoText
-}
-
 export interface CurrencyInfoItem {
   id: string
   code: string
   value: string
   name: LocalizedInfoText
+}
+
+export type TourismInfoLevel = 'province' | 'city' | 'point' | 'landmark'
+
+export interface TourismInfoTypeItem {
+  code: string
+  level: TourismInfoLevel
+  value: string
+  name: LocalizedInfoText
+}
+
+export interface TourismInfoItem {
+  id: string
+  code: string
+  level: TourismInfoLevel
+  typeValue: string
+  type: LocalizedInfoText
+  value?: string
+  name: LocalizedInfoText
+  description: LocalizedInfoText
+  supplement?: {
+    type: StandardSpecSupplementType
+    content: StandardSpecSupplementContent
+  }
 }
 
 export const TIMEZONE_INFOS: InformationItem[] = [
@@ -188,7 +198,8 @@ export const CLIMATE_INFOS: InformationItem[] = [
 export const COMMUNICATION_INFOS: InformationItem[] = [
   {
     id: 'comm-esim',
-    code: 'COMM-ESIM',
+    code: 'COMMUNICATION_18492057361',
+    value: 'ESIM_SIM_CARD',
     name: {
       zh: 'eSIM / 电话卡',
       en: 'eSIM / SIM Card',
@@ -199,7 +210,8 @@ export const COMMUNICATION_INFOS: InformationItem[] = [
   },
   {
     id: 'comm-roaming',
-    code: 'COMM-ROAMING',
+    code: 'COMMUNICATION_62947105834',
+    value: 'INTERNATIONAL_ROAMING',
     name: {
       zh: '国际漫游',
       en: 'International Roaming',
@@ -210,7 +222,8 @@ export const COMMUNICATION_INFOS: InformationItem[] = [
   },
   {
     id: 'comm-wifi',
-    code: 'COMM-WIFI',
+    code: 'COMMUNICATION_80519374620',
+    value: 'POCKET_WIFI',
     name: {
       zh: '随身 Wi-Fi',
       en: 'Pocket Wi-Fi',
@@ -769,20 +782,6 @@ export const DRIVING_LICENSE_INFOS: InformationItem[] = [
       ja: '自動車運転の制限が多い',
       ko: '자가 운전 제한 많음',
       th: 'มีข้อจำกัดในการขับรถเองมาก',
-    },
-  },
-]
-
-export const SERVICE_INFOS: ServiceInfoItem[] = [
-  {
-    id: 'service-rent-car-basic',
-    code: 'SERVICE-RENT-CAR',
-    rentCarRules: {
-      zh: '租车前确认驾照/翻译件要求、押金规则、保险范围和异地还车费用。',
-      en: 'Check license or translation requirements, deposits, insurance coverage, and one-way return fees before renting.',
-      ja: 'レンタカー利用前に免許証や翻訳書類、保証金、保険範囲、乗り捨て料金を確認してください。',
-      ko: '렌터카 이용 전 면허증/번역본 요건, 보증금, 보험 범위, 편도 반납 비용을 확인하세요.',
-      th: 'ก่อนเช่ารถควรตรวจสอบใบขับขี่/เอกสารแปล เงินมัดจำ ประกัน และค่าคืนรถต่างเมือง',
     },
   },
 ]
@@ -1433,30 +1432,376 @@ export const CULTURE_INFOS: CultureInfoItem[] = [
   },
 ]
 
-export const CURRENCY_PAYMENT_INFOS: CurrencyPaymentInfoItem[] = [
+export const TOURISM_INFO_TYPES: TourismInfoTypeItem[] = [
   {
-    id: 'payment-general',
-    code: 'PAYMENT-GENERAL',
-    mobilePayment: {
-      zh: '移动支付覆盖度因国家而异，建议提前确认游客是否可注册和绑卡。',
-      en: 'Mobile payment coverage varies by country; check whether tourists can register and link cards.',
-      ja: 'モバイル決済の普及度は国により異なります。旅行者登録やカード連携可否を事前確認してください。',
-      ko: '모바일 결제 보급률은 국가별로 다르므로 여행자 가입 및 카드 연동 가능 여부를 확인하세요.',
-      th: 'การชำระเงินผ่านมือถือแตกต่างกันไปในแต่ละประเทศ ควรตรวจสอบว่านักท่องเที่ยวสมัครและผูกบัตรได้หรือไม่',
-    },
-    creditCardPayment: {
-      zh: '酒店、商场和连锁商户通常支持信用卡，小店和交通场景可能仍需现金。',
-      en: 'Hotels, malls, and chains often accept credit cards, while small shops and transit may still require cash.',
-      ja: 'ホテル、商業施設、チェーン店ではカード利用が一般的ですが、小規模店舗や交通では現金が必要な場合があります。',
-      ko: '호텔, 쇼핑몰, 체인점은 신용카드가 흔하지만 소규모 상점과 교통에서는 현금이 필요할 수 있습니다.',
-      th: 'โรงแรม ห้าง และร้านเชนมักรับบัตรเครดิต แต่ร้านเล็กและการเดินทางบางประเภทอาจต้องใช้เงินสด',
-    },
-    tippingCulture: {
-      zh: '小费文化差异较大，应按国家和服务场景确认是否必须、建议比例和支付方式。',
-      en: 'Tipping customs vary widely; confirm whether it is expected, suggested rates, and payment methods by country and service type.',
-      ja: 'チップ文化は大きく異なるため、国やサービス別に必要性、目安、支払い方法を確認してください。',
-      ko: '팁 문화는 크게 다르므로 국가와 서비스 상황별 필요 여부, 권장 비율, 결제 방식을 확인하세요.',
-      th: 'วัฒนธรรมการให้ทิปแตกต่างกันมาก ควรตรวจสอบว่าจำเป็นหรือไม่ อัตราแนะนำ และวิธีจ่ายตามประเทศและบริการ',
-    },
+    code: 'TOURISM_TYPE_10492837561',
+    level: 'province',
+    value: 'REGIONAL_LANDSCAPE',
+    name: { zh: '区域地貌', en: 'Regional Landscape', ja: '地域地形', ko: '지역 지형', th: 'ภูมิประเทศภูมิภาค' },
+  },
+  {
+    code: 'TOURISM_TYPE_58392017462',
+    level: 'province',
+    value: 'REGIONAL_CULTURE_BELT',
+    name: { zh: '文化圈层', en: 'Cultural Belt', ja: '文化圏', ko: '문화권', th: 'เขตวัฒนธรรม' },
+  },
+  {
+    code: 'TOURISM_TYPE_73104928650',
+    level: 'province',
+    value: 'REGIONAL_HERITAGE_CLUSTER',
+    name: { zh: '遗产集群', en: 'Heritage Cluster', ja: '遺産群', ko: '유산 군집', th: 'กลุ่มมรดก' },
+  },
+  {
+    code: 'TOURISM_TYPE_29061473815',
+    level: 'province',
+    value: 'REGIONAL_CUISINE_SYSTEM',
+    name: { zh: '风味体系', en: 'Cuisine System', ja: '食文化体系', ko: '음식 체계', th: 'ระบบอาหารท้องถิ่น' },
+  },
+  {
+    code: 'TOURISM_TYPE_64820591734',
+    level: 'province',
+    value: 'REGIONAL_SEASONAL_EVENT',
+    name: { zh: '季节活动', en: 'Seasonal Events', ja: '季節行事', ko: '계절 행사', th: 'กิจกรรมตามฤดูกาล' },
+  },
+  {
+    code: 'TOURISM_TYPE_80519374620',
+    level: 'city',
+    value: 'CITY_DISTRICT',
+    name: { zh: '城市街区', en: 'Urban Districts', ja: '都市地区', ko: '도시 지구', th: 'ย่านเมือง' },
+  },
+  {
+    code: 'TOURISM_TYPE_91350728461',
+    level: 'city',
+    value: 'CITY_LIFESTYLE',
+    name: { zh: '城市生活', en: 'City Lifestyle', ja: '都市生活', ko: '도시 생활', th: 'วิถีชีวิตเมือง' },
+  },
+  {
+    code: 'TOURISM_TYPE_47281960350',
+    level: 'city',
+    value: 'CITY_FOOD_SCENE',
+    name: { zh: '餐饮场景', en: 'Dining Scene', ja: '飲食シーン', ko: '식도락 장면', th: 'ฉากอาหารเมือง' },
+  },
+  {
+    code: 'TOURISM_TYPE_63902817452',
+    level: 'city',
+    value: 'CITY_HERITAGE_SCENE',
+    name: { zh: '城市遗产', en: 'Urban Heritage', ja: '都市遺産', ko: '도시 유산', th: 'มรดกเมือง' },
+  },
+  {
+    code: 'TOURISM_TYPE_81726394058',
+    level: 'city',
+    value: 'CITY_EVENT_SCENE',
+    name: { zh: '城市活动', en: 'City Events', ja: '都市イベント', ko: '도시 행사', th: 'กิจกรรมเมือง' },
+  },
+  {
+    code: 'TOURISM_TYPE_50183726490',
+    level: 'point',
+    value: 'OPENING_NOTICE',
+    name: { zh: '开放提示', en: 'Opening Notice', ja: '営業案内', ko: '운영 안내', th: 'ข้อมูลเวลาเปิด' },
+  },
+  {
+    code: 'TOURISM_TYPE_62819475036',
+    level: 'point',
+    value: 'TICKET_NOTICE',
+    name: { zh: '票务提示', en: 'Ticket Notice', ja: 'チケット案内', ko: '티켓 안내', th: 'ข้อมูลตั๋ว' },
+  },
+  {
+    code: 'TOURISM_TYPE_71938502641',
+    level: 'point',
+    value: 'RESERVATION_NOTICE',
+    name: { zh: '预约提示', en: 'Reservation Notice', ja: '予約案内', ko: '예약 안내', th: 'ข้อมูลการจอง' },
+  },
+  {
+    code: 'TOURISM_TYPE_38274910658',
+    level: 'point',
+    value: 'FACILITY_NOTICE',
+    name: { zh: '设施服务', en: 'Facilities', ja: '施設サービス', ko: '시설 서비스', th: 'สิ่งอำนวยความสะดวก' },
+  },
+  {
+    code: 'TOURISM_TYPE_94620581734',
+    level: 'point',
+    value: 'ARRIVAL_GUIDE',
+    name: { zh: '到达方式', en: 'Arrival Guide', ja: 'アクセス方法', ko: '도착 방법', th: 'วิธีเดินทางไปถึง' },
+  },
+  {
+    code: 'TOURISM_TYPE_27059481635',
+    level: 'point',
+    value: 'ACCESSIBILITY',
+    name: { zh: '无障碍', en: 'Accessibility', ja: 'バリアフリー', ko: '접근성', th: 'การเข้าถึง' },
+  },
+  {
+    code: 'TOURISM_TYPE_61384902755',
+    level: 'point',
+    value: 'CROWD_NOTICE',
+    name: { zh: '拥挤提示', en: 'Crowd Notice', ja: '混雑案内', ko: '혼잡 안내', th: 'ข้อมูลความแออัด' },
+  },
+  {
+    code: 'TOURISM_TYPE_75492068133',
+    level: 'landmark',
+    value: 'GUIDE_INFO',
+    name: { zh: '讲解信息', en: 'Guide Info', ja: 'ガイド情報', ko: '해설 정보', th: 'ข้อมูลไกด์' },
+  },
+  {
+    code: 'TOURISM_TYPE_49281630754',
+    level: 'landmark',
+    value: 'VISIT_ROUTE',
+    name: { zh: '参观动线', en: 'Visit Route', ja: '見学ルート', ko: '관람 동선', th: 'เส้นทางเข้าชม' },
+  },
+  {
+    code: 'TOURISM_TYPE_83620491750',
+    level: 'landmark',
+    value: 'PHOTO_TIP',
+    name: { zh: '拍摄提示', en: 'Photo Tips', ja: '撮影のヒント', ko: '촬영 팁', th: 'เคล็ดลับถ่ายภาพ' },
+  },
+  {
+    code: 'TOURISM_TYPE_19573840627',
+    level: 'landmark',
+    value: 'QUEUE_NOTICE',
+    name: { zh: '排队提示', en: 'Queue Notice', ja: '待ち時間案内', ko: '대기 안내', th: 'ข้อมูลการรอคิว' },
+  },
+  {
+    code: 'TOURISM_TYPE_68031594722',
+    level: 'landmark',
+    value: 'BEST_VISIT_TIME',
+    name: { zh: '最佳时段', en: 'Best Time', ja: 'おすすめ時間帯', ko: '추천 시간대', th: 'ช่วงเวลาที่แนะนำ' },
+  },
+  {
+    code: 'TOURISM_TYPE_52740918366',
+    level: 'landmark',
+    value: 'CULTURE_INTERPRETATION',
+    name: { zh: '文化解读', en: 'Culture Interpretation', ja: '文化解説', ko: '문화 해설', th: 'คำอธิบายวัฒนธรรม' },
+  },
+]
+
+export const TOURISM_INFOS: TourismInfoItem[] = [
+  {
+    id: 'tourism-region-geography-mountain-coast',
+    code: 'TOURISM_10492837561',
+    level: 'province',
+    typeValue: 'REGIONAL_LANDSCAPE',
+    type: TOURISM_INFO_TYPES[0].name,
+    value: 'MOUNTAIN_COAST',
+    name: { zh: '山海地貌', en: 'Mountain and Coast Terrain', ja: '山と海の地形', ko: '산과 해안 지형', th: 'ภูมิประเทศภูเขาและชายฝั่ง' },
+    description: { zh: '用于描述省域内山脉、海岸、湖泊、河谷等地理形态对旅行体验的影响。', en: 'Describes how mountains, coasts, lakes, valleys, and other geography shape regional travel.', ja: '山脈、海岸、湖、渓谷などの地理が地域旅行に与える影響を示します。', ko: '산맥, 해안, 호수, 계곡 등 지형이 지역 여행 경험에 미치는 영향을 설명합니다.', th: 'ใช้อธิบายภูเขา ชายฝั่ง ทะเลสาบ หุบเขา และภูมิศาสตร์ที่ส่งผลต่อการท่องเที่ยวระดับภูมิภาค' },
+  },
+  {
+    id: 'tourism-region-humanity-festival',
+    code: 'TOURISM_58392017462',
+    level: 'province',
+    typeValue: 'REGIONAL_CULTURE_BELT',
+    type: TOURISM_INFO_TYPES[1].name,
+    value: 'LOCAL_FESTIVAL',
+    name: { zh: '地方节庆与手作', en: 'Local Festivals and Crafts', ja: '地域祭りと手仕事', ko: '지역 축제와 수공예', th: 'เทศกาลและงานฝีมือท้องถิ่น' },
+    description: { zh: '用于维护跨城市共享的地方节庆、非遗手作、民俗活动和区域性人文体验。', en: 'Covers province-wide festivals, crafts, folk activities, and cultural experiences shared across cities.', ja: '都市をまたいで共有される祭り、工芸、民俗活動、地域文化体験を扱います。', ko: '여러 도시에 걸친 축제, 공예, 민속 활동, 지역 인문 경험을 관리합니다.', th: 'ใช้กับเทศกาล งานฝีมือ กิจกรรมพื้นบ้าน และประสบการณ์วัฒนธรรมที่พบได้หลายเมืองในภูมิภาค' },
+  },
+  {
+    id: 'tourism-region-religion-heritage',
+    code: 'TOURISM_73104928650',
+    level: 'province',
+    typeValue: 'REGIONAL_HERITAGE_CLUSTER',
+    type: TOURISM_INFO_TYPES[2].name,
+    value: 'RELIGIOUS_HERITAGE',
+    name: { zh: '宗教遗产带', en: 'Religious Heritage Belt', ja: '宗教遺産地帯', ko: '종교 유산권', th: 'แนวมรดกศาสนา' },
+    description: { zh: '用于描述省域内寺院、教堂、圣地、朝圣路线等宗教文化资源。', en: 'Describes temples, churches, sacred places, pilgrimage routes, and other religious resources in the region.', ja: '寺院、教会、聖地、巡礼路など地域内の宗教文化資源を説明します。', ko: '사찰, 교회, 성지, 순례길 등 지역 내 종교 문화 자원을 설명합니다.', th: 'ใช้อธิบายวัด โบสถ์ สถานที่ศักดิ์สิทธิ์ เส้นทางแสวงบุญ และทรัพยากรศาสนาในภูมิภาค' },
+  },
+  {
+    id: 'tourism-region-food-local-cuisine',
+    code: 'TOURISM_29061473815',
+    level: 'province',
+    typeValue: 'REGIONAL_CUISINE_SYSTEM',
+    type: TOURISM_INFO_TYPES[3].name,
+    value: 'LOCAL_CUISINE',
+    name: { zh: '区域风味菜系', en: 'Regional Cuisine', ja: '地域料理', ko: '지역 요리', th: 'อาหารประจำภูมิภาค' },
+    description: { zh: '用于维护省域通行的代表菜系、食材产地、饮食禁忌和跨城市美食主题。', en: 'Maintains regional cuisines, ingredient origins, dietary notes, and food themes shared across cities.', ja: '地域料理、食材産地、食事上の注意、都市をまたぐ食文化テーマを扱います。', ko: '지역 요리, 식재료 산지, 식사 주의사항, 여러 도시의 미식 주제를 관리합니다.', th: 'ใช้กับอาหารประจำภูมิภาค แหล่งวัตถุดิบ ข้อควรระวังด้านอาหาร และธีมอาหารหลายเมือง' },
+  },
+  {
+    id: 'tourism-region-history-heritage',
+    code: 'TOURISM_64820591734',
+    level: 'province',
+    typeValue: 'REGIONAL_SEASONAL_EVENT',
+    type: TOURISM_INFO_TYPES[4].name,
+    value: 'SEASONAL_EVENT_BELT',
+    name: { zh: '花期与节庆窗口', en: 'Bloom and Festival Window', ja: '花期と祭りの時期', ko: '개화와 축제 시즌', th: 'ช่วงดอกไม้และเทศกาล' },
+    description: { zh: '用于维护省域尺度的花期、雪季、丰收季、节庆季和跨城市活动窗口。', en: 'Maintains bloom periods, snow seasons, harvest seasons, festival seasons, and cross-city event windows.', ja: '地域規模の花期、雪の季節、収穫期、祭りの季節、都市横断イベント期間を扱います。', ko: '지역 단위의 개화기, 설경 시즌, 수확철, 축제철, 도시 간 행사 기간을 관리합니다.', th: 'ใช้กับช่วงดอกไม้ ฤดูหิมะ ฤดูเก็บเกี่ยว เทศกาล และช่วงกิจกรรมหลายเมืองในภูมิภาค' },
+  },
+  {
+    id: 'tourism-city-geography-waterfront',
+    code: 'TOURISM_80519374620',
+    level: 'city',
+    typeValue: 'CITY_DISTRICT',
+    type: TOURISM_INFO_TYPES[5].name,
+    value: 'WATERFRONT_CITY',
+    name: { zh: '滨水核心街区', en: 'Waterfront Core District', ja: '水辺中心地区', ko: '수변 핵심 지구', th: 'ย่านริมน้ำหลัก' },
+    description: { zh: '用于维护城市内适合游客停留、步行、购物和观景的核心街区或片区。', en: 'Maintains core districts suitable for staying, walking, shopping, and city views.', ja: '滞在、街歩き、買物、景観に適した都市内中心地区を扱います。', ko: '체류, 도보 관광, 쇼핑, 전망에 적합한 도시 핵심 지구를 관리합니다.', th: 'ใช้กับย่านหลักในเมืองที่เหมาะกับการพัก เดินเที่ยว ช้อปปิ้ง และชมวิว' },
+  },
+  {
+    id: 'tourism-city-humanity-neighborhood',
+    code: 'TOURISM_91350728461',
+    level: 'city',
+    typeValue: 'CITY_LIFESTYLE',
+    type: TOURISM_INFO_TYPES[6].name,
+    value: 'LOCAL_NEIGHBORHOOD',
+    name: { zh: '在地生活街区', en: 'Local Lifestyle Neighborhood', ja: 'ローカル生活街区', ko: '현지 생활 동네', th: 'ย่านวิถีชีวิตท้องถิ่น' },
+    description: { zh: '用于维护城市街区气质、市集、社区活动、手作店和本地生活方式。', en: 'Maintains neighborhood character, markets, community events, craft shops, and local lifestyles.', ja: '街区の雰囲気、市場、地域イベント、手仕事店、ローカルな暮らしを扱います。', ko: '동네 분위기, 시장, 지역 행사, 공방, 현지 생활 방식을 관리합니다.', th: 'ใช้กับบรรยากาศย่าน ตลาด กิจกรรมชุมชน ร้านงานฝีมือ และวิถีชีวิตท้องถิ่น' },
+  },
+  {
+    id: 'tourism-city-religion-district',
+    code: 'TOURISM_47281960350',
+    level: 'city',
+    typeValue: 'CITY_FOOD_SCENE',
+    type: TOURISM_INFO_TYPES[7].name,
+    value: 'SIGNATURE_DINING_BLOCK',
+    name: { zh: '代表餐饮街区', en: 'Signature Dining Block', ja: '代表的な飲食地区', ko: '대표 미식 거리', th: 'ย่านอาหารเด่น' },
+    description: { zh: '用于维护城市内代表餐饮街区、餐厅聚集区、夜宵区域和游客餐饮提示。', en: 'Maintains signature dining blocks, restaurant clusters, late-night dining areas, and visitor food notes.', ja: '代表的な飲食地区、飲食店集積地、夜食エリア、旅行者向け食事案内を扱います。', ko: '대표 음식 거리, 식당 밀집 지역, 야식 구역, 관광객 식사 안내를 관리합니다.', th: 'ใช้กับย่านอาหารเด่น กลุ่มร้านอาหาร พื้นที่อาหารกลางคืน และคำแนะนำด้านอาหารสำหรับนักท่องเที่ยว' },
+  },
+  {
+    id: 'tourism-city-food-night-market',
+    code: 'TOURISM_63902817452',
+    level: 'city',
+    typeValue: 'CITY_HERITAGE_SCENE',
+    type: TOURISM_INFO_TYPES[8].name,
+    value: 'OLD_TOWN_HERITAGE',
+    name: { zh: '老城与建筑遗产', en: 'Old Town and Built Heritage', ja: '旧市街と建築遺産', ko: '구시가지와 건축 유산', th: 'เมืองเก่าและมรดกสถาปัตยกรรม' },
+    description: { zh: '用于维护城市旧城、历史建筑、工业遗产、殖民街区和城市更新背景。', en: 'Maintains old towns, historic buildings, industrial heritage, colonial districts, and urban renewal context.', ja: '旧市街、歴史的建築、産業遺産、植民地時代の街区、都市再生の背景を扱います。', ko: '구시가지, 역사 건축, 산업 유산, 식민지 지구, 도시 재생 배경을 관리합니다.', th: 'ใช้กับเมืองเก่า อาคารประวัติศาสตร์ มรดกอุตสาหกรรม ย่านยุคอาณานิคม และบริบทการฟื้นฟูเมือง' },
+  },
+  {
+    id: 'tourism-city-history-old-town',
+    code: 'TOURISM_81726394058',
+    level: 'city',
+    typeValue: 'CITY_EVENT_SCENE',
+    type: TOURISM_INFO_TYPES[9].name,
+    value: 'CITY_EVENT_CALENDAR',
+    name: { zh: '展演与城市活动', en: 'Performances and City Events', ja: '公演と都市イベント', ko: '공연과 도시 행사', th: 'การแสดงและกิจกรรมเมือง' },
+    description: { zh: '用于维护城市展演、夜间活动、市集、体育赛事和临时城市活动。', en: 'Maintains performances, nightlife events, markets, sports events, and temporary city happenings.', ja: '公演、夜間イベント、市場、スポーツイベント、期間限定都市イベントを扱います。', ko: '공연, 야간 행사, 시장, 스포츠 이벤트, 임시 도시 행사를 관리합니다.', th: 'ใช้กับการแสดง กิจกรรมกลางคืน ตลาด งานกีฬา และกิจกรรมเมืองชั่วคราว' },
+  },
+  {
+    id: 'tourism-point-opening-seasonal',
+    code: 'TOURISM_50183726490',
+    level: 'point',
+    typeValue: 'OPENING_NOTICE',
+    type: TOURISM_INFO_TYPES[10].name,
+    value: 'SEASONAL_HOURS',
+    name: { zh: '季节性开放时间', en: 'Seasonal Opening Hours', ja: '季節営業時間', ko: '계절별 운영시간', th: 'เวลาเปิดตามฤดูกาล' },
+    description: { zh: '点位开放时间随季节、天气或活动调整，发布前需核对当天开放状态。', en: 'Opening hours may change by season, weather, or events; verify same-day status before publishing.', ja: '季節、天候、イベントにより営業時間が変わるため、公開前に当日状況を確認します。', ko: '계절, 날씨, 행사에 따라 운영시간이 달라질 수 있어 게시 전 당일 상태 확인이 필요합니다.', th: 'เวลาเปิดอาจเปลี่ยนตามฤดูกาล อากาศ หรือกิจกรรม ควรตรวจสอบสถานะวันจริงก่อนเผยแพร่' },
+  },
+  {
+    id: 'tourism-point-ticket-timed',
+    code: 'TOURISM_62819475036',
+    level: 'point',
+    typeValue: 'TICKET_NOTICE',
+    type: TOURISM_INFO_TYPES[11].name,
+    value: 'TIMED_TICKET',
+    name: { zh: '分时预约票', en: 'Timed Ticket', ja: '時間指定チケット', ko: '시간 지정 티켓', th: 'ตั๋วตามช่วงเวลา' },
+    description: { zh: '热门点位可能需要分时段购票或实名预约，建议提前确认退改规则。', en: 'Popular points may require timed or real-name tickets; check cancellation and change rules in advance.', ja: '人気スポットでは時間指定や実名予約が必要な場合があり、変更・取消規定も確認します。', ko: '인기 지점은 시간 지정 또는 실명 예약이 필요할 수 있어 변경 및 취소 규정을 확인해야 합니다.', th: 'จุดยอดนิยมอาจต้องจองเป็นช่วงเวลาหรือใช้ชื่อจริง ควรตรวจสอบกฎเปลี่ยน/ยกเลิกก่อน' },
+  },
+  {
+    id: 'tourism-point-reservation-required',
+    code: 'TOURISM_71938502641',
+    level: 'point',
+    typeValue: 'RESERVATION_NOTICE',
+    type: TOURISM_INFO_TYPES[12].name,
+    value: 'ADVANCE_RESERVATION',
+    name: { zh: '建议提前预约', en: 'Advance Reservation Suggested', ja: '事前予約推奨', ko: '사전 예약 권장', th: 'แนะนำจองล่วงหน้า' },
+    description: { zh: '适用于容量有限、体验项目或热门餐厅等需要提前锁定名额的点位。', en: 'For limited-capacity points, experiences, or popular restaurants that should be reserved in advance.', ja: '定員制、体験型、人気レストランなど事前に枠を確保すべき地点向けです。', ko: '정원 제한, 체험형, 인기 식당 등 사전 예약이 필요한 지점에 적합합니다.', th: 'เหมาะกับจุดที่จำกัดจำนวน กิจกรรม体验 หรือร้านยอดนิยมที่ควรจองล่วงหน้า' },
+  },
+  {
+    id: 'tourism-point-facility-family',
+    code: 'TOURISM_38274910658',
+    level: 'point',
+    typeValue: 'FACILITY_NOTICE',
+    type: TOURISM_INFO_TYPES[13].name,
+    value: 'FAMILY_FACILITIES',
+    name: { zh: '亲子与基础设施', en: 'Family Facilities', ja: 'ファミリー設備', ko: '가족 편의시설', th: 'สิ่งอำนวยความสะดวกสำหรับครอบครัว' },
+    description: { zh: '适合维护卫生间、母婴室、储物、休息区、无障碍入口等具体设施信息。', en: 'Use for restrooms, baby rooms, lockers, rest areas, accessible entrances, and similar facilities.', ja: 'トイレ、授乳室、ロッカー、休憩所、バリアフリー入口などの施設情報向けです。', ko: '화장실, 수유실, 보관함, 휴식 공간, 무장애 입구 등 시설 정보에 적합합니다.', th: 'ใช้กับข้อมูลห้องน้ำ ห้องแม่และเด็ก ล็อกเกอร์ จุดพัก และทางเข้าสำหรับผู้พิการ' },
+  },
+  {
+    id: 'tourism-point-arrival-last-mile',
+    code: 'TOURISM_94620581734',
+    level: 'point',
+    typeValue: 'ARRIVAL_GUIDE',
+    type: TOURISM_INFO_TYPES[14].name,
+    value: 'LAST_MILE_WALK',
+    name: { zh: '最后一公里步行', en: 'Last-mile Walk', ja: 'ラストワンマイル徒歩', ko: '마지막 구간 도보', th: 'เดินช่วงสุดท้าย' },
+    description: { zh: '点位距离公共交通仍需步行，适合提示坡道、楼梯、夜间照明和雨天替代方案。', en: 'For points requiring a walk from transit; note slopes, stairs, lighting, and rainy-day alternatives.', ja: '公共交通から徒歩が必要な地点向けで、坂道、階段、夜間照明、雨天代替を示します。', ko: '대중교통 하차 후 도보가 필요한 지점에 적합하며 경사, 계단, 야간 조명, 우천 대안을 안내합니다.', th: 'เหมาะกับจุดที่ต้องเดินต่อจากขนส่งสาธารณะ ระบุทางลาด บันได ไฟกลางคืน และทางเลือกเมื่อฝนตก' },
+  },
+  {
+    id: 'tourism-point-accessibility-step-free',
+    code: 'TOURISM_27059481635',
+    level: 'point',
+    typeValue: 'ACCESSIBILITY',
+    type: TOURISM_INFO_TYPES[15].name,
+    value: 'STEP_FREE_ROUTE',
+    name: { zh: '无台阶路线', en: 'Step-free Route', ja: '段差なしルート', ko: '무단차 경로', th: 'เส้นทางไม่มีขั้นบันได' },
+    description: { zh: '适用于轮椅、婴儿车或携带大件行李游客，需要标注入口、电梯和替代路线。', en: 'For wheelchair, stroller, or large-luggage visitors; note entrances, elevators, and alternate routes.', ja: '車椅子、ベビーカー、大型荷物の旅行者向けに入口、エレベーター、代替経路を示します。', ko: '휠체어, 유모차, 큰 짐이 있는 여행자를 위해 입구, 엘리베이터, 대체 경로를 표시합니다.', th: 'สำหรับผู้ใช้รถเข็น รถเข็นเด็ก หรือสัมภาระใหญ่ ควรระบุทางเข้า ลิฟต์ และเส้นทางสำรอง' },
+  },
+  {
+    id: 'tourism-point-crowd-peak',
+    code: 'TOURISM_61384902755',
+    level: 'point',
+    typeValue: 'CROWD_NOTICE',
+    type: TOURISM_INFO_TYPES[16].name,
+    value: 'PEAK_QUEUE',
+    name: { zh: '高峰排队明显', en: 'Peak Queue Expected', ja: 'ピーク時待ち時間あり', ko: '피크 시간 대기 예상', th: 'คาดว่าคิวหนาแน่นช่วงพีค' },
+    description: { zh: '适合热门点位，建议游客避开周末、节假日或固定演出前后的高峰时段。', en: 'For popular points; visitors should avoid weekends, holidays, or peaks around scheduled shows.', ja: '人気スポット向けで、週末、祝日、定時公演前後のピークを避ける案内です。', ko: '인기 지점에 적합하며 주말, 공휴일, 정기 공연 전후 피크를 피하도록 안내합니다.', th: 'เหมาะกับจุดยอดนิยม แนะนำหลีกเลี่ยงวันหยุดหรือช่วงก่อนหลังรอบการแสดง' },
+  },
+  {
+    id: 'tourism-landmark-guide-audio',
+    code: 'TOURISM_75492068133',
+    level: 'landmark',
+    typeValue: 'GUIDE_INFO',
+    type: TOURISM_INFO_TYPES[17].name,
+    value: 'AUDIO_GUIDE',
+    name: { zh: '多语言语音讲解', en: 'Multilingual Audio Guide', ja: '多言語音声ガイド', ko: '다국어 오디오 가이드', th: 'ออดิโอไกด์หลายภาษา' },
+    description: { zh: '地标支持语音讲解、导览器或 App 导览时绑定，用于提示游客获取方式和语言覆盖。', en: 'Bind when a landmark supports audio devices or app guides, including access method and language coverage.', ja: '名所が音声ガイドやアプリ導覽に対応する場合、利用方法と言語対応を案内します。', ko: '랜드마크가 오디오 장치나 앱 안내를 지원할 때 이용 방법과 언어 지원을 안내합니다.', th: 'ใช้เมื่อแลนด์มาร์กรองรับออดิโอไกด์หรือแอปนำชม พร้อมวิธีรับและภาษาที่รองรับ' },
+  },
+  {
+    id: 'tourism-landmark-route-one-way',
+    code: 'TOURISM_49281630754',
+    level: 'landmark',
+    typeValue: 'VISIT_ROUTE',
+    type: TOURISM_INFO_TYPES[18].name,
+    value: 'ONE_WAY_FLOW',
+    name: { zh: '单向参观动线', en: 'One-way Visitor Flow', ja: '一方通行見学動線', ko: '일방향 관람 동선', th: 'เส้นทางเข้าชมทางเดียว' },
+    description: { zh: '适用于入口、出口、观景台或展厅存在固定单向参观顺序的地标。', en: 'For landmarks with fixed one-way order across entrance, exit, viewpoints, or exhibition halls.', ja: '入口、出口、展望台、展示室などに固定の一方通行順路がある名所向けです。', ko: '입구, 출구, 전망대, 전시실 등에 고정 일방향 순서가 있는 랜드마크에 적합합니다.', th: 'เหมาะกับแลนด์มาร์กที่มีลำดับเดินชมทางเดียวผ่านทางเข้า ทางออก จุดชมวิว หรือห้องจัดแสดง' },
+  },
+  {
+    id: 'tourism-landmark-photo-sunrise',
+    code: 'TOURISM_83620491750',
+    level: 'landmark',
+    typeValue: 'PHOTO_TIP',
+    type: TOURISM_INFO_TYPES[19].name,
+    value: 'SUNRISE_SUNSET',
+    name: { zh: '日出日落机位', en: 'Sunrise and Sunset Spots', ja: '日の出・夕景撮影位置', ko: '일출·일몰 촬영 포인트', th: 'จุดถ่ายภาพพระอาทิตย์ขึ้นและตก' },
+    description: { zh: '用于维护地标拍摄角度、最佳光线、禁拍区域和人流避让建议。', en: 'Use for photo angles, best light, restricted areas, and crowd-avoidance suggestions.', ja: '撮影角度、最適な光、撮影禁止エリア、混雑回避の案内に使います。', ko: '촬영 각도, 최적의 빛, 촬영 금지 구역, 혼잡 회피 안내에 사용합니다.', th: 'ใช้ระบุมุมถ่ายภาพ แสงที่ดีที่สุด พื้นที่ห้ามถ่าย และคำแนะนำเลี่ยงคนเยอะ' },
+  },
+  {
+    id: 'tourism-landmark-queue-security',
+    code: 'TOURISM_19573840627',
+    level: 'landmark',
+    typeValue: 'QUEUE_NOTICE',
+    type: TOURISM_INFO_TYPES[20].name,
+    value: 'SECURITY_CHECK_QUEUE',
+    name: { zh: '安检排队', en: 'Security Check Queue', ja: '保安検査待ち', ko: '보안 검색 대기', th: 'คิวตรวจความปลอดภัย' },
+    description: { zh: '地标入口存在安检或实名核验时使用，适合提示禁止携带物和预留排队时间。', en: 'Use when entry includes security or identity checks; note prohibited items and buffer time.', ja: '入口で保安検査や本人確認がある場合、持込禁止物と待ち時間余裕を案内します。', ko: '입구에서 보안 검색 또는 신원 확인이 있는 경우 반입 금지 물품과 대기 시간을 안내합니다.', th: 'ใช้เมื่อทางเข้ามีการตรวจความปลอดภัยหรือยืนยันตัวตน ระบุของต้องห้ามและเวลารอ' },
+  },
+  {
+    id: 'tourism-landmark-best-time-golden-hour',
+    code: 'TOURISM_68031594722',
+    level: 'landmark',
+    typeValue: 'BEST_VISIT_TIME',
+    type: TOURISM_INFO_TYPES[21].name,
+    value: 'GOLDEN_HOUR',
+    name: { zh: '黄金时段到访', en: 'Golden Hour Visit', ja: 'ゴールデンアワー訪問', ko: '골든아워 방문', th: 'เข้าชมช่วงแสงทอง' },
+    description: { zh: '适合观景、拍摄或夜景地标，用于提示最佳光线、开灯时间和人流峰值。', en: 'For viewpoints, photo spots, or night-view landmarks; note light, illumination time, and crowd peaks.', ja: '展望、撮影、夜景名所向けに、光、点灯時間、混雑ピークを示します。', ko: '전망, 촬영, 야경 랜드마크에 적합하며 빛, 점등 시간, 혼잡 피크를 안내합니다.', th: 'เหมาะกับจุดชมวิว ถ่ายภาพ หรือแลนด์มาร์กกลางคืน ระบุแสง เวลาเปิดไฟ และช่วงคนเยอะ' },
+  },
+  {
+    id: 'tourism-landmark-culture-symbol',
+    code: 'TOURISM_52740918366',
+    level: 'landmark',
+    typeValue: 'CULTURE_INTERPRETATION',
+    type: TOURISM_INFO_TYPES[22].name,
+    value: 'SYMBOL_STORY',
+    name: { zh: '地标象征故事', en: 'Symbolic Landmark Story', ja: '象徴的な物語', ko: '상징적 이야기', th: 'เรื่องราวสัญลักษณ์ของแลนด์มาร์ก' },
+    description: { zh: '用于解释地标背后的历史、宗教、城市记忆或建筑象征。', en: 'Explains the history, religion, city memory, or architectural symbolism behind a landmark.', ja: '名所の背景にある歴史、宗教、都市記憶、建築的象徴を説明します。', ko: '랜드마크 뒤의 역사, 종교, 도시 기억, 건축 상징을 설명합니다.', th: 'ใช้อธิบายประวัติ ศาสนา ความทรงจำเมือง หรือสัญลักษณ์ทางสถาปัตยกรรมของแลนด์มาร์ก' },
   },
 ]

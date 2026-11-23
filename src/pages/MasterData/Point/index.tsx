@@ -14,23 +14,50 @@ import { CITIES } from '@/mock/cities'
 import { POINT_TYPES, type PointType } from '@/mock/pointTypes'
 import type { Point } from '@/types/point'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
+import {
+  useTourismInfoBindingStore,
+  type PointTourismInfoBindingState,
+} from '@/store/useTourismInfoBindingStore'
+import { useTourismInformationStore } from '@/store/useTourismInformationStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
 import DataFormItem, { type DataFormItemValue } from '@/components/DataFormItem'
+import TourismInfoBindingModal, {
+  type TourismInfoBindingSection,
+} from '@/components/TourismInfoBindingModal'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
 import { modalPopupContainer } from '@/utils/popupContainer'
+import { createTourismInfoOptions } from '@/utils/tourismInformation'
 import type { LocalizedText } from '@/types/destination'
 
 type PointEditorFormData = Omit<PointFormData, 'name'> & {
   name: DataFormItemValue
 }
+interface PointInfoBindingForm extends PointTourismInfoBindingState {
+  displayZoom?: number | null
+}
 
+const DEFAULT_DISPLAY_ZOOM = 8
+const MIN_DISPLAY_ZOOM = 0.8
+const MAX_DISPLAY_ZOOM = 100
+const DISPLAY_ZOOM_TEXT_COLOR = '#1677ff'
+const CLICKABLE_NAME_TEXT_COLOR = '#1677ff'
 const TYPE_LIST_THEME_COLOR = '#52c41a'
 const typeListButtonStyle = {
   backgroundColor: TYPE_LIST_THEME_COLOR,
   borderColor: TYPE_LIST_THEME_COLOR,
 }
 const toolbarDividerStyle = { height: 24 }
+
+interface EditingDisplayZoom {
+  id: string
+  value: number | null
+}
+
+function normalizeDisplayZoom(value?: number | null) {
+  const nextValue = value ?? DEFAULT_DISPLAY_ZOOM
+  return Math.min(MAX_DISPLAY_ZOOM, Math.max(MIN_DISPLAY_ZOOM, nextValue))
+}
 
 function CoordinatesInput({
   langKey,
@@ -202,10 +229,128 @@ export default function PointPage() {
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [typeModalOpen, setTypeModalOpen] = useState(false)
+  const [bindingModalOpen, setBindingModalOpen] = useState(false)
   const [editing, setEditing] = useState<Point | null>(null)
+  const [bindingPoint, setBindingPoint] = useState<Point | null>(null)
   const [pointTypes, setPointTypes] = useState<PointType[]>(POINT_TYPES)
+  const tourismInfoItems = useTourismInformationStore((state) => state.items)
+  const displayZoomById = useTourismInfoBindingStore(
+    (state) => state.pointDisplayZoomById,
+  )
+  const infoBindingById = useTourismInfoBindingStore(
+    (state) => state.pointInfoBindingById,
+  )
+  const setDisplayZoom = useTourismInfoBindingStore(
+    (state) => state.setPointDisplayZoom,
+  )
+  const setPointInfoBinding = useTourismInfoBindingStore(
+    (state) => state.setPointInfoBinding,
+  )
+  const [editingDisplayZoom, setEditingDisplayZoom] =
+    useState<EditingDisplayZoom | null>(null)
   const [form] = Form.useForm<PointEditorFormData>()
   const pointType = Form.useWatch('pointType', form)
+
+  const getDisplayZoom = (id: string) => displayZoomById[id] ?? DEFAULT_DISPLAY_ZOOM
+  const pointTourismInfoSections: TourismInfoBindingSection[] = useMemo(
+    () => [
+      {
+        titleKey: 'pointTourismInfo',
+        fields: [
+          {
+            kind: 'select',
+            name: 'openingInfoId',
+            labelKey: 'openingNotice',
+            required: true,
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'point',
+              'OPENING_NOTICE',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'ticketInfoId',
+            labelKey: 'ticketNotice',
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'point',
+              'TICKET_NOTICE',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'reservationInfoId',
+            labelKey: 'reservationNotice',
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'point',
+              'RESERVATION_NOTICE',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'facilityInfoIds',
+            labelKey: 'facilityNotice',
+            mode: 'multiple',
+            required: true,
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'point',
+              'FACILITY_NOTICE',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'arrivalInfoIds',
+            labelKey: 'arrivalGuide',
+            mode: 'multiple',
+            required: true,
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'point',
+              'ARRIVAL_GUIDE',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'accessibilityInfoId',
+            labelKey: 'accessibility',
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'point',
+              'ACCESSIBILITY',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'crowdInfoId',
+            labelKey: 'crowdNotice',
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'point',
+              'CROWD_NOTICE',
+            ),
+          },
+          {
+            kind: 'number',
+            name: 'suggestedVisitMinutes',
+            labelKey: 'suggestedVisitMinutes',
+            min: 0,
+            step: 5,
+          },
+        ],
+      },
+    ],
+    [language, tourismInfoItems],
+  )
 
   const fetchData = async () => {
     setLoading(true)
@@ -235,6 +380,31 @@ export default function PointPage() {
     form.resetFields()
     form.setFieldsValue({ businessHours: [{ start: '', end: '' }] })
     setModalOpen(true)
+  }
+
+  const openInfoBindingModal = (point: Point) => {
+    setBindingPoint(point)
+    setBindingModalOpen(true)
+  }
+
+  const closeInfoBindingModal = () => {
+    setBindingModalOpen(false)
+    setBindingPoint(null)
+  }
+
+  const saveInfoBinding = (values: PointInfoBindingForm) => {
+    if (!bindingPoint) return
+    const { displayZoom, ...infoBindingValues } = values
+    setDisplayZoom(bindingPoint.id, normalizeDisplayZoom(displayZoom))
+    setPointInfoBinding(bindingPoint.id, infoBindingValues)
+    closeInfoBindingModal()
+  }
+
+  const commitDisplayZoomEdit = () => {
+    if (!editingDisplayZoom) return
+    const nextValue = normalizeDisplayZoom(editingDisplayZoom.value)
+    setDisplayZoom(editingDisplayZoom.id, nextValue)
+    setEditingDisplayZoom(null)
   }
 
   const openEdit = (point: Point) => {
@@ -290,7 +460,21 @@ export default function PointPage() {
     {
       title: <LanguageLabel langKey={language} labelKey="pointName" />,
       dataIndex: 'name',
-      render: (name: Point['name']) => <LanguageText langKey={language} map={{ ...name }} />,
+      render: (name: Point['name'], record) => (
+        <Button
+          type="link"
+          size="small"
+          onClick={() => openInfoBindingModal(record)}
+          style={{
+            color: CLICKABLE_NAME_TEXT_COLOR,
+            fontWeight: 600,
+            height: 'auto',
+            padding: 0,
+          }}
+        >
+          <LanguageText langKey={language} map={{ ...name }} />
+        </Button>
+      ),
     },
     {
       title: <LanguageLabel langKey={language} labelKey="pointType" />,
@@ -306,11 +490,59 @@ export default function PointPage() {
       render: (coordinates: Point['coordinates']) => coordinates.join(', '),
     },
     {
+      title: (
+        <span style={{ whiteSpace: 'nowrap' }}>
+          <LanguageLabel langKey={language} labelKey="displayZoom" />
+        </span>
+      ),
+      key: 'displayZoom',
+      width: 160,
+      render: (_, record) =>
+        editingDisplayZoom?.id === record.id ? (
+          <InputNumber
+            autoFocus
+            min={MIN_DISPLAY_ZOOM}
+            max={MAX_DISPLAY_ZOOM}
+            step={0.1}
+            value={editingDisplayZoom.value}
+            onChange={(value) =>
+              setEditingDisplayZoom((prev) =>
+                prev ? { ...prev, value: typeof value === 'number' ? value : null } : prev,
+              )
+            }
+            onBlur={commitDisplayZoomEdit}
+            onPressEnter={commitDisplayZoomEdit}
+            style={{ width: 104 }}
+          />
+        ) : (
+          <span
+            onClick={() =>
+              setEditingDisplayZoom({
+                id: record.id,
+                value: getDisplayZoom(record.id),
+              })
+            }
+            style={{
+              color: DISPLAY_ZOOM_TEXT_COLOR,
+              cursor: 'pointer',
+              display: 'inline-block',
+              fontWeight: 600,
+              minWidth: 72,
+            }}
+          >
+            {getDisplayZoom(record.id)}x
+          </span>
+        ),
+    },
+    {
       title: <LanguageLabel langKey={language} labelKey="actions" />,
       fixed: 'right',
-      width: 160,
+      width: 240,
       render: (_, record) => (
         <>
+          <Button type="link" onClick={() => openInfoBindingModal(record)}>
+            <LanguageLabel langKey={language} labelKey="infoBinding" />
+          </Button>
           <Button type="link" onClick={() => openEdit(record)}>
             <LanguageLabel langKey={language} labelKey="edit" />
           </Button>
@@ -436,6 +668,25 @@ export default function PointPage() {
         codePrefix="POINT_TYPE"
         onCancel={() => setTypeModalOpen(false)}
         onTypesChange={setPointTypes}
+      />
+      <TourismInfoBindingModal<PointInfoBindingForm>
+        open={bindingModalOpen}
+        language={language}
+        entityCode={bindingPoint?.id}
+        entityName={bindingPoint ? { ...bindingPoint.name } : undefined}
+        entityCodeLabelKey="pointCode"
+        entityNameLabelKey="pointName"
+        initialValues={{
+          ...(bindingPoint ? (infoBindingById[bindingPoint.id] ?? {}) : {}),
+          displayZoom: bindingPoint
+            ? getDisplayZoom(bindingPoint.id)
+            : DEFAULT_DISPLAY_ZOOM,
+        }}
+        sections={pointTourismInfoSections}
+        width={960}
+        columnCount={1}
+        onCancel={closeInfoBindingModal}
+        onSave={saveInfoBinding}
       />
     </>
   )

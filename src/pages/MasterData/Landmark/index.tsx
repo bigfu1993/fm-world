@@ -1,4 +1,4 @@
-import { Button, Divider, Form, Input, Popconfirm, Select, Space, Table, message } from 'antd'
+import { Button, Divider, Form, Input, InputNumber, Popconfirm, Select, Space, Table, message } from 'antd'
 import { PlusOutlined, UnorderedListOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import DraggableModal from '@/components/DraggableModal'
@@ -14,23 +14,50 @@ import {
 import { LANDMARK_TYPES, type LandmarkType } from '@/mock/landmarkTypes'
 import type { Landmark, Point } from '@/types/point'
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore'
+import {
+  useTourismInfoBindingStore,
+  type LandmarkTourismInfoBindingState,
+} from '@/store/useTourismInfoBindingStore'
+import { useTourismInformationStore } from '@/store/useTourismInformationStore'
 import LanguageLabel from '@/components/LanguageLabel'
 import LanguageText from '@/components/LanguageText'
 import DataFormItem, { type DataFormItemValue } from '@/components/DataFormItem'
+import TourismInfoBindingModal, {
+  type TourismInfoBindingSection,
+} from '@/components/TourismInfoBindingModal'
 import { getLabel } from '@/components/LanguageLabel/LabelMap'
 import { modalPopupContainer } from '@/utils/popupContainer'
+import { createTourismInfoOptions } from '@/utils/tourismInformation'
 import type { LocalizedText } from '@/types/destination'
 
 type LandmarkEditorFormData = Omit<LandmarkFormData, 'name'> & {
   name: DataFormItemValue
 }
+interface LandmarkInfoBindingForm extends LandmarkTourismInfoBindingState {
+  displayZoom?: number | null
+}
 
+const DEFAULT_DISPLAY_ZOOM = 8
+const MIN_DISPLAY_ZOOM = 0.8
+const MAX_DISPLAY_ZOOM = 100
+const DISPLAY_ZOOM_TEXT_COLOR = '#1677ff'
+const CLICKABLE_NAME_TEXT_COLOR = '#1677ff'
 const TYPE_LIST_THEME_COLOR = '#52c41a'
 const typeListButtonStyle = {
   backgroundColor: TYPE_LIST_THEME_COLOR,
   borderColor: TYPE_LIST_THEME_COLOR,
 }
 const toolbarDividerStyle = { height: 24 }
+
+interface EditingDisplayZoom {
+  id: string
+  value: number | null
+}
+
+function normalizeDisplayZoom(value?: number | null) {
+  const nextValue = value ?? DEFAULT_DISPLAY_ZOOM
+  return Math.min(MAX_DISPLAY_ZOOM, Math.max(MIN_DISPLAY_ZOOM, nextValue))
+}
 
 function createLabelDataFormValue(content: LocalizedText): DataFormItemValue {
   return {
@@ -55,9 +82,118 @@ export default function LandmarkPage() {
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [typeModalOpen, setTypeModalOpen] = useState(false)
+  const [bindingModalOpen, setBindingModalOpen] = useState(false)
   const [editing, setEditing] = useState<Landmark | null>(null)
+  const [bindingLandmark, setBindingLandmark] = useState<Landmark | null>(null)
   const [landmarkTypes, setLandmarkTypes] = useState<LandmarkType[]>(LANDMARK_TYPES)
+  const tourismInfoItems = useTourismInformationStore((state) => state.items)
+  const displayZoomById = useTourismInfoBindingStore(
+    (state) => state.landmarkDisplayZoomById,
+  )
+  const infoBindingById = useTourismInfoBindingStore(
+    (state) => state.landmarkInfoBindingById,
+  )
+  const setDisplayZoom = useTourismInfoBindingStore(
+    (state) => state.setLandmarkDisplayZoom,
+  )
+  const setLandmarkInfoBinding = useTourismInfoBindingStore(
+    (state) => state.setLandmarkInfoBinding,
+  )
+  const [editingDisplayZoom, setEditingDisplayZoom] =
+    useState<EditingDisplayZoom | null>(null)
   const [form] = Form.useForm<LandmarkEditorFormData>()
+
+  const getDisplayZoom = (id: string) => displayZoomById[id] ?? DEFAULT_DISPLAY_ZOOM
+  const landmarkTourismInfoSections: TourismInfoBindingSection[] = useMemo(
+    () => [
+      {
+        titleKey: 'landmarkTourismInfo',
+        fields: [
+          {
+            kind: 'select',
+            name: 'guideInfoIds',
+            labelKey: 'landmarkGuideInfo',
+            mode: 'multiple',
+            required: true,
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'landmark',
+              'GUIDE_INFO',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'visitRouteInfoIds',
+            labelKey: 'landmarkRouteAdvice',
+            mode: 'multiple',
+            required: true,
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'landmark',
+              'VISIT_ROUTE',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'photoInfoIds',
+            labelKey: 'photoTips',
+            mode: 'multiple',
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'landmark',
+              'PHOTO_TIP',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'queueInfoId',
+            labelKey: 'queueNotice',
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'landmark',
+              'QUEUE_NOTICE',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'bestVisitTimeInfoId',
+            labelKey: 'bestVisitTime',
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'landmark',
+              'BEST_VISIT_TIME',
+            ),
+          },
+          {
+            kind: 'select',
+            name: 'cultureInterpretationInfoIds',
+            labelKey: 'cultureInterpretation',
+            mode: 'multiple',
+            required: true,
+            options: createTourismInfoOptions(
+              tourismInfoItems,
+              language,
+              'landmark',
+              'CULTURE_INTERPRETATION',
+            ),
+          },
+          {
+            kind: 'number',
+            name: 'suggestedVisitMinutes',
+            labelKey: 'suggestedVisitMinutes',
+            min: 0,
+            step: 5,
+          },
+        ],
+      },
+    ],
+    [language, tourismInfoItems],
+  )
 
   const fetchData = async () => {
     setLoading(true)
@@ -88,6 +224,31 @@ export default function LandmarkPage() {
     setEditing(null)
     form.resetFields()
     setModalOpen(true)
+  }
+
+  const openInfoBindingModal = (landmark: Landmark) => {
+    setBindingLandmark(landmark)
+    setBindingModalOpen(true)
+  }
+
+  const closeInfoBindingModal = () => {
+    setBindingModalOpen(false)
+    setBindingLandmark(null)
+  }
+
+  const saveInfoBinding = (values: LandmarkInfoBindingForm) => {
+    if (!bindingLandmark) return
+    const { displayZoom, ...infoBindingValues } = values
+    setDisplayZoom(bindingLandmark.id, normalizeDisplayZoom(displayZoom))
+    setLandmarkInfoBinding(bindingLandmark.id, infoBindingValues)
+    closeInfoBindingModal()
+  }
+
+  const commitDisplayZoomEdit = () => {
+    if (!editingDisplayZoom) return
+    const nextValue = normalizeDisplayZoom(editingDisplayZoom.value)
+    setDisplayZoom(editingDisplayZoom.id, nextValue)
+    setEditingDisplayZoom(null)
   }
 
   const openEdit = (landmark: Landmark) => {
@@ -143,7 +304,21 @@ export default function LandmarkPage() {
     {
       title: <LanguageLabel langKey={language} labelKey="landmarkName" />,
       dataIndex: 'name',
-      render: (name: Landmark['name']) => <LanguageText langKey={language} map={{ ...name }} />,
+      render: (name: Landmark['name'], record) => (
+        <Button
+          type="link"
+          size="small"
+          onClick={() => openInfoBindingModal(record)}
+          style={{
+            color: CLICKABLE_NAME_TEXT_COLOR,
+            fontWeight: 600,
+            height: 'auto',
+            padding: 0,
+          }}
+        >
+          <LanguageText langKey={language} map={{ ...name }} />
+        </Button>
+      ),
     },
     {
       title: <LanguageLabel langKey={language} labelKey="landmarkType" />,
@@ -156,11 +331,59 @@ export default function LandmarkPage() {
     { title: <LanguageLabel langKey={language} labelKey="introduction" />, dataIndex: 'description' },
     { title: <LanguageLabel langKey={language} labelKey="cultureExtension" />, dataIndex: 'cultureExtension' },
     {
+      title: (
+        <span style={{ whiteSpace: 'nowrap' }}>
+          <LanguageLabel langKey={language} labelKey="displayZoom" />
+        </span>
+      ),
+      key: 'displayZoom',
+      width: 160,
+      render: (_, record) =>
+        editingDisplayZoom?.id === record.id ? (
+          <InputNumber
+            autoFocus
+            min={MIN_DISPLAY_ZOOM}
+            max={MAX_DISPLAY_ZOOM}
+            step={0.1}
+            value={editingDisplayZoom.value}
+            onChange={(value) =>
+              setEditingDisplayZoom((prev) =>
+                prev ? { ...prev, value: typeof value === 'number' ? value : null } : prev,
+              )
+            }
+            onBlur={commitDisplayZoomEdit}
+            onPressEnter={commitDisplayZoomEdit}
+            style={{ width: 104 }}
+          />
+        ) : (
+          <span
+            onClick={() =>
+              setEditingDisplayZoom({
+                id: record.id,
+                value: getDisplayZoom(record.id),
+              })
+            }
+            style={{
+              color: DISPLAY_ZOOM_TEXT_COLOR,
+              cursor: 'pointer',
+              display: 'inline-block',
+              fontWeight: 600,
+              minWidth: 72,
+            }}
+          >
+            {getDisplayZoom(record.id)}x
+          </span>
+        ),
+    },
+    {
       title: <LanguageLabel langKey={language} labelKey="actions" />,
       fixed: 'right',
-      width: 160,
+      width: 240,
       render: (_, record) => (
         <>
+          <Button type="link" onClick={() => openInfoBindingModal(record)}>
+            <LanguageLabel langKey={language} labelKey="infoBinding" />
+          </Button>
           <Button type="link" onClick={() => openEdit(record)}>
             <LanguageLabel langKey={language} labelKey="edit" />
           </Button>
@@ -264,6 +487,27 @@ export default function LandmarkPage() {
         codePrefix="LANDMARK_TYPE"
         onCancel={() => setTypeModalOpen(false)}
         onTypesChange={setLandmarkTypes}
+      />
+      <TourismInfoBindingModal<LandmarkInfoBindingForm>
+        open={bindingModalOpen}
+        language={language}
+        entityCode={bindingLandmark?.id}
+        entityName={bindingLandmark ? { ...bindingLandmark.name } : undefined}
+        entityCodeLabelKey="landmarkCode"
+        entityNameLabelKey="landmarkName"
+        initialValues={{
+          ...(bindingLandmark
+            ? (infoBindingById[bindingLandmark.id] ?? {})
+            : {}),
+          displayZoom: bindingLandmark
+            ? getDisplayZoom(bindingLandmark.id)
+            : DEFAULT_DISPLAY_ZOOM,
+        }}
+        sections={landmarkTourismInfoSections}
+        width={960}
+        columnCount={1}
+        onCancel={closeInfoBindingModal}
+        onSave={saveInfoBinding}
       />
     </>
   )

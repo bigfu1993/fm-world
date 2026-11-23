@@ -133,7 +133,7 @@ function createRandomDigits(length = 11): string {
 }
 
 function createCultureCustomTypeCode(existingCodes: Set<string>): string {
-  let code = ''
+  let code: string
   do {
     code = `CULTURE_TYPE_${createRandomDigits()}`
   } while (existingCodes.has(code))

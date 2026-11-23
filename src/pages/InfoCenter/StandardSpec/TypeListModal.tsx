@@ -165,7 +165,7 @@ function createRandomDigits(length = 11): string {
 }
 
 function createStandardSpecTypeCode(existingCodes: Set<string>): string {
-  let code = '';
+  let code: string;
   do {
     code = `STANDARD_TYPE_${createRandomDigits()}`;
   } while (existingCodes.has(code));

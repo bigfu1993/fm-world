@@ -25,7 +25,6 @@ import {
   type StandardSpecSupplementFile,
 } from '@/mock/information';
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore';
-import type { LanguageCode } from '@/types/system';
 import { renderTableEmptyPlaceholder } from '@/utils/table';
 import TypeListModal, {
   STANDARD_SPEC_TYPE_THEME_COLOR,
@@ -244,7 +243,7 @@ function createRandomDigits(length = 11): string {
 function createStandardSpecCode(
   existingCodes: Set<string>,
 ): string {
-  let code = '';
+  let code: string;
   do {
     code = `STANDARD_${createRandomDigits()}`;
   } while (existingCodes.has(code));
@@ -311,7 +310,7 @@ export default function StandardSpecPage() {
     setEditModalOpen(true);
   };
 
-  const refreshCreateCode = (typeKey: StandardSpecTypeFilter) => {
+  const refreshCreateCode = () => {
     if (formMode !== 'create') return;
     editForm.setFieldValue('code', generateCode());
   };

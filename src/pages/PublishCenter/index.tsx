@@ -1,4 +1,4 @@
-import { Button, Input, Spin, Tag, message } from 'antd';
+import { Alert, Button, Input, Spin, Tag, message } from 'antd';
 import { COUNTRIES } from '@/db/countries';
 import { CONTINENTS } from '@/db/continents';
 import { PROVINCES, type Province } from '@/db/provinces';
@@ -14,6 +14,8 @@ import {
 } from '@/api/publish';
 import type { PublishStatus } from '@/mock/publishStatus';
 import { useAuthStore, selectCurrentLanguage } from '@/store/useAuthStore';
+import { useCountryInfoBindingStore } from '@/store/useCountryInfoBindingStore';
+import { useTourismInfoBindingStore } from '@/store/useTourismInfoBindingStore';
 import type { LanguageCode } from '@/types/system';
 import LanguageLabel from '@/components/LanguageLabel';
 import LanguageText from '@/components/LanguageText';
@@ -24,6 +26,10 @@ import GeoMap, {
   type GeoMapRegion,
 } from '@/components/GeoMap';
 import { getLabel, type LabelKey } from '@/components/LanguageLabel/LabelMap';
+import {
+  hasAnySelectedTourismInfo,
+  hasSelectedTourismInfo,
+} from '@/utils/tourismInformation';
 
 const STATUS_LABEL_KEY: Record<PublishStatus, LabelKey> = {
   unpublished: 'statusUnpublished',
@@ -264,6 +270,21 @@ function ListColumn<T>({
 
 export default function PublishCenterPage() {
   const language = useAuthStore(selectCurrentLanguage);
+  const infoBindingByCode = useCountryInfoBindingStore(
+    (state) => state.infoBindingByCode,
+  );
+  const provinceInfoBindingByCode = useTourismInfoBindingStore(
+    (state) => state.provinceInfoBindingByCode,
+  );
+  const cityInfoBindingByCode = useTourismInfoBindingStore(
+    (state) => state.cityInfoBindingByCode,
+  );
+  const pointInfoBindingById = useTourismInfoBindingStore(
+    (state) => state.pointInfoBindingById,
+  );
+  const landmarkInfoBindingById = useTourismInfoBindingStore(
+    (state) => state.landmarkInfoBindingById,
+  );
   const [geoTree, setGeoTree] = useState<GeoNode[] | null>(null);
   const [geoTreeLoading, setGeoTreeLoading] = useState(true);
   const [countryCode, setCountryCode] = useState<string | undefined>(undefined);
@@ -417,8 +438,15 @@ export default function PublishCenterPage() {
     ? getPublishStatus(selectedPublishKey)
     : undefined;
 
+  const createRequiredInfoIssue = (labelKey: LabelKey) =>
+    `${getLabel('missingRequiredInfo', language)}：${getLabel(labelKey, language)}`;
+
   const handlePublish = async () => {
     if (!selectedPublishKey) return;
+    if (selectedPublishIssues.length) {
+      message.warning(getLabel('publishBlocked', language));
+      return;
+    }
     await requestPublish(selectedPublishKey);
     message.success(getLabel('publishRequested', language));
     setStatusVersion((v) => v + 1);
@@ -520,6 +548,173 @@ export default function PublishCenterPage() {
         | GeoMapFeature
         | undefined))
     : undefined;
+
+  const selectedPublishIssues = (() => {
+    const issues: string[] = [];
+    if (!selectedPublishKey) return issues;
+
+    if (selectedCountry) {
+      if (!countryGeo) issues.push(getLabel('missingGeoData', language));
+      if (countryHasMissingChild(selectedCountry)) {
+        issues.push(getLabel('missingChildGeoData', language));
+      }
+      const binding = infoBindingByCode[selectedCountry.code];
+      if (!binding) {
+        issues.push(getLabel('missingCountryBinding', language));
+      } else {
+        if (!binding.officialLanguageCodes?.length) {
+          issues.push(createRequiredInfoIssue('officialLanguage'));
+        }
+        if (!binding.currencyInfoId) {
+          issues.push(createRequiredInfoIssue('currency'));
+        }
+        if (!binding.timezoneInfoId) {
+          issues.push(createRequiredInfoIssue('timezone'));
+        }
+        if (!binding.climateInfoId) {
+          issues.push(createRequiredInfoIssue('climate'));
+        }
+        if (
+          Object.values(binding.standardSpecInfoIds ?? {}).filter(Boolean)
+            .length < 2
+        ) {
+          issues.push(createRequiredInfoIssue('standardSpecification'));
+        }
+        if (!binding.entryPolicyInfoId) {
+          issues.push(createRequiredInfoIssue('entryPolicy'));
+        }
+        if (!binding.customsRestrictionInfoId) {
+          issues.push(createRequiredInfoIssue('customsRestriction'));
+        }
+        if (!binding.communicationInfoId) {
+          issues.push(createRequiredInfoIssue('travelCommunication'));
+        }
+        if (!binding.networkInfoId) {
+          issues.push(createRequiredInfoIssue('networkInformation'));
+        }
+        if (!binding.paymentMethodInfoIds?.length) {
+          issues.push(createRequiredInfoIssue('payment'));
+        }
+        if (!binding.trafficRuleInfoId) {
+          issues.push(createRequiredInfoIssue('trafficRules'));
+        }
+        if (!binding.drivingLicenseInfoId) {
+          issues.push(createRequiredInfoIssue('drivingLicense'));
+        }
+        if (!binding.securityRiskInfoId) {
+          issues.push(createRequiredInfoIssue('securityRisk'));
+        }
+        const selectedCultureCount = Object.values(
+          binding.cultureInfoIds ?? {},
+        ).reduce((sum, values) => sum + (values?.length ?? 0), 0);
+        if (selectedCultureCount === 0) {
+          issues.push(createRequiredInfoIssue('cultureCustoms'));
+        }
+        if (
+          typeof binding.foodSafetyLevel !== 'number' ||
+          typeof binding.waterSafetyLevel !== 'number' ||
+          typeof binding.publicSecurityLevel !== 'number'
+        ) {
+          issues.push(createRequiredInfoIssue('safetyLevel'));
+        }
+      }
+    }
+
+    if (selectedProvince) {
+      if (!selectedProvinceGeo) issues.push(getLabel('missingGeoData', language));
+      if (provinceHasMissingChild(selectedProvince)) {
+        issues.push(getLabel('missingChildGeoData', language));
+      }
+      const binding = provinceInfoBindingByCode[selectedProvince.code];
+      if (!binding) {
+        issues.push(getLabel('missingProvinceBinding', language));
+      } else {
+        if (
+          !hasAnySelectedTourismInfo([
+            binding.regionalLandscapeInfoIds,
+            binding.regionalCultureBeltInfoIds,
+            binding.regionalHeritageClusterInfoIds,
+            binding.regionalCuisineSystemInfoIds,
+            binding.regionalSeasonalEventInfoIds,
+          ])
+        ) {
+          issues.push(createRequiredInfoIssue('regionalFeatureInfo'));
+        }
+        if (!hasSelectedTourismInfo(binding.regionalTrafficInfoIds)) {
+          issues.push(createRequiredInfoIssue('trafficInformation'));
+        }
+      }
+    }
+
+    if (selectedCity) {
+      if (
+        !(geoLookup.get(cityGeoCode(selectedCity)) as GeoMapFeature | undefined)
+      ) {
+        issues.push(getLabel('missingGeoData', language));
+      }
+      const binding = cityInfoBindingByCode[selectedCity.code];
+      if (!binding) {
+        issues.push(getLabel('missingCityBinding', language));
+      } else {
+        if (
+          !hasAnySelectedTourismInfo([
+            binding.urbanDistrictInfoIds,
+            binding.cityLifestyleInfoIds,
+            binding.cityFoodSceneInfoIds,
+            binding.cityHeritageInfoIds,
+            binding.cityEventInfoIds,
+          ])
+        ) {
+          issues.push(createRequiredInfoIssue('cityFeatureInfo'));
+        }
+        if (!hasSelectedTourismInfo(binding.cityTransportInfoIds)) {
+          issues.push(createRequiredInfoIssue('trafficInformation'));
+        }
+      }
+    }
+
+    if (selectedPoint) {
+      if (
+        !Number.isFinite(selectedPoint.coordinates[0]) ||
+        !Number.isFinite(selectedPoint.coordinates[1])
+      ) {
+        issues.push(getLabel('missingCoordinates', language));
+      }
+      const binding = pointInfoBindingById[selectedPoint.id];
+      if (!binding) {
+        issues.push(getLabel('missingPointBinding', language));
+      } else {
+        if (!hasSelectedTourismInfo(binding.openingInfoId)) {
+          issues.push(createRequiredInfoIssue('openingNotice'));
+        }
+        if (!hasSelectedTourismInfo(binding.facilityInfoIds)) {
+          issues.push(createRequiredInfoIssue('facilityNotice'));
+        }
+        if (!hasSelectedTourismInfo(binding.arrivalInfoIds)) {
+          issues.push(createRequiredInfoIssue('arrivalGuide'));
+        }
+      }
+    }
+
+    if (selectedLandmark) {
+      const binding = landmarkInfoBindingById[selectedLandmark.id];
+      if (!binding) {
+        issues.push(getLabel('missingLandmarkBinding', language));
+      } else {
+        if (!hasSelectedTourismInfo(binding.guideInfoIds)) {
+          issues.push(createRequiredInfoIssue('landmarkGuideInfo'));
+        }
+        if (!hasSelectedTourismInfo(binding.visitRouteInfoIds)) {
+          issues.push(createRequiredInfoIssue('landmarkRouteAdvice'));
+        }
+        if (!hasSelectedTourismInfo(binding.cultureInterpretationInfoIds)) {
+          issues.push(createRequiredInfoIssue('cultureInterpretation'));
+        }
+      }
+    }
+
+    return issues;
+  })();
 
   let mapFocus: GeoMapFocus | undefined;
   if (selectedPoint) {
@@ -706,7 +901,9 @@ export default function PublishCenterPage() {
             size="small"
             type="primary"
             disabled={
-              !selectedPublishKey || currentPublishStatus !== 'unpublished'
+              !selectedPublishKey ||
+              currentPublishStatus !== 'unpublished' ||
+              selectedPublishIssues.length > 0
             }
             onClick={handlePublish}
           >
@@ -722,6 +919,36 @@ export default function PublishCenterPage() {
             <LanguageLabel langKey={language} labelKey="unpublish" />
           </Button>
         </div>
+        {selectedPublishKey && (
+          <Alert
+            type={selectedPublishIssues.length ? 'warning' : 'success'}
+            showIcon
+            message={
+              <LanguageLabel
+                langKey={language}
+                labelKey={
+                  selectedPublishIssues.length
+                    ? 'publishChecklistFailed'
+                    : 'publishChecklistPassed'
+                }
+              />
+            }
+            description={
+              selectedPublishIssues.length ? (
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {selectedPublishIssues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              ) : (
+                <LanguageLabel
+                  langKey={language}
+                  labelKey="publishReady"
+                />
+              )
+            }
+          />
+        )}
       </div>
     </div>
   );
