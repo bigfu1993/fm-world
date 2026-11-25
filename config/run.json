@@ -1,0 +1,10 @@
+{
+  "dev": {
+    "front-end": { "host": "127.0.0.1", "port": 5173 },
+    "back-end": { "host": "127.0.0.1", "port": 8080, "install": null, "start": null }
+  },
+  "test": {
+    "front-end": { "host": "127.0.0.1", "port": 5174 },
+    "back-end": { "host": "127.0.0.1", "port": 8081, "install": null, "start": null }
+  }
+}
