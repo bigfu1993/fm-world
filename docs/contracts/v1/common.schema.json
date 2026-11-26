@@ -1,0 +1,358 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/common.schema.json",
+  "title": "首版共享传输类型",
+  "definitions": {
+    "Id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "Locale": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "Revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "Issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "locale": {
+          "$ref": "#/definitions/Locale"
+        },
+        "referenceId": {
+          "$ref": "#/definitions/Id"
+        }
+      },
+      "required": [
+        "field",
+        "code"
+      ]
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "MALFORMED_REQUEST",
+            "INVALID_CREDENTIALS",
+            "SESSION_INVALID",
+            "ACTION_FORBIDDEN",
+            "CSRF_INVALID",
+            "RECORD_NOT_FOUND",
+            "COUNTRY_CONFIGURATION_UNAVAILABLE",
+            "PUBLISHED_CONTENT_UNAVAILABLE",
+            "PUBLISHED_LANGUAGE_UNAVAILABLE",
+            "REVISION_CONFLICT",
+            "PENDING_OPERATION_EXISTS",
+            "WITHDRAWAL_BLOCKED",
+            "IDEMPOTENCY_CONFLICT",
+            "LAST_ADMIN_REQUIRED",
+            "RELOCATION_BLOCKED",
+            "FILE_TOO_LARGE",
+            "UNSUPPORTED_MEDIA_TYPE",
+            "INVALID_PRIMARY_LOCALE",
+            "VALIDATION_FAILED",
+            "RATE_LIMITED",
+            "INTERNAL_ERROR",
+            "SERVICE_NOT_READY"
+          ]
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Issue"
+          }
+        },
+        "availableLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Locale"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "code",
+        "requestId"
+      ],
+      "if": {
+        "properties": {
+          "code": {
+            "const": "PUBLISHED_LANGUAGE_UNAVAILABLE"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "availableLocales"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "availableLocales"
+          ]
+        }
+      }
+    },
+    "CsrfHeaders": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x-csrf-token": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "x-csrf-token"
+      ]
+    },
+    "WriteHeaders": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x-csrf-token": {
+          "type": "string",
+          "minLength": 1
+        },
+        "idempotency-key": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "x-csrf-token",
+        "idempotency-key"
+      ]
+    },
+    "Http400Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "MALFORMED_REQUEST"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http401Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "INVALID_CREDENTIALS",
+                "SESSION_INVALID"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http403Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "ACTION_FORBIDDEN",
+                "CSRF_INVALID"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http404Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "RECORD_NOT_FOUND",
+                "COUNTRY_CONFIGURATION_UNAVAILABLE",
+                "PUBLISHED_CONTENT_UNAVAILABLE",
+                "PUBLISHED_LANGUAGE_UNAVAILABLE"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "RECORD_NOT_FOUND",
+                  "COUNTRY_CONFIGURATION_UNAVAILABLE"
+                ]
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "issues"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http409Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "REVISION_CONFLICT",
+                "PENDING_OPERATION_EXISTS",
+                "WITHDRAWAL_BLOCKED",
+                "IDEMPOTENCY_CONFLICT",
+                "LAST_ADMIN_REQUIRED",
+                "RELOCATION_BLOCKED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http413Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "FILE_TOO_LARGE"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http415Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "UNSUPPORTED_MEDIA_TYPE"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http422Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "INVALID_PRIMARY_LOCALE",
+                "VALIDATION_FAILED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http429Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "RATE_LIMITED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http500Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "INTERNAL_ERROR"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Http503Error": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "enum": [
+                "SERVICE_NOT_READY"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

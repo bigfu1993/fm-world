@@ -1,0 +1,2638 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/publication-dependencies.schema.json",
+  "title": "首版公开引用影响与限制命令",
+  "definitions": {
+    "ImpactRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "query": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "operation": {
+                  "const": "withdraw"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "operation": {
+                  "const": "pause"
+                }
+              },
+              "required": [
+                "operation"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "operation": {
+                  "const": "revoke-version"
+                },
+                "versionId": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                }
+              },
+              "required": [
+                "operation",
+                "versionId"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "query"
+      ]
+    },
+    "ImpactItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "versionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "displayName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "relationshipType": {
+          "enum": [
+            "public-required",
+            "frozen-required",
+            "frozen-optional",
+            "link-only",
+            "rule-required",
+            "evidence-required"
+          ]
+        },
+        "effect": {
+          "enum": [
+            "blocks-withdrawal",
+            "node-unavailable",
+            "none",
+            "hide-fragment",
+            "link-unavailable",
+            "rule-needs-review"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "versionId",
+        "displayName",
+        "relationshipType",
+        "effect"
+      ],
+      "description": "id 和 versionId 属于引用方的当前生效记录。只返回获准读取的行。可见行缺少当前主语言名称时 displayName 为 null。",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "relationshipType": {
+                "const": "public-required"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effect": {
+                "enum": [
+                  "blocks-withdrawal",
+                  "node-unavailable",
+                  "none"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relationshipType": {
+                "const": "frozen-required"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effect": {
+                "enum": [
+                  "node-unavailable",
+                  "none"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relationshipType": {
+                "const": "frozen-optional"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effect": {
+                "enum": [
+                  "hide-fragment",
+                  "none"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relationshipType": {
+                "const": "link-only"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effect": {
+                "enum": [
+                  "link-unavailable",
+                  "none"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relationshipType": {
+                "const": "rule-required"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effect": {
+                "enum": [
+                  "rule-needs-review",
+                  "none"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relationshipType": {
+                "const": "evidence-required"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effect": {
+                "enum": [
+                  "node-unavailable",
+                  "hide-fragment",
+                  "none"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ImpactResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "visibilityRevision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "hasBlockingDependents": {
+          "type": "boolean"
+        },
+        "hasRestrictedImpacts": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ImpactItem"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "visibilityRevision",
+        "hasBlockingDependents",
+        "hasRestrictedImpacts",
+        "items"
+      ],
+      "description": "按实际公开资格或公开片段的变化遍历直接及间接引用，停止传播已经不可用且无实际变化的分支。影响项按引用方的生效版本、关系类型和结果去重。hasRestrictedImpacts 仅指不可读取且实际发生变化的影响。普通撤下才可阻断。执行时在事务锁内按第 08.2.1 节重查。",
+      "if": {
+        "properties": {
+          "hasBlockingDependents": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "items": {
+            "not": {
+              "contains": {
+                "properties": {
+                  "effect": {
+                    "const": "blocks-withdrawal"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "anyOf": [
+          {
+            "properties": {
+              "hasRestrictedImpacts": {
+                "const": true
+              }
+            }
+          },
+          {
+            "properties": {
+              "items": {
+                "contains": {
+                  "properties": {
+                    "effect": {
+                      "const": "blocks-withdrawal"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "RestrictionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "headers": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/WriteHeaders"
+        },
+        "body": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "targetId": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                "operation": {
+                  "const": "pause"
+                },
+                "versionId": {
+                  "type": "null"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "sourceIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                },
+                "expectedVisibilityRevision": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+                }
+              },
+              "required": [
+                "targetId",
+                "operation",
+                "versionId",
+                "reason",
+                "sourceIds",
+                "expectedVisibilityRevision"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "targetId": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                "operation": {
+                  "const": "revoke-version"
+                },
+                "versionId": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "sourceIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                },
+                "expectedVisibilityRevision": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+                }
+              },
+              "required": [
+                "targetId",
+                "operation",
+                "versionId",
+                "reason",
+                "sourceIds",
+                "expectedVisibilityRevision"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "headers",
+        "body"
+      ]
+    },
+    "RestrictionReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "status": {
+          "const": "applied"
+        },
+        "processedAt": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "processedAt"
+      ]
+    },
+    "ImpactActionDenied": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "const": "ACTION_FORBIDDEN"
+            }
+          }
+        }
+      ]
+    },
+    "ImpactTargetUnavailable": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "const": "RECORD_NOT_FOUND"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "x-operations": {
+    "getPublicationImpact": {
+      "method": "GET",
+      "path": "/api/records/{id}/publication-impact",
+      "request": "#/definitions/ImpactRequest",
+      "responses": {
+        "200": "#/definitions/ImpactResponse",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "#/definitions/ImpactActionDenied",
+        "404": "#/definitions/ImpactTargetUnavailable",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      },
+      "description": "在目标作用域校验 records.read 和对应动作权限。普通撤下要求 publication.submit。已有对应待审撤下时，具备 publication.review 的账号也可核查。紧急暂停或确切版本撤销要求 publication.restrict。不可读取目标返回 404，目标可读但没有对应动作权限时返回 403。"
+    },
+    "applyPublicationRestriction": {
+      "method": "POST",
+      "path": "/api/publication-restrictions",
+      "request": "#/definitions/RestrictionRequest",
+      "responses": {
+        "201": "#/definitions/RestrictionReceipt",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "409": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http409Error",
+        "422": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http422Error",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    }
+  },
+  "x-examples": [
+    {
+      "id": "DEP-01",
+      "operation": "getPublicationImpact",
+      "given": [
+        "入口当前生效。A 仅以 venue.entranceIds 建立导航链接，当前公开内容不要求该入口。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000701"
+        },
+        "query": {
+          "operation": "withdraw"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000703",
+              "versionId": "00000000-0000-4000-8000-000000000704",
+              "displayName": "样例馆区 A",
+              "relationshipType": "link-only",
+              "effect": "link-unavailable"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "可发起普通撤下。撤下获批后 A 仍可公开，入口链接失效。"
+      ]
+    },
+    {
+      "id": "DEP-02",
+      "operation": "getPublicationImpact",
+      "given": [
+        "入口当前生效。B 的已选内容块包含到达指引，arrival-guide.entranceId 指向此入口。当前账号有权读 B。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000701"
+        },
+        "query": {
+          "operation": "withdraw"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": true,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000705",
+              "versionId": "00000000-0000-4000-8000-000000000706",
+              "displayName": "样例馆区 B",
+              "relationshipType": "public-required",
+              "effect": "blocks-withdrawal"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "B 即使通过可选 contentRefs 采用指引，指引在其生效包内仍形成公开必需依赖。"
+      ]
+    },
+    {
+      "id": "DEP-03",
+      "operation": "getPublicationImpact",
+      "given": [
+        "A 仅有链接。B 含公开必需依赖，当前账号能撤下入口且只获准读取 A。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000701"
+        },
+        "query": {
+          "operation": "withdraw"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": true,
+          "hasRestrictedImpacts": true,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000703",
+              "versionId": "00000000-0000-4000-8000-000000000704",
+              "displayName": "样例馆区 A",
+              "relationshipType": "link-only",
+              "effect": "link-unavailable"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "未知引用方仍阻断撤下。响应不给 B 的 ID、版本、名称、数量或原因明细。"
+      ]
+    },
+    {
+      "id": "DEP-04",
+      "operation": "getPublicationImpact",
+      "given": [
+        "入口公开且 A 的可选链接和 B 的必需依赖有效。当前账号获准查看两项。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000701"
+        },
+        "query": {
+          "operation": "pause"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000703",
+              "versionId": "00000000-0000-4000-8000-000000000704",
+              "displayName": "样例馆区 A",
+              "relationshipType": "link-only",
+              "effect": "link-unavailable"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000705",
+              "versionId": "00000000-0000-4000-8000-000000000706",
+              "displayName": "样例馆区 B",
+              "relationshipType": "public-required",
+              "effect": "node-unavailable"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "暂停即时关闭入口，A 的链接不可用，B 对外不可读。预览不会把紧急暂停误判为普通撤下阻断。"
+      ]
+    },
+    {
+      "id": "DEP-05",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "沿用 DEP-04 的权限和数据，当前公开修订号为 12。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-pause-entrance"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000701",
+          "operation": "pause",
+          "versionId": null,
+          "reason": "因现场临时封闭暂停公开",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 12
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000734",
+          "status": "applied",
+          "processedAt": "2026-06-15T10:00:00Z"
+        }
+      },
+      "assertions": [
+        "提交后公开修订变为 13，回执 ID 是新暂停事件 ID。入口隐藏，B 的生效指针保留，资格变为不可读。"
+      ]
+    },
+    {
+      "id": "DEP-06",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "DEP-05 已提交。执行者与原操作和写入权限相同，公开修订号已变为 13。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-pause-entrance"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000701",
+          "operation": "pause",
+          "versionId": null,
+          "reason": "因现场临时封闭暂停公开",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 12
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000734",
+          "status": "applied",
+          "processedAt": "2026-06-15T10:00:00Z"
+        }
+      },
+      "assertions": [
+        "同键同请求返回原回执，不新增暂停事件，不再次变更公开修订。"
+      ]
+    },
+    {
+      "id": "DEP-07",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "DEP-05 已提交。重新读取前用新幂等键提交仍引用修订 12 的暂停命令。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-pause-stale"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000701",
+          "operation": "pause",
+          "versionId": null,
+          "reason": "重新报告现场封闭",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 12
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "req-dep-stale"
+        }
+      },
+      "assertions": [
+        "旧修订请求失败，原暂停事件与公开修订号保持。"
+      ]
+    },
+    {
+      "id": "DEP-08",
+      "operation": "getPublicationImpact",
+      "given": [
+        "C 通过 mediaRefs 冻结 photoV1，另一个馆区采用 photoV2。photoV1 与 photoV2 许可状态按各版独立保存。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000712"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000713"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 8,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000715",
+              "versionId": "00000000-0000-4000-8000-000000000716",
+              "displayName": "样例馆区 C",
+              "relationshipType": "frozen-optional",
+              "effect": "hide-fragment"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "只列采用 photoV1 的 C。采用 photoV2 的馆区不出现，也无需重发。"
+      ]
+    },
+    {
+      "id": "DEP-09",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "沿用 DEP-08 且当前公开修订号仍是 8。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-revoke-photo-v1"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000712",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000713",
+          "reason": "首版图片的公开许可已经撤回",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 8
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000735",
+          "status": "applied",
+          "processedAt": "2026-06-15T10:00:00Z"
+        }
+      },
+      "assertions": [
+        "只撤销 photoV1。C 从公开详情移除旧图、媒体 URL 及该版替代文本，其他内容块保留。旧媒体请求复核同一撤销条件并返回不可用。"
+      ]
+    },
+    {
+      "id": "DEP-10",
+      "operation": "getPublicationImpact",
+      "given": [
+        "D 当前生效的 power-plug 组经 standard-rule.itemIds 冻结指定插座项。上下级另有可用规则，D 的供电组独立有效。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000719"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000720"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 5,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000721",
+              "versionId": "00000000-0000-4000-8000-000000000722",
+              "displayName": "样例辖区 D",
+              "relationshipType": "rule-required",
+              "effect": "rule-needs-review"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "只把 D 的受影响插座规则组标成 needs-review，原因 invalid-reference。未显式恢复前不向上继承。地点详情及供电组仍可读。"
+      ]
+    },
+    {
+      "id": "DEP-11",
+      "operation": "getPublicationImpact",
+      "given": [
+        "B 的生效到达指引通过 arrival-guide.transportModeId 冻结 transportV1。其他指引使用后续 transportV2，且不少于一个目录项仍可供新候选采用。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000723"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000724"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 4,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000705",
+              "versionId": "00000000-0000-4000-8000-000000000706",
+              "displayName": "样例馆区 B",
+              "relationshipType": "frozen-required",
+              "effect": "node-unavailable"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "撤销正在采用的交通方式确切版本只使 B 不可读。常规目录停用及撤销未被采用的后续版本都不构成该影响。"
+      ]
+    },
+    {
+      "id": "DEP-12",
+      "operation": "getPublicationImpact",
+      "given": [
+        "E 的必备事实在冻结包中采用 factSourceVersion 与可独立证明同一事实的 secondSourceVersion。F 的必备事实只采用 factSourceVersion。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000726"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000727"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 3,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000730",
+              "versionId": "00000000-0000-4000-8000-000000000731",
+              "displayName": "样例馆区 E",
+              "relationshipType": "evidence-required",
+              "effect": "hide-fragment"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000732",
+              "versionId": "00000000-0000-4000-8000-000000000733",
+              "displayName": "样例馆区 F",
+              "relationshipType": "evidence-required",
+              "effect": "node-unavailable"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "E 移除被撤销的证据及链接，保留获准事实和其他证据。F 缺少有效替代，触发公开不可读。"
+      ]
+    },
+    {
+      "id": "DEP-13",
+      "operation": "getPublicationImpact",
+      "given": [
+        "目标可读，请求版本不属于该目标或不可读。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000712"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000718"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "RECORD_NOT_FOUND",
+          "requestId": "req-dep-version"
+        }
+      },
+      "assertions": [
+        "与不存在的版本返回同形，未返回版本所属对象或记录数量。"
+      ]
+    },
+    {
+      "id": "DEP-14",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "DEP-05 已提交。仍获准操作目标，复用同一幂等键并改写原因。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-pause-entrance"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000701",
+          "operation": "pause",
+          "versionId": null,
+          "reason": "变更后的理由",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 12
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "IDEMPOTENCY_CONFLICT",
+          "requestId": "req-dep-key"
+        }
+      },
+      "assertions": [
+        "先复核权限，再判定同键请求指纹。复用不同请求不会更新原事件，也不会产生新回执。"
+      ]
+    },
+    {
+      "id": "DEP-15",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "采用 DEP-08 的初始数据。向首次执行注入提交失败，故障发生在写入限制、依赖与审计后且事务提交前。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-revoke-photo-v1"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000712",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000713",
+          "reason": "首版图片的公开许可已经撤回",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 8
+        }
+      },
+      "response": {
+        "status": 500,
+        "body": {
+          "code": "INTERNAL_ERROR",
+          "requestId": "req-dep-rollback"
+        }
+      },
+      "assertions": [
+        "限制、索引、公开修订、审计和幂等回执均回滚。故障消除后相同请求才生成 DEP-09 所示回执。"
+      ]
+    },
+    {
+      "id": "DEP-16",
+      "operation": "getPublicationImpact",
+      "given": [
+        "照片原许可保持，当前账号可读取目标，但没有查看撤销影响的操作权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000712"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000713"
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "req-dep-impact-forbidden"
+        }
+      },
+      "assertions": [
+        "拒绝读取整个影响报告，不透出待处理范围和计数。"
+      ]
+    },
+    {
+      "id": "DEP-17",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "写入请求使用新幂等键，当前公开条件有效。已选证据 ID 的形状有效，但该证据不满足核验要求。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-unverified-evidence"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000712",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000713",
+          "reason": "首版图片的公开许可已经撤回",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 8
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "req-dep-evidence",
+          "issues": [
+            {
+              "field": "sourceIds",
+              "code": "SOURCE_UNVERIFIED"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "不新增限制。错误不包含未授权的来源信息。"
+      ]
+    },
+    {
+      "id": "DEP-18",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "B 已采用 guideVersion 作为可选内容块，其中包含对入口与站点的公开必需依赖。该指引只出现在 B 的此版本。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-revoke-guide"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000709",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000710",
+          "reason": "该版到达说明的时刻信息有误",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 6
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000744",
+          "status": "applied",
+          "processedAt": "2026-06-15T10:00:00Z"
+        }
+      },
+      "assertions": [
+        "B 隐藏已撤销的指引块但保留其他获准内容。仅来自该块的入口和站点两条边退出公开阻断逻辑，快照留档供审计。"
+      ]
+    },
+    {
+      "id": "DEP-19",
+      "operation": "getPublicationImpact",
+      "given": [
+        "入口 v1 历史可见，当前采用仍可公开的 v2。A 链接入口，B 的生效指引需要当前入口。没有仍锁定 v1 的公开片段。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000701"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000702"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 14,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": []
+        }
+      },
+      "assertions": [
+        "当前 v2 仍提供实际入口。只有对象级公开依赖或导航关系时，撤销历史 v1 不改变 A 和 B 的资格。"
+      ]
+    },
+    {
+      "id": "DEP-20",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "沿用 DEP-19。操作人可查看确切历史入口 v1 并有撤销权限，当前公开修订号仍是 14。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-revoke-old-entrance"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000701",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000702",
+          "reason": "旧版入口资料不再可用于公开",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 14
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000748",
+          "status": "applied",
+          "processedAt": "2026-06-15T10:00:00Z"
+        }
+      },
+      "assertions": [
+        "只记录 v1 撤销。当前入口 v2 保持生效，A 的链接有效，采用该入口的 B 仍可读。"
+      ]
+    },
+    {
+      "id": "DEP-21",
+      "operation": "getPublicationImpact",
+      "given": [
+        "证据 E 的确切版本是当前可公开站点 C 的必备事实的唯一已核验证据。B 已生效的两个到达指引均将 C 作为 stopId。",
+        "操作人可读取 E 和目标确切版本，并在 E 的范围有 publication.restrict。可读取 B，无权读取 C。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000751"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000752"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 32,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": true,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000755",
+              "versionId": "00000000-0000-4000-8000-000000000756",
+              "displayName": "样例馆区 B",
+              "relationshipType": "public-required",
+              "effect": "node-unavailable"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "撤销 E 后，C 失去站点必备事实所需的最后证据。C 的公开资格变化通过 stopId 传递到 B。",
+        "当前账号只收到 B 的可见间接影响。两个指引引用同一站点时，B 的同类结果只出现一行。",
+        "不可见的 C 只通过布尔标记说明。响应不包含 C 的 ID、名称、版本和受限对象数量。"
+      ]
+    },
+    {
+      "id": "DEP-22",
+      "operation": "getPublicationImpact",
+      "given": [
+        "与 DEP-21 使用同一个关系图。执行前，C 已暂停，B 已因该站点不可公开而不可读。撤销 E 不改变任一引用方当前可公开的内容。",
+        "操作人可读取目标 E，并在 E 的范围有 publication.restrict。B 可读取，C 无权读取。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000751"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000752"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 32,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": []
+        }
+      },
+      "assertions": [
+        "已不可用且结果未变化的 C 不计入隐藏影响，并在 C 停止向下传播。B 不出现影响行。"
+      ]
+    },
+    {
+      "id": "DEP-23",
+      "operation": "applyPublicationRestriction",
+      "given": [
+        "证据 E 的确切版本是当前可公开站点 C 的必备事实的唯一已核验证据。B 已生效的两个到达指引均将 C 作为 stopId。",
+        "操作人可读取 E 和目标确切版本，并在 E 的范围有 publication.restrict。可读取 B，无权读取 C。",
+        "DEP-21 的影响报告仍对应最新公开修订 32，操作人已复核影响和撤销理由。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-revoke-transitive-station-source"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000751",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000752",
+          "reason": "站点定位证据失去公开许可",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000759"
+          ],
+          "expectedVisibilityRevision": 32
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000760",
+          "status": "applied",
+          "processedAt": "2026-06-15T10:00:00Z"
+        }
+      },
+      "assertions": [
+        "E 的确切版本撤销后，C 和 B 的公开读资格不可用。",
+        "C 和 B 的生效指针以及授权历史保留。公开资格复核即时采用新状态。"
+      ]
+    },
+    {
+      "id": "DEP-24",
+      "operation": "getPublicationImpact",
+      "given": [
+        "操作人可以读取一个潜在引用方，但不可读取目标 E。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000751"
+        },
+        "query": {
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000752"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "RECORD_NOT_FOUND",
+          "requestId": "req-dep-target-invisible"
+        }
+      },
+      "assertions": [
+        "不暴露目标、确切版本、依赖路径和是否存在受限引用方。"
+      ]
+    },
+    {
+      "id": "DEP-25",
+      "operation": "getPublicationImpact",
+      "given": [
+        "入口可读取，操作人有该目标范围的 publication.review，没有 publication.submit。该目标没有待审撤下申请。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000701"
+        },
+        "query": {
+          "operation": "withdraw"
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "req-dep-review-without-pending"
+        }
+      },
+      "assertions": [
+        "只有审批权限的账号可在对应撤下申请待审时核查影响。该请求没有可核查的待审撤下。"
+      ]
+    },
+    {
+      "id": "DEP-26",
+      "operation": "getPublicationImpact",
+      "given": [
+        "入口可读取，已有对应的待审撤下申请，当前公开修订为 12。A 仅有 venue.entranceIds 导航。",
+        "操作人有目标范围的 publication.review，没有 publication.submit，并有权读取 A。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000701"
+        },
+        "query": {
+          "operation": "withdraw"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000703",
+              "versionId": "00000000-0000-4000-8000-000000000704",
+              "displayName": "样例馆区 A",
+              "relationshipType": "link-only",
+              "effect": "link-unavailable"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "审核人可以复核当前影响。结果不新增提交或执行撤下权限。"
+      ]
+    }
+  ],
+  "x-rejections": [
+    {
+      "id": "DEP-X01",
+      "operation": "getPublicationImpact",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000712"
+        },
+        "query": {
+          "operation": "revoke-version"
+        }
+      }
+    },
+    {
+      "id": "DEP-X02",
+      "operation": "getPublicationImpact",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000701"
+        },
+        "query": {
+          "operation": "withdraw",
+          "versionId": "00000000-0000-4000-8000-000000000702"
+        }
+      }
+    },
+    {
+      "id": "DEP-X03",
+      "operation": "applyPublicationRestriction",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-pause-entrance"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000701",
+          "operation": "pause",
+          "versionId": "00000000-0000-4000-8000-000000000702",
+          "reason": "因现场临时封闭暂停公开",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 12
+        }
+      }
+    },
+    {
+      "id": "DEP-X04",
+      "operation": "applyPublicationRestriction",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-revoke-photo-v1"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000712",
+          "operation": "revoke-version",
+          "versionId": null,
+          "reason": "首版图片的公开许可已经撤回",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 8
+        }
+      }
+    },
+    {
+      "id": "DEP-X05",
+      "operation": "applyPublicationRestriction",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000712",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000713",
+          "reason": "首版图片的公开许可已经撤回",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 8
+        }
+      }
+    },
+    {
+      "id": "DEP-X06",
+      "operation": "applyPublicationRestriction",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-revoke-photo-v1"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000712",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000713",
+          "reason": "首版图片的公开许可已经撤回",
+          "sourceIds": [],
+          "expectedVisibilityRevision": 8
+        }
+      }
+    },
+    {
+      "id": "DEP-X07",
+      "operation": "applyPublicationRestriction",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf",
+          "idempotency-key": "fixture-revoke-photo-v1"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000712",
+          "operation": "revoke-version",
+          "versionId": "00000000-0000-4000-8000-000000000713",
+          "reason": "   ",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000711"
+          ],
+          "expectedVisibilityRevision": 8
+        }
+      }
+    },
+    {
+      "id": "DEP-X08",
+      "operation": "getPublicationImpact",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": false,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000705",
+              "versionId": "00000000-0000-4000-8000-000000000706",
+              "displayName": "样例馆区 B",
+              "relationshipType": "public-required",
+              "effect": "blocks-withdrawal"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "DEP-X09",
+      "operation": "getPublicationImpact",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": true,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000703",
+              "versionId": "00000000-0000-4000-8000-000000000704",
+              "displayName": "样例馆区 A",
+              "relationshipType": "link-only",
+              "effect": "link-unavailable"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "DEP-X10",
+      "operation": "getPublicationImpact",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": true,
+          "hasRestrictedImpacts": true,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000703",
+              "versionId": "00000000-0000-4000-8000-000000000704",
+              "displayName": "样例馆区 A",
+              "relationshipType": "link-only",
+              "effect": "link-unavailable"
+            }
+          ],
+          "restrictedImpacts": [
+            "00000000-0000-4000-8000-000000000705"
+          ]
+        }
+      }
+    },
+    {
+      "id": "DEP-X11",
+      "operation": "getPublicationImpact",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "visibilityRevision": 12,
+          "hasBlockingDependents": true,
+          "hasRestrictedImpacts": false,
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000703",
+              "versionId": "00000000-0000-4000-8000-000000000704",
+              "displayName": "样例馆区 A",
+              "relationshipType": "link-only",
+              "effect": "blocks-withdrawal"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "DEP-X12",
+      "operation": "applyPublicationRestriction",
+      "target": "response",
+      "value": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000734",
+          "status": "pending",
+          "processedAt": "2026-06-15T10:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "DEP-X13",
+      "operation": "getPublicationImpact",
+      "target": "response",
+      "value": {
+        "status": 404,
+        "body": {
+          "code": "PUBLISHED_CONTENT_UNAVAILABLE",
+          "requestId": "req-dep-not-found-mismatch"
+        }
+      }
+    },
+    {
+      "id": "DEP-X14",
+      "operation": "getPublicationImpact",
+      "target": "response",
+      "value": {
+        "status": 403,
+        "body": {
+          "code": "CSRF_INVALID",
+          "requestId": "req-dep-write-error-on-read"
+        }
+      }
+    }
+  ],
+  "x-scenarios": [
+    {
+      "id": "DEP-S01",
+      "acceptance": [
+        "AC-07",
+        "AC-08"
+      ],
+      "given": [
+        "入口公开，当前修订号 12。A 仅有 venue.entranceIds 链接，无其他依赖。"
+      ],
+      "steps": [
+        {
+          "example": "DEP-01"
+        },
+        {
+          "contract": "publication.schema.json",
+          "operation": "submitPublicationRequest",
+          "request": {
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-nav-withdraw"
+            },
+            "body": {
+              "targetId": "00000000-0000-4000-8000-000000000701",
+              "operation": "withdraw",
+              "expectedActiveVersionId": "00000000-0000-4000-8000-000000000702",
+              "expectedVisibilityRevision": 12
+            }
+          },
+          "expect": {
+            "status": 201,
+            "partialBody": {
+              "id": "00000000-0000-4000-8000-000000000738",
+              "targetId": "00000000-0000-4000-8000-000000000701",
+              "requestRevision": 1,
+              "operation": "withdraw",
+              "status": "pending",
+              "frozenVersionId": "00000000-0000-4000-8000-000000000739",
+              "expectedActiveVersionId": "00000000-0000-4000-8000-000000000702",
+              "expectedVisibilityRevision": 12
+            }
+          }
+        },
+        {
+          "contract": "publication.schema.json",
+          "operation": "decidePublicationRequest",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000738"
+            },
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-nav-approval"
+            },
+            "body": {
+              "decision": "approve",
+              "reason": "已复核申请",
+              "expectedRequestRevision": 1,
+              "expectedActiveVersionId": "00000000-0000-4000-8000-000000000702",
+              "expectedVisibilityRevision": 12
+            }
+          },
+          "expect": {
+            "status": 201,
+            "partialBody": {
+              "id": "00000000-0000-4000-8000-000000000740",
+              "requestId": "00000000-0000-4000-8000-000000000738",
+              "status": "approved"
+            }
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000701"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000703"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "场馆仍可读。入口链接不可用且不带可点击目标。"
+            ]
+          }
+        }
+      ],
+      "assertions": [
+        "整个流程不因单纯引用入口名称或导航链接产生撤下阻断。"
+      ]
+    },
+    {
+      "id": "DEP-S02",
+      "acceptance": [
+        "AC-07",
+        "AC-09"
+      ],
+      "given": [
+        "入口当前生效且 B 已有采用该入口的指引。A 仅有入口链接。",
+        "撤下申请用只能读取 A 的授权账号提交。之后改用可读取 A 和 B 且有紧急暂停权限的账号继续。"
+      ],
+      "steps": [
+        {
+          "example": "DEP-03"
+        },
+        {
+          "contract": "publication.schema.json",
+          "operation": "submitPublicationRequest",
+          "request": {
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-hidden-dependent"
+            },
+            "body": {
+              "targetId": "00000000-0000-4000-8000-000000000701",
+              "operation": "withdraw",
+              "expectedActiveVersionId": "00000000-0000-4000-8000-000000000702",
+              "expectedVisibilityRevision": 12
+            }
+          },
+          "expect": {
+            "status": 409,
+            "code": "WITHDRAWAL_BLOCKED"
+          }
+        },
+        {
+          "example": "DEP-04"
+        },
+        {
+          "example": "DEP-05"
+        },
+        {
+          "example": "DEP-06"
+        },
+        {
+          "example": "DEP-07"
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000701"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000705"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000703"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200
+          }
+        }
+      ],
+      "assertions": [
+        "隐藏的必需依赖既约束写操作也保持不可枚举。紧急暂停改变资格，不改 B 的历史或生效指针。"
+      ]
+    },
+    {
+      "id": "DEP-S03",
+      "acceptance": [
+        "AC-07"
+      ],
+      "given": [
+        "入口生效版为 00000000-0000-4000-8000-000000000702，当前公开修订为 12，已存在待审撤下申请 00000000-0000-4000-8000-000000000738。",
+        "B 已有生效版 00000000-0000-4000-8000-000000000706，当前公开修订为 3，待审申请 00000000-0000-4000-8000-000000000746 首次采用到达指引，故开始时入口没有来自 B 的生效硬依赖。两申请修订为 1。",
+        "两个相反的调度从同一初始数据分别运行，并用同步屏障控制提交顺序。"
+      ],
+      "steps": [
+        {
+          "assertions": [
+            "第一个调度释放会话 2，等 B 核验及提交成功后释放会话 1。"
+          ]
+        },
+        {
+          "contract": "publication.schema.json",
+          "operation": "decidePublicationRequest",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000746"
+            },
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-race-b-first"
+            },
+            "body": {
+              "decision": "approve",
+              "reason": "已复核申请",
+              "expectedRequestRevision": 1,
+              "expectedActiveVersionId": "00000000-0000-4000-8000-000000000706",
+              "expectedVisibilityRevision": 3
+            }
+          },
+          "expect": {
+            "status": 201,
+            "partialBody": {
+              "requestId": "00000000-0000-4000-8000-000000000746",
+              "status": "approved"
+            }
+          }
+        },
+        {
+          "contract": "publication.schema.json",
+          "operation": "decidePublicationRequest",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000738"
+            },
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-race-entrance-second"
+            },
+            "body": {
+              "decision": "approve",
+              "reason": "已复核申请",
+              "expectedRequestRevision": 1,
+              "expectedActiveVersionId": "00000000-0000-4000-8000-000000000702",
+              "expectedVisibilityRevision": 12
+            }
+          },
+          "expect": {
+            "status": 201,
+            "partialBody": {
+              "requestId": "00000000-0000-4000-8000-000000000738",
+              "status": "conflicted",
+              "reasonCode": "DEPENDENCY_UNAVAILABLE"
+            }
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000701"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "partialBody": {
+              "versionId": "00000000-0000-4000-8000-000000000702"
+            }
+          }
+        },
+        {
+          "assertions": [
+            "重置到相同初始数据。第二个调度释放会话 1，等入口撤下提交后释放会话 2。"
+          ]
+        },
+        {
+          "contract": "publication.schema.json",
+          "operation": "decidePublicationRequest",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000738"
+            },
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-race-entrance-first"
+            },
+            "body": {
+              "decision": "approve",
+              "reason": "已复核申请",
+              "expectedRequestRevision": 1,
+              "expectedActiveVersionId": "00000000-0000-4000-8000-000000000702",
+              "expectedVisibilityRevision": 12
+            }
+          },
+          "expect": {
+            "status": 201,
+            "partialBody": {
+              "requestId": "00000000-0000-4000-8000-000000000738",
+              "status": "approved"
+            }
+          }
+        },
+        {
+          "contract": "publication.schema.json",
+          "operation": "decidePublicationRequest",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000746"
+            },
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-race-b-second"
+            },
+            "body": {
+              "decision": "approve",
+              "reason": "已复核申请",
+              "expectedRequestRevision": 1,
+              "expectedActiveVersionId": "00000000-0000-4000-8000-000000000706",
+              "expectedVisibilityRevision": 3
+            }
+          },
+          "expect": {
+            "status": 201,
+            "partialBody": {
+              "requestId": "00000000-0000-4000-8000-000000000746",
+              "status": "conflicted",
+              "reasonCode": "DEPENDENCY_UNAVAILABLE"
+            }
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000705"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "partialBody": {
+              "versionId": "00000000-0000-4000-8000-000000000706"
+            }
+          }
+        },
+        {
+          "assertions": [
+            "在第一种调度结果上重建 B 候选并选用替代入口 00000000-0000-4000-8000-000000000736（版本 00000000-0000-4000-8000-000000000737）。B 批准后重新检查原入口，报告不再显示硬依赖。"
+          ]
+        },
+        {
+          "assertions": [
+            "重新提交原入口的普通撤下申请并批准。B 仍可公开且指向替代入口。"
+          ]
+        }
+      ],
+      "assertions": [
+        "入口和 B 的发布、撤下、引用索引、回执和审计结果按同一事务落地。"
+      ]
+    },
+    {
+      "id": "DEP-S04",
+      "acceptance": [
+        "AC-08",
+        "AC-09"
+      ],
+      "given": [
+        "C 冻结采用图片 photoV1，另一个馆区采用 photoV2。两馆区均已公开。原许可可用于测试旧链路。"
+      ],
+      "steps": [
+        {
+          "example": "DEP-08"
+        },
+        {
+          "assertions": [
+            "先按旧链接读取 photoV1，状态 200。"
+          ]
+        },
+        {
+          "example": "DEP-15"
+        },
+        {
+          "assertions": [
+            "数据库仍无撤销事件，公开修订、缓存资格和审计回滚，旧链接仍为 200。"
+          ]
+        },
+        {
+          "example": "DEP-09"
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000715"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "media 不含 photoV1。C 的其他已获准片段保持。"
+            ]
+          }
+        },
+        {
+          "http": {
+            "method": "GET",
+            "path": "/api/published-nodes/{id}/publication-media/{mediaVersionId}",
+            "request": {
+              "path": {
+                "id": "00000000-0000-4000-8000-000000000715",
+                "mediaVersionId": "00000000-0000-4000-8000-000000000713"
+              },
+              "query": {
+                "language": "zh",
+                "versionId": "00000000-0000-4000-8000-000000000716"
+              }
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000717"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "media 保有 photoV2，公开节点版本保持。"
+            ]
+          }
+        }
+      ],
+      "assertions": [
+        "确切撤销仅影响 photoV1。C 的受控旧导出失去原内容资格。不记录失败或重放引起的额外状态写入。"
+      ]
+    },
+    {
+      "id": "DEP-S05",
+      "acceptance": [
+        "AC-08",
+        "AC-09"
+      ],
+      "given": [
+        "B 采用原封不动的 guideVersion，并无别的公开必需依赖使用入口和站点。"
+      ],
+      "steps": [
+        {
+          "example": "DEP-02"
+        },
+        {
+          "example": "DEP-18"
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000705"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "正文 contentBlocks 不含被撤销的 guideVersion。"
+            ]
+          }
+        },
+        {
+          "contract": "publication-dependencies.schema.json",
+          "operation": "getPublicationImpact",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000701"
+            },
+            "query": {
+              "operation": "withdraw"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "partialBody": {
+              "hasBlockingDependents": false
+            }
+          }
+        },
+        {
+          "contract": "publication-dependencies.schema.json",
+          "operation": "getPublicationImpact",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000707"
+            },
+            "query": {
+              "operation": "withdraw"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "partialBody": {
+              "hasBlockingDependents": false
+            }
+          }
+        }
+      ],
+      "assertions": [
+        "被删除可选块从公开索引停用后，不再阻断其独有的入口或站点依赖。授权历史仍保留原引用。"
+      ]
+    },
+    {
+      "id": "DEP-S06",
+      "acceptance": [
+        "AC-08"
+      ],
+      "given": [
+        "A 将已核验的独立目录版本 00000000-0000-4000-8000-000000000742 纳入生效包。B 用 contentRefs 选用同一目录版本。C 的候审包也采用它。"
+      ],
+      "steps": [
+        {
+          "http": {
+            "method": "POST",
+            "path": "/api/catalog-reviews",
+            "request": {
+              "body": {
+                "targetId": "00000000-0000-4000-8000-000000000741",
+                "draftRevision": 3,
+                "decision": "retire",
+                "reason": "目录停止提供给新的发布候选"
+              },
+              "headers": {
+                "x-csrf-token": "fixture-csrf"
+              }
+            }
+          },
+          "expect": {
+            "status": 201,
+            "partialBody": {
+              "id": "00000000-0000-4000-8000-000000000743"
+            }
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000705"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "B 保留原版片段，目录停用没有回收已批准的可选内容。"
+            ]
+          }
+        },
+        {
+          "assertions": [
+            "C 的待审包在审批时发现该目录版本不再供候选采用，通过 201 status=conflicted 拒绝生效。"
+          ]
+        },
+        {
+          "contract": "publication-dependencies.schema.json",
+          "operation": "applyPublicationRestriction",
+          "request": {
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-revoke-catalog-optional"
+            },
+            "body": {
+              "targetId": "00000000-0000-4000-8000-000000000741",
+              "operation": "revoke-version",
+              "versionId": "00000000-0000-4000-8000-000000000742",
+              "reason": "档案公开许可已撤销",
+              "sourceIds": [
+                "00000000-0000-4000-8000-000000000711"
+              ],
+              "expectedVisibilityRevision": 4
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000705"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "B 仅移除该版目录记录提供的片段。"
+            ]
+          }
+        }
+      ],
+      "assertions": [
+        "目录停用约束新候选。确切撤销作用于已采纳的原版内容。"
+      ]
+    },
+    {
+      "id": "DEP-S07",
+      "acceptance": [
+        "AC-09"
+      ],
+      "given": [
+        "A 与 B 读取同一个入口。A 使用可选导航，B 的生效指引要求入口继续公开。入口当前为 v2，v1 是历史。"
+      ],
+      "steps": [
+        {
+          "example": "DEP-19"
+        },
+        {
+          "example": "DEP-20"
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000701"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "partialBody": {
+              "versionId": "00000000-0000-4000-8000-000000000747"
+            }
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000703"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "入口链接仍有效。"
+            ]
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000705"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "到达指引仍可读，采用当前入口 v2。"
+            ]
+          }
+        }
+      ],
+      "assertions": [
+        "确切版本限制不会提前关停同一对象的其他可用版本与实际采用它的引用方。"
+      ]
+    },
+    {
+      "id": "DEP-S08",
+      "acceptance": [
+        "AC-06",
+        "AC-09"
+      ],
+      "given": [
+        "D 只在有生效覆盖的插座组中采用 plugVersion。E 与 F 的必备事实均采用同一证据版本，E 另有有效替代。规则与证据目标相互独立。"
+      ],
+      "steps": [
+        {
+          "example": "DEP-10"
+        },
+        {
+          "contract": "publication-dependencies.schema.json",
+          "operation": "applyPublicationRestriction",
+          "request": {
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-revoke-selected-plug"
+            },
+            "body": {
+              "targetId": "00000000-0000-4000-8000-000000000719",
+              "operation": "revoke-version",
+              "versionId": "00000000-0000-4000-8000-000000000720",
+              "reason": "该版插座规则依据已撤销",
+              "sourceIds": [
+                "00000000-0000-4000-8000-000000000711"
+              ],
+              "expectedVisibilityRevision": 5
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000721"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "resolvedRules.power-plug 进入 needs-review 并返回 invalid-reference。供电组保持原采用版本，插座未悄然继承。"
+            ]
+          }
+        },
+        {
+          "example": "DEP-12"
+        },
+        {
+          "contract": "publication-dependencies.schema.json",
+          "operation": "applyPublicationRestriction",
+          "request": {
+            "headers": {
+              "x-csrf-token": "fixture-csrf",
+              "idempotency-key": "fixture-revoke-fact-source"
+            },
+            "body": {
+              "targetId": "00000000-0000-4000-8000-000000000726",
+              "operation": "revoke-version",
+              "versionId": "00000000-0000-4000-8000-000000000727",
+              "reason": "该版证据已失去许可",
+              "sourceIds": [
+                "00000000-0000-4000-8000-000000000711"
+              ],
+              "expectedVisibilityRevision": 3
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000730"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "assertions": [
+              "sources 不含撤销的证据，必备事实由已核验替代证据支持。"
+            ]
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000732"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        }
+      ],
+      "assertions": [
+        "规则组失效不关停一个位置的其他公开内容。必备事实按经核验的剩余证据决定公开资格。"
+      ]
+    },
+    {
+      "id": "DEP-S09",
+      "acceptance": [
+        "AC-09"
+      ],
+      "given": [
+        "证据 E 的确切版本是当前可公开站点 C 的必备事实的唯一已核验证据。B 已生效的两个到达指引均将 C 作为 stopId。",
+        "操作人可读取 E 和目标确切版本，并在 E 的范围有 publication.restrict。可读取 B，无权读取 C。",
+        "C 的当前公开版本为 00000000-0000-4000-8000-000000000754，B 的当前公开版本为 00000000-0000-4000-8000-000000000756。独立馆区 00000000-0000-4000-8000-000000000757 不使用 E 或 C。"
+      ],
+      "steps": [
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000753"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "partialBody": {
+              "versionId": "00000000-0000-4000-8000-000000000754"
+            }
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000755"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "partialBody": {
+              "versionId": "00000000-0000-4000-8000-000000000756"
+            }
+          }
+        },
+        {
+          "example": "DEP-21"
+        },
+        {
+          "example": "DEP-23"
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000753"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000755"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000757"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 200,
+            "partialBody": {
+              "versionId": "00000000-0000-4000-8000-000000000758"
+            }
+          }
+        }
+      ],
+      "assertions": [
+        "影响报告透明地列出可见的 B，隐藏 C 的实际变化仅用 hasRestrictedImpacts 汇总。",
+        "提交后立即复核 E→C→B 的实际公开资格，独立馆区仍可读。C 和 B 的生效指针、历史和相互关系留档。"
+      ]
+    },
+    {
+      "id": "DEP-S10",
+      "acceptance": [
+        "AC-09"
+      ],
+      "given": [
+        "从独立初态运行 DEP-22，C 已暂停且 B 已因 C 不可读而失去公开资格。"
+      ],
+      "steps": [
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000753"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        },
+        {
+          "contract": "resolved-rules.schema.json",
+          "operation": "getPublishedNodeRules",
+          "request": {
+            "path": {
+              "id": "00000000-0000-4000-8000-000000000755"
+            },
+            "query": {
+              "language": "zh"
+            }
+          },
+          "expect": {
+            "status": 404,
+            "code": "PUBLISHED_CONTENT_UNAVAILABLE"
+          }
+        },
+        {
+          "example": "DEP-22"
+        }
+      ],
+      "assertions": [
+        "C 在撤销前已不可用且没有实际变化时，影响计算不再沿该支路向下传播，不返回 B 或受限影响标记。"
+      ]
+    }
+  ]
+}

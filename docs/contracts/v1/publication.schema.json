@@ -1,0 +1,3494 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/publication.schema.json",
+  "title": "发布候选、冻结预览及审核的共享契约",
+  "description": "管理端 M4。快照标识始终保留。只有请求指定且获准读取的语种可出现于预览正文。示例的业务前置和断言用于服务及页面联调。",
+  "definitions": {
+    "RecordPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "PublicationWriteHeaders": {
+      "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/WriteHeaders"
+    },
+    "DraftSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "draft"
+        },
+        "targetId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "draftRevision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        }
+      },
+      "required": [
+        "kind",
+        "targetId",
+        "draftRevision"
+      ]
+    },
+    "RestoreSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "restore"
+        },
+        "targetId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "restoreFromVersionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "pauseEventId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        }
+      },
+      "required": [
+        "kind",
+        "targetId",
+        "restoreFromVersionId",
+        "pauseEventId"
+      ]
+    },
+    "FrozenSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "frozen"
+        },
+        "targetId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "requestId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "frozenVersionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        }
+      },
+      "required": [
+        "kind",
+        "targetId",
+        "requestId",
+        "frozenVersionId"
+      ]
+    },
+    "ReferencePreview": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "reference"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "available",
+                "unavailable"
+              ]
+            },
+            "targetId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "referenceVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "displayName": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "state",
+            "targetId",
+            "displayName"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "reference"
+            },
+            "state": {
+              "const": "restricted"
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        }
+      ]
+    },
+    "ResolvedFragment": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "text"
+          ]
+        },
+        {
+          "$ref": "#/definitions/ReferencePreview"
+        }
+      ]
+    },
+    "FieldPreview": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "text-field"
+            },
+            "field": {
+              "type": "string",
+              "enum": [
+                "name",
+                "summary",
+                "streetNumber",
+                "postalCode",
+                "streetName",
+                "addressDetail",
+                "areaLevel"
+              ]
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "field",
+            "value"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "text-list-field"
+            },
+            "field": {
+              "const": "aliases"
+            },
+            "value": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "field",
+            "value"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "coordinates"
+            },
+            "latitude": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "longitude": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            }
+          },
+          "required": [
+            "kind",
+            "latitude",
+            "longitude"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "official-original"
+            },
+            "field": {
+              "type": "string",
+              "enum": [
+                "name",
+                "address",
+                "signage"
+              ]
+            },
+            "locale": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sourceUrl": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "required": [
+            "kind",
+            "field",
+            "locale",
+            "value"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "reference-list"
+            },
+            "field": {
+              "type": "string",
+              "enum": [
+                "parentId",
+                "areaId",
+                "parentPlaceId",
+                "organizationId",
+                "entranceIds",
+                "contentRefs",
+                "sourceIds",
+                "mediaRefs",
+                "historicalRecordRefs",
+                "entranceId",
+                "stopId",
+                "transportModeId",
+                "itemIds"
+              ]
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ReferencePreview"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "field",
+            "items"
+          ]
+        }
+      ]
+    },
+    "ContentPreview": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "content"
+            },
+            "recordType": {
+              "type": "string",
+              "enum": [
+                "exhibition",
+                "historical-record",
+                "venue-introduction"
+              ]
+            },
+            "recordId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "referenceVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "body": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ResolvedFragment"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "recordType",
+            "recordId",
+            "referenceVersionId",
+            "title",
+            "body"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "content"
+            },
+            "recordType": {
+              "const": "arrival-guide"
+            },
+            "recordId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "referenceVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "body": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ResolvedFragment"
+              }
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/ResolvedFragment"
+                }
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "recordType",
+            "recordId",
+            "referenceVersionId",
+            "title",
+            "body",
+            "steps"
+          ]
+        }
+      ]
+    },
+    "AuthorizedPreview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "language": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/FieldPreview"
+              },
+              {
+                "$ref": "#/definitions/ContentPreview"
+              }
+            ]
+          }
+        },
+        "resolvedRules": {
+          "$ref": "https://fm-world.test/contracts/v1/resolved-rules.schema.json#/definitions/ResolvedRules"
+        },
+        "geographicPath": {
+          "$ref": "https://fm-world.test/contracts/v1/geographic-path.schema.json#/definitions/GeographicPath"
+        }
+      },
+      "required": [
+        "language",
+        "blocks",
+        "geographicPath"
+      ]
+    },
+    "OptionsQuery": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation": {
+              "const": "publish"
+            },
+            "draftRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "optionalFieldKeys": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "extraLocales": {
+              "type": "array",
+              "items": {
+                "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+              },
+              "uniqueItems": true
+            },
+            "language": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            }
+          },
+          "required": [
+            "operation",
+            "draftRevision"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation": {
+              "const": "restore"
+            },
+            "restoreFromVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "pauseEventId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "optionalFieldKeys": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "extraLocales": {
+              "type": "array",
+              "items": {
+                "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+              },
+              "uniqueItems": true
+            },
+            "language": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            }
+          },
+          "required": [
+            "operation",
+            "restoreFromVersionId",
+            "pauseEventId"
+          ]
+        }
+      ]
+    },
+    "OptionsRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/RecordPath"
+        },
+        "query": {
+          "$ref": "#/definitions/OptionsQuery"
+        }
+      },
+      "required": [
+        "path",
+        "query"
+      ]
+    },
+    "OptionsResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/DraftSnapshot"
+            },
+            {
+              "$ref": "#/definitions/RestoreSnapshot"
+            }
+          ]
+        },
+        "preview": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/AuthorizedPreview"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "canSubmit": {
+          "type": "boolean"
+        },
+        "eligibleOptionalFieldKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "selectedOptionalFieldKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "eligibleLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+          },
+          "uniqueItems": true
+        },
+        "selectedExtraLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+          },
+          "uniqueItems": true
+        },
+        "removedLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+          },
+          "uniqueItems": true
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Issue"
+          }
+        },
+        "hasRestrictedIssues": {
+          "type": "boolean"
+        },
+        "hasRestrictedLocaleRemovals": {
+          "type": "boolean"
+        },
+        "localeRemovalAcknowledgement": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "snapshot",
+        "preview",
+        "canSubmit",
+        "eligibleOptionalFieldKeys",
+        "selectedOptionalFieldKeys",
+        "eligibleLocales",
+        "selectedExtraLocales",
+        "removedLocales",
+        "issues",
+        "hasRestrictedIssues",
+        "hasRestrictedLocaleRemovals"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "hasRestrictedIssues": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "canSubmit": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "hasRestrictedLocaleRemovals": {
+                    "const": true
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "removedLocales": {
+                    "minItems": 1
+                  }
+                }
+              }
+            ]
+          },
+          "then": {
+            "required": [
+              "localeRemovalAcknowledgement"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "localeRemovalAcknowledgement"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "SubmitBody": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "targetId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "operation": {
+              "const": "publish"
+            },
+            "expectedActiveVersionId": {
+              "oneOf": [
+                {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "expectedVisibilityRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "draftRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "optionalFieldKeys": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "extraLocales": {
+              "type": "array",
+              "items": {
+                "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+              },
+              "uniqueItems": true
+            },
+            "localeRemovalAcknowledgement": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "targetId",
+            "operation",
+            "expectedActiveVersionId",
+            "expectedVisibilityRevision",
+            "draftRevision"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "targetId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "operation": {
+              "const": "restore"
+            },
+            "expectedActiveVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "expectedVisibilityRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "restoreFromVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "pauseEventId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "optionalFieldKeys": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "extraLocales": {
+              "type": "array",
+              "items": {
+                "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+              },
+              "uniqueItems": true
+            },
+            "localeRemovalAcknowledgement": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "targetId",
+            "operation",
+            "expectedActiveVersionId",
+            "expectedVisibilityRevision",
+            "restoreFromVersionId",
+            "pauseEventId"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "targetId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "operation": {
+              "const": "withdraw"
+            },
+            "expectedActiveVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "expectedVisibilityRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            }
+          },
+          "required": [
+            "targetId",
+            "operation",
+            "expectedActiveVersionId",
+            "expectedVisibilityRevision"
+          ]
+        }
+      ]
+    },
+    "SubmitRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "headers": {
+          "$ref": "#/definitions/PublicationWriteHeaders"
+        },
+        "body": {
+          "$ref": "#/definitions/SubmitBody"
+        }
+      },
+      "required": [
+        "headers",
+        "body"
+      ]
+    },
+    "CreatedRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "targetId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "requestRevision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "publish",
+            "restore",
+            "withdraw"
+          ]
+        },
+        "status": {
+          "const": "pending"
+        },
+        "frozenVersionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "expectedActiveVersionId": {
+          "oneOf": [
+            {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expectedVisibilityRevision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "allowedActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "candidateFieldKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "candidateLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+          },
+          "uniqueItems": true
+        },
+        "processedAt": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "targetId",
+        "requestRevision",
+        "operation",
+        "status",
+        "frozenVersionId",
+        "expectedActiveVersionId",
+        "expectedVisibilityRevision",
+        "allowedActions",
+        "candidateFieldKeys",
+        "candidateLocales",
+        "processedAt"
+      ]
+    },
+    "FrozenPreviewRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/RecordPath"
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "language": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "FrozenPreviewResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "$ref": "#/definitions/FrozenSnapshot"
+        },
+        "preview": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/AuthorizedPreview"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "availableLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+          },
+          "uniqueItems": true
+        },
+        "reviewSummary": {
+          "type": "string",
+          "enum": [
+            "verified",
+            "blocked"
+          ]
+        },
+        "removedLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+          },
+          "uniqueItems": true
+        },
+        "hasRestrictedLocaleRemovals": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "snapshot",
+        "preview",
+        "availableLocales",
+        "reviewSummary",
+        "removedLocales",
+        "hasRestrictedLocaleRemovals"
+      ]
+    },
+    "DecisionBody": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "decision": {
+              "const": "approve"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expectedRequestRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "expectedActiveVersionId": {
+              "oneOf": [
+                {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "expectedVisibilityRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "acknowledgeLocaleRemovals": {
+              "const": true
+            }
+          },
+          "required": [
+            "decision",
+            "reason",
+            "expectedRequestRevision",
+            "expectedActiveVersionId",
+            "expectedVisibilityRevision"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "decision": {
+              "const": "reject"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expectedRequestRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "expectedActiveVersionId": {
+              "oneOf": [
+                {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "expectedVisibilityRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            }
+          },
+          "required": [
+            "decision",
+            "reason",
+            "expectedRequestRevision",
+            "expectedActiveVersionId",
+            "expectedVisibilityRevision"
+          ]
+        }
+      ]
+    },
+    "DecideRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/RecordPath"
+        },
+        "headers": {
+          "$ref": "#/definitions/PublicationWriteHeaders"
+        },
+        "body": {
+          "$ref": "#/definitions/DecisionBody"
+        }
+      },
+      "required": [
+        "path",
+        "headers",
+        "body"
+      ]
+    },
+    "DecisionReceipt": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "requestId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "rejected"
+              ]
+            },
+            "processedAt": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+            }
+          },
+          "required": [
+            "id",
+            "requestId",
+            "status",
+            "processedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "requestId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "status": {
+              "const": "conflicted"
+            },
+            "processedAt": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+            },
+            "reasonCode": {
+              "type": "string",
+              "enum": [
+                "PUBLICATION_STATE_CHANGED",
+                "DEPENDENCY_UNAVAILABLE"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "requestId",
+            "status",
+            "processedAt",
+            "reasonCode"
+          ]
+        }
+      ]
+    },
+    "Malformed": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "MALFORMED_REQUEST"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Unauthorized": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "SESSION_INVALID"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ReadForbidden": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "ACTION_FORBIDDEN"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "WriteForbidden": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "ACTION_FORBIDDEN",
+                "CSRF_INVALID"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "NotFound": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "RECORD_NOT_FOUND"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Stale": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "REVISION_CONFLICT"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "SubmitConflict": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "REVISION_CONFLICT",
+                "IDEMPOTENCY_CONFLICT",
+                "PENDING_OPERATION_EXISTS",
+                "WITHDRAWAL_BLOCKED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "DecisionConflict": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "REVISION_CONFLICT",
+                "IDEMPOTENCY_CONFLICT"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Invalid": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "VALIDATION_FAILED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "RateLimited": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "RATE_LIMITED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Internal": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INTERNAL_ERROR"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "NotReady": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "SERVICE_NOT_READY"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "HistoricalVersionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "versionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          },
+          "required": [
+            "id",
+            "versionId"
+          ]
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "language": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "HistoricalAuditEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "action": {
+          "enum": [
+            "publish",
+            "verify",
+            "withdraw",
+            "pause",
+            "revoke-version",
+            "restore",
+            "retire"
+          ]
+        },
+        "occurredAt": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        },
+        "actorId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "action",
+        "occurredAt"
+      ]
+    },
+    "HistoricalVersionResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "targetId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "availableLocales": {
+              "type": "array",
+              "items": {
+                "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+              },
+              "uniqueItems": true
+            },
+            "restrictionStatus": {
+              "enum": [
+                "unrestricted",
+                "revoked"
+              ]
+            },
+            "allowedOperations": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "restore",
+                  "revoke-version"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "preview": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/AuthorizedPreview"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "audit": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HistoricalAuditEntry"
+              }
+            },
+            "kind": {
+              "const": "node"
+            },
+            "publishedAt": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+            }
+          },
+          "required": [
+            "id",
+            "targetId",
+            "availableLocales",
+            "restrictionStatus",
+            "allowedOperations",
+            "preview",
+            "audit",
+            "kind",
+            "publishedAt"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "restrictionStatus": {
+                    "const": "revoked"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "allowedOperations": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "targetId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "availableLocales": {
+              "type": "array",
+              "items": {
+                "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+              },
+              "uniqueItems": true
+            },
+            "restrictionStatus": {
+              "enum": [
+                "unrestricted",
+                "revoked"
+              ]
+            },
+            "allowedOperations": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "restore",
+                  "revoke-version"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "preview": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/AuthorizedPreview"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "audit": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HistoricalAuditEntry"
+              }
+            },
+            "kind": {
+              "const": "catalog"
+            },
+            "publishedAt": {
+              "type": "null"
+            },
+            "verifiedAt": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+            }
+          },
+          "required": [
+            "id",
+            "targetId",
+            "availableLocales",
+            "restrictionStatus",
+            "allowedOperations",
+            "preview",
+            "audit",
+            "kind",
+            "publishedAt",
+            "verifiedAt"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "restrictionStatus": {
+                    "const": "revoked"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "allowedOperations": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "allowedOperations": {
+                  "items": {
+                    "const": "revoke-version"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "description": "仅含获准读取的版本与审计。读取已发布节点历史同时检查现行范围与冻结范围。选择语种后才返回获准的历史正文和冻结父链，省略语种时 preview 为 null。目录版本记录核验时间。"
+    }
+  },
+  "x-operations": {
+    "getPublicationOptions": {
+      "method": "GET",
+      "path": "/api/records/{id}/publication-options",
+      "request": "#/definitions/OptionsRequest",
+      "responses": {
+        "200": "#/definitions/OptionsResponse",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "409": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http409Error",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    },
+    "submitPublicationRequest": {
+      "method": "POST",
+      "path": "/api/publication-requests",
+      "request": "#/definitions/SubmitRequest",
+      "responses": {
+        "201": "#/definitions/CreatedRequest",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "409": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http409Error",
+        "422": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http422Error",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    },
+    "getFrozenPublicationPreview": {
+      "method": "GET",
+      "path": "/api/publication-requests/{id}/preview",
+      "request": "#/definitions/FrozenPreviewRequest",
+      "responses": {
+        "200": "#/definitions/FrozenPreviewResponse",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    },
+    "decidePublicationRequest": {
+      "method": "POST",
+      "path": "/api/publication-requests/{id}/decisions",
+      "request": "#/definitions/DecideRequest",
+      "responses": {
+        "201": "#/definitions/DecisionReceipt",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "409": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http409Error",
+        "422": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http422Error",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    },
+    "getPublicationVersion": {
+      "method": "GET",
+      "path": "/api/records/{id}/publication-versions/{versionId}",
+      "request": "#/definitions/HistoricalVersionRequest",
+      "responses": {
+        "200": "#/definitions/HistoricalVersionResponse",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    }
+  },
+  "x-examples": [
+    {
+      "id": "SC-PUB-01",
+      "operation": "getPublicationOptions",
+      "given": [
+        "馆区草稿修订为 7",
+        "操作者有英文读写权，所选内容符合发布条件"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "operation": "publish",
+          "draftRevision": 7,
+          "language": "en"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "draft",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "draftRevision": 7
+          },
+          "preview": {
+            "language": "en",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "Memorial"
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000039",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930",
+                "displayName": "Test China"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000042",
+                "nameVersionId": "00000000-0000-4000-8000-000000000931",
+                "displayName": "Original District"
+              }
+            ]
+          },
+          "canSubmit": true,
+          "eligibleOptionalFieldKeys": [
+            "summary"
+          ],
+          "selectedOptionalFieldKeys": [],
+          "eligibleLocales": [],
+          "selectedExtraLocales": [],
+          "removedLocales": [],
+          "issues": [],
+          "hasRestrictedIssues": false,
+          "hasRestrictedLocaleRemovals": false
+        }
+      },
+      "assertions": [
+        "从 snapshot.draftRevision 取得候选修订",
+        "界面读取有权展示的英文块"
+      ]
+    },
+    {
+      "id": "SC-PUB-02",
+      "operation": "getPublicationOptions",
+      "given": [
+        "操作者具备提交权限，但阻塞项未获读取授权"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "operation": "publish",
+          "draftRevision": 7
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "draft",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "draftRevision": 7
+          },
+          "preview": null,
+          "canSubmit": false,
+          "eligibleOptionalFieldKeys": [
+            "summary"
+          ],
+          "selectedOptionalFieldKeys": [],
+          "eligibleLocales": [],
+          "selectedExtraLocales": [],
+          "removedLocales": [],
+          "issues": [],
+          "hasRestrictedIssues": true,
+          "hasRestrictedLocaleRemovals": false
+        }
+      },
+      "assertions": [
+        "空 issues 仍阻止提交",
+        "响应不含阻塞语种或其正文"
+      ]
+    },
+    {
+      "id": "SC-PUB-03",
+      "operation": "getPublicationOptions",
+      "given": [
+        "暂停指向当前事件",
+        "来源历史版重新复核后无法发布当前版本的日语及另一不可读扩展语种",
+        "来源历史版使用更早的路径，复核使用当前合法父链。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "operation": "restore",
+          "restoreFromVersionId": "00000000-0000-4000-8000-000000000201",
+          "pauseEventId": "00000000-0000-4000-8000-000000000301",
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "restore",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "restoreFromVersionId": "00000000-0000-4000-8000-000000000201",
+            "pauseEventId": "00000000-0000-4000-8000-000000000301"
+          },
+          "preview": {
+            "language": "zh",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "纪念馆原版说明"
+              },
+              {
+                "kind": "reference-list",
+                "field": "sourceIds",
+                "items": [
+                  {
+                    "kind": "reference",
+                    "state": "restricted"
+                  }
+                ]
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000039",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930",
+                "displayName": "测试中国"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000042",
+                "nameVersionId": "00000000-0000-4000-8000-000000000931",
+                "displayName": "原属区"
+              }
+            ]
+          },
+          "canSubmit": true,
+          "eligibleOptionalFieldKeys": [
+            "summary"
+          ],
+          "selectedOptionalFieldKeys": [],
+          "eligibleLocales": [],
+          "selectedExtraLocales": [],
+          "removedLocales": [
+            "ja"
+          ],
+          "issues": [],
+          "hasRestrictedIssues": false,
+          "hasRestrictedLocaleRemovals": true,
+          "localeRemovalAcknowledgement": "fixture-removal-ack-402"
+        }
+      },
+      "assertions": [
+        "预览来自明确历史版",
+        "界面列出可见移除语种与受限影响提示",
+        "受限引用不泄露稳定标识",
+        "明确确认后可提交",
+        "恢复候选返回现行合法父链，来源历史版仅固定文字和引用的恢复来源。",
+        "以 SC-PUB-30 对照同一恢复源的历史路径。"
+      ]
+    },
+    {
+      "id": "SC-PUB-04",
+      "operation": "submitPublicationRequest",
+      "given": [
+        "沿用恢复预检条件并确认范围内的影响"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-4"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "restore",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 5,
+          "restoreFromVersionId": "00000000-0000-4000-8000-000000000201",
+          "pauseEventId": "00000000-0000-4000-8000-000000000301",
+          "optionalFieldKeys": [],
+          "extraLocales": [],
+          "localeRemovalAcknowledgement": "fixture-removal-ack-402"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000402",
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "requestRevision": 1,
+          "operation": "restore",
+          "status": "pending",
+          "frozenVersionId": "00000000-0000-4000-8000-000000000204",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 5,
+          "allowedActions": [
+            "records.read"
+          ],
+          "candidateFieldKeys": [
+            "name"
+          ],
+          "candidateLocales": [
+            "zh",
+            "en"
+          ],
+          "processedAt": "2026-11-26T09:00:00Z"
+        }
+      },
+      "assertions": [
+        "应创建待审恢复",
+        "仍保留当前暂停，直到审核通过",
+        "重复同键同请求返回原回执"
+      ]
+    },
+    {
+      "id": "SC-PUB-05",
+      "operation": "submitPublicationRequest",
+      "given": [
+        "已加载草稿候选，当前版与公开修订在提交前未变化"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-5"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "publish",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "draftRevision": 7,
+          "optionalFieldKeys": [],
+          "extraLocales": []
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000401",
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "requestRevision": 1,
+          "operation": "publish",
+          "status": "pending",
+          "frozenVersionId": "00000000-0000-4000-8000-000000000203",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "allowedActions": [
+            "records.read"
+          ],
+          "candidateFieldKeys": [
+            "name"
+          ],
+          "candidateLocales": [
+            "zh",
+            "en"
+          ],
+          "processedAt": "2026-11-26T09:00:00Z"
+        }
+      },
+      "assertions": [
+        "请求冻结其所审草稿",
+        "当前生效指针保持原版，直到审核通过"
+      ]
+    },
+    {
+      "id": "SC-PUB-06",
+      "operation": "submitPublicationRequest",
+      "given": [
+        "预检后草稿修订从 7 更新到 8"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-6"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "publish",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "draftRevision": 7,
+          "optionalFieldKeys": [],
+          "extraLocales": []
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "fixture-publication-request-6"
+        }
+      },
+      "assertions": [
+        "不创建待审申请",
+        "前端重新预检"
+      ]
+    },
+    {
+      "id": "SC-PUB-07",
+      "operation": "getFrozenPublicationPreview",
+      "given": [
+        "请求已冻结",
+        "审批人未选展示语种"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000401"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "frozen",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "requestId": "00000000-0000-4000-8000-000000000401",
+            "frozenVersionId": "00000000-0000-4000-8000-000000000203"
+          },
+          "preview": null,
+          "availableLocales": [
+            "en"
+          ],
+          "reviewSummary": "verified",
+          "removedLocales": [],
+          "hasRestrictedLocaleRemovals": false
+        }
+      },
+      "assertions": [
+        "仅返回可阅读语种枚举和总体复核摘要",
+        "省略语种时不读取正文"
+      ]
+    },
+    {
+      "id": "SC-PUB-08",
+      "operation": "getFrozenPublicationPreview",
+      "given": [
+        "申请已冻结发布版本 203；提交后工作草稿已改名",
+        "审批人有英文读取权"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000401"
+        },
+        "query": {
+          "language": "en"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "frozen",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "requestId": "00000000-0000-4000-8000-000000000401",
+            "frozenVersionId": "00000000-0000-4000-8000-000000000203"
+          },
+          "preview": {
+            "language": "en",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "Memorial"
+              },
+              {
+                "kind": "content",
+                "recordType": "arrival-guide",
+                "recordId": "00000000-0000-4000-8000-000000000024",
+                "referenceVersionId": "00000000-0000-4000-8000-000000000240",
+                "title": "Approach",
+                "body": [
+                  {
+                    "kind": "text",
+                    "text": "Use the signed entrance."
+                  },
+                  {
+                    "kind": "reference",
+                    "state": "available",
+                    "targetId": "00000000-0000-4000-8000-000000000023",
+                    "displayName": "North Entrance"
+                  }
+                ],
+                "steps": [
+                  [
+                    {
+                      "kind": "text",
+                      "text": "Follow the signs."
+                    }
+                  ]
+                ]
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000039",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930",
+                "displayName": "Test China"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000042",
+                "nameVersionId": "00000000-0000-4000-8000-000000000931",
+                "displayName": "Original District"
+              }
+            ]
+          },
+          "availableLocales": [
+            "en"
+          ],
+          "reviewSummary": "verified",
+          "removedLocales": [],
+          "hasRestrictedLocaleRemovals": false
+        }
+      },
+      "assertions": [
+        "英文正文和附属内容来自冻结版",
+        "详情保留内容来源的确切版本 ID"
+      ]
+    },
+    {
+      "id": "SC-PUB-09",
+      "operation": "getFrozenPublicationPreview",
+      "given": [
+        "审批人仅获英文读取授权",
+        "用户显式请求中文"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000401"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "fixture-publication-request-9"
+        }
+      },
+      "assertions": [
+        "不返回正文和受限语种的候选结果",
+        "仍可重新查询无语种摘要"
+      ]
+    },
+    {
+      "id": "SC-PUB-10",
+      "operation": "decidePublicationRequest",
+      "given": [
+        "当前申请公开条件和依赖与冻结时一致"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000401"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-10"
+        },
+        "body": {
+          "decision": "approve",
+          "reason": "内容核验通过",
+          "expectedRequestRevision": 1,
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000510",
+          "requestId": "00000000-0000-4000-8000-000000000401",
+          "status": "approved",
+          "processedAt": "2026-11-26T09:00:00Z"
+        }
+      },
+      "assertions": [
+        "刷新后当前版本切换为冻结版本",
+        "同键同请求返回原决定"
+      ]
+    },
+    {
+      "id": "SC-PUB-11",
+      "operation": "decidePublicationRequest",
+      "given": [
+        "调用方记录停留在较早的申请修订",
+        "真实申请仍待审"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000401"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-11"
+        },
+        "body": {
+          "decision": "approve",
+          "reason": "内容核验通过",
+          "expectedRequestRevision": 0,
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "fixture-publication-request-11"
+        }
+      },
+      "assertions": [
+        "不产生审批记录",
+        "原待审位保留"
+      ]
+    },
+    {
+      "id": "SC-PUB-12",
+      "operation": "decidePublicationRequest",
+      "given": [
+        "调用方条件匹配冻结恢复申请",
+        "随后发生新的暂停，当前公开修订已变"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000402"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-12"
+        },
+        "body": {
+          "decision": "approve",
+          "reason": "恢复内容并确认语言影响",
+          "expectedRequestRevision": 1,
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 5,
+          "acknowledgeLocaleRemovals": true
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000512",
+          "requestId": "00000000-0000-4000-8000-000000000402",
+          "status": "conflicted",
+          "processedAt": "2026-11-26T09:00:00Z",
+          "reasonCode": "PUBLICATION_STATE_CHANGED"
+        }
+      },
+      "assertions": [
+        "记录审批冲突并释放待审位",
+        "保留当前生效指针和新暂停",
+        "同键同请求返回同一冲突回执"
+      ]
+    },
+    {
+      "id": "SC-PUB-13",
+      "operation": "decidePublicationRequest",
+      "given": [
+        "冻结申请包含可见扩展语种及另一受限语种的移除",
+        "审批人在确认前提交"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000402"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-13"
+        },
+        "body": {
+          "decision": "approve",
+          "reason": "拟确认",
+          "expectedRequestRevision": 1,
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 5
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "fixture-publication-request-13"
+        }
+      },
+      "assertions": [
+        "待审位保留",
+        "必须由审核人明确确认语言影响才能批准"
+      ]
+    },
+    {
+      "id": "SC-PUB-14",
+      "operation": "getFrozenPublicationPreview",
+      "given": [
+        "恢复申请包含日语和受限语种移除",
+        "审批人有日语读取权但未请求正文"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000402"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "frozen",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "requestId": "00000000-0000-4000-8000-000000000402",
+            "frozenVersionId": "00000000-0000-4000-8000-000000000204"
+          },
+          "preview": null,
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "reviewSummary": "verified",
+          "removedLocales": [
+            "ja"
+          ],
+          "hasRestrictedLocaleRemovals": true
+        }
+      },
+      "assertions": [
+        "审批人可确认语言移除影响",
+        "不回传预检确认值和不可见语种标识"
+      ]
+    },
+    {
+      "id": "SC-PUB-15",
+      "operation": "submitPublicationRequest",
+      "given": [
+        "现行生效版无阻断依赖"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-15"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "withdraw",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000403",
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "requestRevision": 1,
+          "operation": "withdraw",
+          "status": "pending",
+          "frozenVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "allowedActions": [
+            "records.read"
+          ],
+          "candidateFieldKeys": [
+            "name"
+          ],
+          "candidateLocales": [
+            "zh",
+            "en"
+          ],
+          "processedAt": "2026-11-26T09:00:00Z"
+        }
+      },
+      "assertions": [
+        "撤下候审引用对应生效版作为冻结预览",
+        "审批前保留生效资格"
+      ]
+    },
+    {
+      "id": "SC-PUB-16",
+      "operation": "getPublicationOptions",
+      "given": [
+        "客户端预检使用已经过时的草稿修订"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "operation": "publish",
+          "draftRevision": 6
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "fixture-publication-request-16"
+        }
+      },
+      "assertions": [
+        "使用最新工作草稿重取预检"
+      ]
+    },
+    {
+      "id": "SC-PUB-17",
+      "operation": "submitPublicationRequest",
+      "given": [
+        "提交者持有上一次恢复预检移除确认值",
+        "后台再次检查发现候选或真实语言移除范围改变"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-17"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "restore",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 5,
+          "restoreFromVersionId": "00000000-0000-4000-8000-000000000201",
+          "pauseEventId": "00000000-0000-4000-8000-000000000301",
+          "optionalFieldKeys": [],
+          "extraLocales": [],
+          "localeRemovalAcknowledgement": "fixture-removal-ack-402"
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "fixture-publication-request-17"
+        }
+      },
+      "assertions": [
+        "拒绝使用旧确认值",
+        "重新预检并由操作者确认新的影响"
+      ]
+    },
+    {
+      "id": "SC-PUB-18",
+      "operation": "getFrozenPublicationPreview",
+      "given": [
+        "沿用 RULE-02 在地区规则变动前冻结的候审申请。",
+        "RULE-03 的供电新版本已上线，地方插座已过期，审批人仍有按历史辖区读取中文的权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000401"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "frozen",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "requestId": "00000000-0000-4000-8000-000000000401",
+            "frozenVersionId": "00000000-0000-4000-8000-000000000203"
+          },
+          "preview": {
+            "language": "zh",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "验收测试馆区"
+              }
+            ],
+            "resolvedRules": {
+              "power-supply": {
+                "state": "applied",
+                "source": {
+                  "scopeId": "00000000-0000-4000-8000-000000000101",
+                  "scopeDisplayName": "测试甲国",
+                  "ruleId": "00000000-0000-4000-8000-000000000110",
+                  "versionId": "00000000-0000-4000-8000-000000000120",
+                  "mode": "inherited"
+                },
+                "items": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000130",
+                    "versionId": "00000000-0000-4000-8000-000000000131",
+                    "code": "TEST-220-50",
+                    "displayName": "220 V / 50 Hz（测试）",
+                    "voltageV": 220,
+                    "frequencyHz": 50
+                  }
+                ]
+              },
+              "power-plug": {
+                "state": "applied",
+                "source": {
+                  "scopeId": "00000000-0000-4000-8000-000000000102",
+                  "scopeDisplayName": "测试甲国东区",
+                  "ruleId": "00000000-0000-4000-8000-000000000112",
+                  "versionId": "00000000-0000-4000-8000-000000000122",
+                  "mode": "local",
+                  "validFrom": "2026-10-01T00:00:00Z",
+                  "validUntil": "2026-11-26T00:00:00Z"
+                },
+                "items": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000140",
+                    "versionId": "00000000-0000-4000-8000-000000000141",
+                    "code": "TEST-LOCAL",
+                    "displayName": "本地插座（测试）"
+                  }
+                ]
+              }
+            },
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000101",
+                "nameVersionId": "00000000-0000-4000-8000-000000000910",
+                "displayName": "测试甲国"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000102",
+                "nameVersionId": "00000000-0000-4000-8000-000000000911",
+                "displayName": "测试甲国东区"
+              }
+            ]
+          },
+          "availableLocales": [
+            "zh"
+          ],
+          "reviewSummary": "verified",
+          "removedLocales": [],
+          "hasRestrictedLocaleRemovals": false
+        }
+      },
+      "assertions": [
+        "冻结预览保留供电版本 120 和当时有效的地方插座版本 122。",
+        "同一时间当前生效读取按 RULE-03 返回新版供电和插座过期待复核。",
+        "地理父链保持提交时名称和名称版本，RULE-03 当前生效返回同一身份的新名称版本。"
+      ]
+    },
+    {
+      "id": "SC-PUB-19",
+      "operation": "submitPublicationRequest",
+      "given": [
+        "RELOC-11 已保存馆区迁移草稿，当前管理和公开范围仍沿移出辖区。",
+        "操作者可读两侧，但只有移出侧 publication.submit，草稿候选修订和公开条件未变。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-19"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "publish",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "draftRevision": 19,
+          "optionalFieldKeys": [],
+          "extraLocales": []
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "fixture-publication-request-19"
+        }
+      },
+      "assertions": [
+        "拒绝单侧提交，未新增待审申请。",
+        "管理和公开范围仍沿原父链。"
+      ]
+    },
+    {
+      "id": "SC-PUB-20",
+      "operation": "submitPublicationRequest",
+      "given": [
+        "沿用 RELOC-11 草稿、当前候选修订和公开条件。",
+        "提交者可读两侧并在移出和移入侧分别持有 publication.submit。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-20"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "publish",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "draftRevision": 19,
+          "optionalFieldKeys": [],
+          "extraLocales": []
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000409",
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "requestRevision": 1,
+          "operation": "publish",
+          "status": "pending",
+          "frozenVersionId": "00000000-0000-4000-8000-000000000209",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "allowedActions": [
+            "records.read"
+          ],
+          "candidateFieldKeys": [
+            "name"
+          ],
+          "candidateLocales": [
+            "zh",
+            "en"
+          ],
+          "processedAt": "2026-11-26T09:00:00Z"
+        }
+      },
+      "assertions": [
+        "冻结源、目标两侧作用域及候选父链。",
+        "等待审批期间继续显示原公开路径。"
+      ]
+    },
+    {
+      "id": "SC-PUB-21",
+      "operation": "decidePublicationRequest",
+      "given": [
+        "SC-PUB-20 已冻结源、目标两侧作用域。",
+        "审批人在按申请传入预期修订前被撤去目标侧 publication.review，仍可读取两侧。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000409"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-21"
+        },
+        "body": {
+          "decision": "approve",
+          "reason": "内容核验通过",
+          "expectedRequestRevision": 1,
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "fixture-publication-request-21"
+        }
+      },
+      "assertions": [
+        "审批在持锁条件下按两侧最新授权拒绝此请求。",
+        "申请仍待审，原生效指针、正式归属和公开父链不变。"
+      ]
+    },
+    {
+      "id": "SC-PUB-22",
+      "operation": "decidePublicationRequest",
+      "given": [
+        "沿用 SC-PUB-20 和 SC-PUB-21，申请仍待审。",
+        "审批人恢复双侧 publication.review，候选父链和依赖再次通过锁内校验。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000409"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-22"
+        },
+        "body": {
+          "decision": "approve",
+          "reason": "内容核验通过",
+          "expectedRequestRevision": 1,
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000522",
+          "requestId": "00000000-0000-4000-8000-000000000409",
+          "status": "approved",
+          "processedAt": "2026-11-26T09:00:00Z"
+        }
+      },
+      "assertions": [
+        "同一事务切换正式归属和生效指针。",
+        "管理范围与公开父链切换到目标侧。",
+        "历史译文仍要求历史范围与当前范围双侧授权。"
+      ]
+    },
+    {
+      "id": "SC-PUB-23",
+      "operation": "getPublicationOptions",
+      "given": [
+        "RELOC-11 已保存馆区迁移，候选草稿修订为 19。",
+        "请求语种及两侧路径均获准读取。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "operation": "publish",
+          "draftRevision": 19,
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "draft",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "draftRevision": 19
+          },
+          "preview": {
+            "language": "zh",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "迁移验收馆区"
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000039",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930",
+                "displayName": "测试中国"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000041",
+                "nameVersionId": "00000000-0000-4000-8000-000000000932",
+                "displayName": "接收区"
+              }
+            ]
+          },
+          "canSubmit": true,
+          "eligibleOptionalFieldKeys": [
+            "summary"
+          ],
+          "selectedOptionalFieldKeys": [],
+          "eligibleLocales": [],
+          "selectedExtraLocales": [],
+          "removedLocales": [],
+          "issues": [],
+          "hasRestrictedIssues": false,
+          "hasRestrictedLocaleRemovals": false
+        }
+      },
+      "assertions": [
+        "候选草稿显示拟迁入父链，不提前改变当前生效链。"
+      ]
+    },
+    {
+      "id": "SC-PUB-24",
+      "operation": "getFrozenPublicationPreview",
+      "given": [
+        "SC-PUB-20 已冻结待审版 209。",
+        "审批人有冻结版本及两侧地理身份的中文读取权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000409"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "frozen",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "requestId": "00000000-0000-4000-8000-000000000409",
+            "frozenVersionId": "00000000-0000-4000-8000-000000000209"
+          },
+          "preview": {
+            "language": "zh",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "迁移验收馆区"
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000039",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930",
+                "displayName": "测试中国"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000041",
+                "nameVersionId": "00000000-0000-4000-8000-000000000932",
+                "displayName": "接收区"
+              }
+            ]
+          },
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "reviewSummary": "verified",
+          "removedLocales": [],
+          "hasRestrictedLocaleRemovals": false
+        }
+      },
+      "assertions": [
+        "候审预览保留冻结时的目标父链和名称版本。",
+        "和 RULE-13、RULE-14 的生效旧路径可同时读取。"
+      ]
+    },
+    {
+      "id": "SC-PUB-25",
+      "operation": "getPublicationVersion",
+      "given": [
+        "SC-PUB-22 已批准迁移，当前生效结果见 RULE-15。",
+        "用户拥有当前范围与冻结原范围的读取权限及双方的中文读取权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000202",
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "kind": "node",
+          "publishedAt": "2026-11-25T09:00:00Z",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "restrictionStatus": "unrestricted",
+          "allowedOperations": [
+            "revoke-version"
+          ],
+          "preview": {
+            "language": "zh",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "迁移验收馆区"
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000039",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930",
+                "displayName": "测试中国"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000042",
+                "nameVersionId": "00000000-0000-4000-8000-000000000931",
+                "displayName": "原属区"
+              }
+            ]
+          },
+          "audit": [
+            {
+              "id": "00000000-0000-4000-8000-000000000620",
+              "action": "publish",
+              "occurredAt": "2026-11-25T09:00:00Z"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "历史版 202 仍显示原父链，当前生效的目标父链只在当前视图读取。"
+      ]
+    },
+    {
+      "id": "SC-PUB-26",
+      "operation": "getPublicationVersion",
+      "given": [
+        "和 SC-PUB-25 为同一历史版本。",
+        "账号可读当前区域内的馆区，但无冻结原范围的记录读取权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "RECORD_NOT_FOUND",
+          "requestId": "fixture-history-hidden"
+        }
+      },
+      "assertions": [
+        "没有历史范围权限时不返回版本、审计和路径。"
+      ]
+    },
+    {
+      "id": "SC-PUB-27",
+      "operation": "getPublicationVersion",
+      "given": [
+        "和 SC-PUB-25 为同一历史版本。",
+        "账号具有当前及冻结范围的记录读取权，但原范围未授权中文。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "fixture-history-language-hidden"
+        }
+      },
+      "assertions": [
+        "明确请求无权语种时不返回预览或父链标签。"
+      ]
+    },
+    {
+      "id": "SC-PUB-28",
+      "operation": "getPublicationVersion",
+      "given": [
+        "账号有当前及冻结范围的记录读取权限，未选择语种。",
+        "审计项当前可见。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000202",
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "kind": "node",
+          "publishedAt": "2026-11-25T09:00:00Z",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "restrictionStatus": "unrestricted",
+          "allowedOperations": [
+            "revoke-version"
+          ],
+          "preview": null,
+          "audit": [
+            {
+              "id": "00000000-0000-4000-8000-000000000620",
+              "action": "publish",
+              "occurredAt": "2026-11-25T09:00:00Z"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "未选语种只返回获准摘要和审计，不返回父链或正文。"
+      ]
+    },
+    {
+      "id": "SC-PUB-29",
+      "operation": "getPublicationVersion",
+      "given": [
+        "查看有核验记录的目录素材版本。",
+        "账号有目录和版本的记录读取权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000077",
+          "versionId": "00000000-0000-4000-8000-000000000620"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000620",
+          "targetId": "00000000-0000-4000-8000-000000000077",
+          "kind": "catalog",
+          "publishedAt": null,
+          "verifiedAt": "2026-11-25T09:00:00Z",
+          "availableLocales": [
+            "zh"
+          ],
+          "restrictionStatus": "unrestricted",
+          "allowedOperations": [
+            "revoke-version"
+          ],
+          "preview": null,
+          "audit": []
+        }
+      },
+      "assertions": [
+        "目录版本使用核验时间，历史界面不产生发布或恢复操作。"
+      ]
+    },
+    {
+      "id": "SC-PUB-30",
+      "operation": "getPublicationVersion",
+      "given": [
+        "该馆区当前路径取 SC-PUB-03 的现行合法父链，恢复源版本 201 曾属于不同辖区。",
+        "管理账号具备现行范围、历史范围及对应中文读取权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000201"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000201",
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "kind": "node",
+          "publishedAt": "2026-11-24T09:00:00Z",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "restrictionStatus": "unrestricted",
+          "allowedOperations": [
+            "restore",
+            "revoke-version"
+          ],
+          "preview": {
+            "language": "zh",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "纪念馆原版说明"
+              },
+              {
+                "kind": "reference-list",
+                "field": "sourceIds",
+                "items": [
+                  {
+                    "kind": "reference",
+                    "state": "restricted"
+                  }
+                ]
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000039",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930",
+                "displayName": "测试中国"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000046",
+                "nameVersionId": "00000000-0000-4000-8000-000000000933",
+                "displayName": "旧版馆区原属区"
+              }
+            ]
+          },
+          "audit": []
+        }
+      },
+      "assertions": [
+        "历史读取仍显示版本 201 原有路径。",
+        "SC-PUB-03 选择相同版本恢复内容，恢复候选使用现行合法路径，不恢复历史归属。"
+      ]
+    }
+  ],
+  "x-rejections": [
+    {
+      "id": "SC-PUB-R01",
+      "operation": "getPublicationOptions",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "operation": "restore",
+          "restoreFromVersionId": "00000000-0000-4000-8000-000000000201"
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R02",
+      "operation": "getPublicationOptions",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "operation": "publish",
+          "draftRevision": 7,
+          "extraLocales": "ja,en"
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R03",
+      "operation": "getPublicationOptions",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "draft",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "draftRevision": 7
+          },
+          "preview": null,
+          "canSubmit": true,
+          "eligibleOptionalFieldKeys": [
+            "summary"
+          ],
+          "selectedOptionalFieldKeys": [],
+          "eligibleLocales": [],
+          "selectedExtraLocales": [],
+          "removedLocales": [],
+          "issues": [],
+          "hasRestrictedIssues": true,
+          "hasRestrictedLocaleRemovals": false
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R04",
+      "operation": "getPublicationOptions",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "restore",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "restoreFromVersionId": "00000000-0000-4000-8000-000000000201",
+            "pauseEventId": "00000000-0000-4000-8000-000000000301"
+          },
+          "preview": null,
+          "canSubmit": true,
+          "eligibleOptionalFieldKeys": [
+            "summary"
+          ],
+          "selectedOptionalFieldKeys": [],
+          "eligibleLocales": [],
+          "selectedExtraLocales": [],
+          "removedLocales": [],
+          "issues": [],
+          "hasRestrictedIssues": false,
+          "hasRestrictedLocaleRemovals": true
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R05",
+      "operation": "submitPublicationRequest",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-22"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "publish",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "draftRevision": 7,
+          "optionalFieldKeys": [],
+          "extraLocales": [],
+          "pauseEventId": "00000000-0000-4000-8000-000000000301"
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R06",
+      "operation": "submitPublicationRequest",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication"
+        },
+        "body": {
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "operation": "publish",
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "draftRevision": 7,
+          "optionalFieldKeys": [],
+          "extraLocales": []
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R07",
+      "operation": "getFrozenPublicationPreview",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "draft",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "draftRevision": 7
+          },
+          "preview": null,
+          "availableLocales": [
+            "en"
+          ],
+          "reviewSummary": "verified",
+          "removedLocales": [],
+          "hasRestrictedLocaleRemovals": false
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R08",
+      "operation": "getFrozenPublicationPreview",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "frozen",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "requestId": "00000000-0000-4000-8000-000000000401",
+            "frozenVersionId": "00000000-0000-4000-8000-000000000203"
+          },
+          "preview": {
+            "language": "en",
+            "blocks": [
+              {
+                "kind": "reference-list",
+                "field": "sourceIds",
+                "items": [
+                  {
+                    "kind": "reference",
+                    "state": "restricted",
+                    "targetId": "00000000-0000-4000-8000-000000000024"
+                  }
+                ]
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000039",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930",
+                "displayName": "Test China"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000042",
+                "nameVersionId": "00000000-0000-4000-8000-000000000931",
+                "displayName": "Original District"
+              }
+            ]
+          },
+          "availableLocales": [
+            "en"
+          ],
+          "reviewSummary": "verified",
+          "removedLocales": [],
+          "hasRestrictedLocaleRemovals": false
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R09",
+      "operation": "decidePublicationRequest",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000401"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-csrf-publication",
+          "idempotency-key": "fixture-publication-29"
+        },
+        "body": {
+          "decision": "reject",
+          "reason": "内容核验通过",
+          "expectedRequestRevision": 1,
+          "expectedActiveVersionId": "00000000-0000-4000-8000-000000000202",
+          "expectedVisibilityRevision": 4,
+          "acknowledgeLocaleRemovals": true
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R10",
+      "operation": "decidePublicationRequest",
+      "target": "response",
+      "value": {
+        "status": 409,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000513",
+          "requestId": "00000000-0000-4000-8000-000000000401",
+          "status": "conflicted",
+          "processedAt": "2026-11-26T09:00:00Z",
+          "reasonCode": "PUBLICATION_STATE_CHANGED"
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R11",
+      "operation": "getFrozenPublicationPreview",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "snapshot": {
+            "kind": "frozen",
+            "targetId": "00000000-0000-4000-8000-000000000017",
+            "requestId": "00000000-0000-4000-8000-000000000409",
+            "frozenVersionId": "00000000-0000-4000-8000-000000000209"
+          },
+          "preview": {
+            "language": "zh",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "迁移验收馆区"
+              }
+            ]
+          },
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "reviewSummary": "verified",
+          "removedLocales": [],
+          "hasRestrictedLocaleRemovals": false
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R12",
+      "operation": "getPublicationVersion",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000202",
+          "targetId": "00000000-0000-4000-8000-000000000017",
+          "kind": "node",
+          "publishedAt": "2026-11-25T09:00:00Z",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "restrictionStatus": "unrestricted",
+          "allowedOperations": [
+            "revoke-version"
+          ],
+          "preview": {
+            "language": "zh",
+            "blocks": [
+              {
+                "kind": "text-field",
+                "field": "name",
+                "value": "迁移验收馆区"
+              }
+            ],
+            "geographicPath": [
+              {
+                "state": "restricted",
+                "nameVersionId": "00000000-0000-4000-8000-000000000930"
+              },
+              {
+                "state": "available",
+                "id": "00000000-0000-4000-8000-000000000042",
+                "nameVersionId": "00000000-0000-4000-8000-000000000931",
+                "displayName": "原属区"
+              }
+            ]
+          },
+          "audit": [
+            {
+              "id": "00000000-0000-4000-8000-000000000620",
+              "action": "publish",
+              "occurredAt": "2026-11-25T09:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "SC-PUB-R13",
+      "operation": "getPublicationVersion",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000620",
+          "targetId": "00000000-0000-4000-8000-000000000077",
+          "kind": "catalog",
+          "publishedAt": null,
+          "verifiedAt": "2026-11-25T09:00:00Z",
+          "availableLocales": [
+            "zh"
+          ],
+          "restrictionStatus": "unrestricted",
+          "allowedOperations": [
+            "revoke-version",
+            "restore"
+          ],
+          "preview": null,
+          "audit": []
+        }
+      }
+    }
+  ]
+}

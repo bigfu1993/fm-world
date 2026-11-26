@@ -1,0 +1,3147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/resolved-rules.schema.json",
+  "title": "首版地区规则生效投影与详情读取契约",
+  "description": "采用共用业务规则解析后的供电与插座状态。管理预览和公开详情读取同一投影，并按各自权限裁剪。",
+  "definitions": {
+    "RuleSource": {
+      "type": "object",
+      "properties": {
+        "scopeId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "ruleId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "versionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "local",
+            "inherited"
+          ]
+        },
+        "scopeDisplayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "validFrom": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        },
+        "validUntil": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        }
+      },
+      "required": [
+        "scopeId",
+        "ruleId",
+        "versionId",
+        "mode"
+      ],
+      "additionalProperties": false,
+      "description": "当前采用或需要复核的确切规则版本。local 相对于查询辖区或地点当前生效的直属辖区。validFrom 为包含起点，validUntil 为不包含终点。"
+    },
+    "SupplyItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "versionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "voltageV": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "frequencyHz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "id",
+        "versionId",
+        "code",
+        "displayName",
+        "voltageV",
+        "frequencyHz"
+      ],
+      "additionalProperties": false
+    },
+    "PlugItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "versionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "versionId",
+        "code",
+        "displayName"
+      ],
+      "additionalProperties": false
+    },
+    "AppliedGroup": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "const": "applied"
+        },
+        "source": {
+          "$ref": "#/definitions/RuleSource"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "state",
+        "source",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "NotConfiguredGroup": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "const": "not-configured"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "additionalProperties": false
+    },
+    "NotApplicableGroup": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "const": "not-applicable"
+        },
+        "source": {
+          "$ref": "#/definitions/RuleSource"
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "state",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "NeedsReviewGroup": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "const": "needs-review"
+        },
+        "reasonCode": {
+          "type": "string",
+          "enum": [
+            "expired",
+            "withdrawn",
+            "missing-translation",
+            "invalid-reference"
+          ]
+        },
+        "source": {
+          "$ref": "#/definitions/RuleSource"
+        }
+      },
+      "required": [
+        "state",
+        "reasonCode"
+      ],
+      "additionalProperties": false
+    },
+    "UnavailableGroup": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "const": "unavailable"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "additionalProperties": false,
+      "description": "当前读取场景无权得到适用规则详情，使用固定形状。"
+    },
+    "ResolvedSupplyGroup": {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/definitions/AppliedGroup"
+            },
+            {
+              "properties": {
+                "items": {
+                  "items": {
+                    "$ref": "#/definitions/SupplyItem"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/NotConfiguredGroup"
+        },
+        {
+          "$ref": "#/definitions/NotApplicableGroup"
+        },
+        {
+          "$ref": "#/definitions/NeedsReviewGroup"
+        },
+        {
+          "$ref": "#/definitions/UnavailableGroup"
+        }
+      ]
+    },
+    "ResolvedPlugGroup": {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/definitions/AppliedGroup"
+            },
+            {
+              "properties": {
+                "items": {
+                  "items": {
+                    "$ref": "#/definitions/PlugItem"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/NotConfiguredGroup"
+        },
+        {
+          "$ref": "#/definitions/NotApplicableGroup"
+        },
+        {
+          "$ref": "#/definitions/NeedsReviewGroup"
+        },
+        {
+          "$ref": "#/definitions/UnavailableGroup"
+        }
+      ]
+    },
+    "ResolvedRules": {
+      "type": "object",
+      "properties": {
+        "power-supply": {
+          "$ref": "#/definitions/ResolvedSupplyGroup"
+        },
+        "power-plug": {
+          "$ref": "#/definitions/ResolvedPlugGroup"
+        }
+      },
+      "required": [
+        "power-supply",
+        "power-plug"
+      ],
+      "additionalProperties": false,
+      "description": "两个规则组分别计算。当前预览沿生效父链计算，历史或候审冻结视图读取提交时的计算结果。"
+    },
+    "RuleDraft": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "revision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "configured",
+            "not-applicable",
+            "inherit"
+          ]
+        },
+        "itemIds": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+          },
+          "uniqueItems": true
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+          },
+          "uniqueItems": true
+        },
+        "validFrom": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        },
+        "validUntil": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "status",
+        "itemIds",
+        "sourceIds"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "status": {
+            "const": "configured"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "itemIds": {
+            "minItems": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "itemIds": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    "AdministrativeRuleSlot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "scopeId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "groupCode": {
+          "type": "string",
+          "enum": [
+            "power-supply",
+            "power-plug"
+          ]
+        },
+        "draft": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/RuleDraft"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "effective": {}
+      },
+      "required": [
+        "scopeId",
+        "groupCode",
+        "draft",
+        "effective"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "groupCode": {
+                "const": "power-supply"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effective": {
+                "$ref": "#/definitions/ResolvedSupplyGroup"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "groupCode": {
+                "const": "power-plug"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effective": {
+                "$ref": "#/definitions/ResolvedPlugGroup"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "draft": {
+                "type": "object"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "id"
+            ]
+          }
+        }
+      ]
+    },
+    "AdministrativeRuleListRequest": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "object",
+          "properties": {
+            "scopeId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "groupCode": {
+              "type": "string",
+              "enum": [
+                "power-supply",
+                "power-plug"
+              ]
+            },
+            "query": {
+              "type": "string",
+              "minLength": 1
+            },
+            "cursor": {
+              "type": "string",
+              "minLength": 1
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "传 scopeId 可读取指定辖区，即使没有本地草稿的继承组。省略 scopeId 时返回可读的具名辖区规则槽。"
+    },
+    "AdministrativeRuleListResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AdministrativeRuleSlot"
+          }
+        },
+        "nextCursor": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "items",
+        "nextCursor"
+      ],
+      "additionalProperties": false
+    },
+    "TextFragment": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "text"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "ReferenceFragment": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "reference"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "available": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "displayName",
+        "available"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "available": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "id"
+          ]
+        }
+      }
+    },
+    "BodyFragment": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/TextFragment"
+        },
+        {
+          "$ref": "#/definitions/ReferenceFragment"
+        }
+      ]
+    },
+    "ContentBlock": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "versionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "exhibition",
+            "historical-record",
+            "arrival-guide",
+            "venue-introduction"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "body": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BodyFragment"
+          }
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/BodyFragment"
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "required": [
+        "id",
+        "versionId",
+        "type",
+        "title",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "AreaDisplayFields": {
+      "type": "object",
+      "properties": {
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "PointDisplayFields": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "additionalProperties": false,
+      "dependencies": {
+        "latitude": [
+          "longitude"
+        ],
+        "longitude": [
+          "latitude"
+        ]
+      }
+    },
+    "VenueDisplayFields": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "streetName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "streetNumber": {
+          "type": "string",
+          "minLength": 1
+        },
+        "postalCode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "addressDetail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "contentBlocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContentBlock"
+          },
+          "description": "馆区采用的有序独立内容块。每项使用被采用的对象 ID、确切版本和当前语言的正文。"
+        }
+      },
+      "additionalProperties": false,
+      "dependencies": {
+        "latitude": [
+          "longitude"
+        ],
+        "longitude": [
+          "latitude"
+        ]
+      }
+    },
+    "OfficialName": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "name",
+            "address",
+            "signage"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "locale": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "kind",
+        "value",
+        "locale"
+      ],
+      "additionalProperties": false
+    },
+    "EffectiveLink": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        }
+      },
+      "required": [
+        "kind",
+        "displayName",
+        "available"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "available": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "id"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "id"
+          ]
+        }
+      }
+    },
+    "EffectiveMedia": {
+      "type": "object",
+      "properties": {
+        "mediaVersionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri-reference"
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+          ]
+        },
+        "altText": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "mediaVersionId",
+        "url",
+        "mediaType",
+        "altText"
+      ],
+      "additionalProperties": false
+    },
+    "EffectiveSource": {
+      "type": "object",
+      "properties": {
+        "publisher": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "retrievedAt": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        }
+      },
+      "required": [
+        "publisher",
+        "url",
+        "retrievedAt"
+      ],
+      "additionalProperties": false
+    },
+    "EffectiveDetail": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "versionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "language": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+        },
+        "availableLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "country",
+            "administrative-area",
+            "venue",
+            "entrance",
+            "interior-point",
+            "transport-stop"
+          ]
+        },
+        "officialNames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OfficialName"
+          }
+        },
+        "displayFields": {},
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EffectiveLink"
+          }
+        },
+        "media": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EffectiveMedia"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EffectiveSource"
+          }
+        },
+        "geographicPath": {
+          "$ref": "https://fm-world.test/contracts/v1/geographic-path.schema.json#/definitions/GeographicPath"
+        },
+        "resolvedRules": {
+          "$ref": "#/definitions/ResolvedRules"
+        }
+      },
+      "required": [
+        "id",
+        "versionId",
+        "language",
+        "availableLocales",
+        "displayName",
+        "type",
+        "officialNames",
+        "displayFields",
+        "links",
+        "media",
+        "sources",
+        "geographicPath",
+        "resolvedRules"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "country",
+                  "administrative-area"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "displayFields": {
+                "$ref": "#/definitions/AreaDisplayFields"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "venue"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "displayFields": {
+                "$ref": "#/definitions/VenueDisplayFields"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "entrance",
+                  "interior-point",
+                  "transport-stop"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "displayFields": {
+                "$ref": "#/definitions/PointDisplayFields"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "country"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "geographicPath": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "geographicPath": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "EffectiveDetailRequest": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "query": {
+          "type": "object",
+          "properties": {
+            "language": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            }
+          },
+          "required": [
+            "language"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "path",
+        "query"
+      ],
+      "additionalProperties": false
+    },
+    "ManagementEffectiveDetail": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/EffectiveDetail"
+        },
+        {
+          "properties": {
+            "media": {
+              "items": {
+                "properties": {
+                  "url": {
+                    "pattern": "^/api/records/[^/]+/preview-media/[^/?]+\\?"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PublicEffectiveDetail": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/EffectiveDetail"
+        },
+        {
+          "properties": {
+            "media": {
+              "items": {
+                "properties": {
+                  "url": {
+                    "pattern": "^/api/published-nodes/[^/]+/publication-media/[^/?]+\\?"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "x-operations": {
+    "listAdministrativeRules": {
+      "method": "GET",
+      "path": "/api/standard-applicability-rules",
+      "request": "#/definitions/AdministrativeRuleListRequest",
+      "responses": {
+        "200": "#/definitions/AdministrativeRuleListResponse",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    },
+    "getEffectivePreviewRules": {
+      "method": "GET",
+      "path": "/api/records/{id}/effective-preview",
+      "request": "#/definitions/EffectiveDetailRequest",
+      "responses": {
+        "200": "#/definitions/ManagementEffectiveDetail",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    },
+    "getPublishedNodeRules": {
+      "method": "GET",
+      "path": "/api/published-nodes/{id}",
+      "request": "#/definitions/EffectiveDetailRequest",
+      "responses": {
+        "200": "#/definitions/PublicEffectiveDetail",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error",
+        "500": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http500Error",
+        "503": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http503Error"
+      }
+    }
+  },
+  "x-examples": [
+    {
+      "id": "RULE-01",
+      "operation": "listAdministrativeRules",
+      "given": [
+        "M2 权限可读的东区正维护供电草稿，已有插座草稿和生效版。",
+        "供电未来时段新增本地方案，当前仍继承甲国已生效规则。"
+      ],
+      "request": {
+        "query": {
+          "scopeId": "00000000-0000-4000-8000-000000000102",
+          "limit": 25
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "id": "00000000-0000-4000-8000-000000000111",
+              "scopeId": "00000000-0000-4000-8000-000000000102",
+              "groupCode": "power-supply",
+              "draft": {
+                "id": "00000000-0000-4000-8000-000000000111",
+                "revision": 2,
+                "status": "configured",
+                "itemIds": [
+                  "00000000-0000-4000-8000-000000000130"
+                ],
+                "sourceIds": [
+                  "00000000-0000-4000-8000-000000000150"
+                ],
+                "validFrom": "2026-12-01T00:00:00Z"
+              },
+              "effective": {
+                "state": "applied",
+                "source": {
+                  "scopeId": "00000000-0000-4000-8000-000000000101",
+                  "scopeDisplayName": "测试甲国",
+                  "ruleId": "00000000-0000-4000-8000-000000000110",
+                  "versionId": "00000000-0000-4000-8000-000000000120",
+                  "mode": "inherited"
+                },
+                "items": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000130",
+                    "versionId": "00000000-0000-4000-8000-000000000131",
+                    "code": "TEST-220-50",
+                    "displayName": "220 V / 50 Hz（测试）",
+                    "voltageV": 220,
+                    "frequencyHz": 50
+                  }
+                ]
+              }
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000112",
+              "scopeId": "00000000-0000-4000-8000-000000000102",
+              "groupCode": "power-plug",
+              "draft": {
+                "id": "00000000-0000-4000-8000-000000000112",
+                "revision": 1,
+                "status": "configured",
+                "itemIds": [
+                  "00000000-0000-4000-8000-000000000140"
+                ],
+                "sourceIds": [
+                  "00000000-0000-4000-8000-000000000150"
+                ]
+              },
+              "effective": {
+                "state": "applied",
+                "source": {
+                  "scopeId": "00000000-0000-4000-8000-000000000102",
+                  "scopeDisplayName": "测试甲国东区",
+                  "ruleId": "00000000-0000-4000-8000-000000000112",
+                  "versionId": "00000000-0000-4000-8000-000000000122",
+                  "mode": "local",
+                  "validFrom": "2026-10-01T00:00:00Z",
+                  "validUntil": "2026-11-26T00:00:00Z"
+                },
+                "items": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000140",
+                    "versionId": "00000000-0000-4000-8000-000000000141",
+                    "code": "TEST-LOCAL",
+                    "displayName": "本地插座（测试）"
+                  }
+                ]
+              }
+            }
+          ],
+          "nextCursor": null
+        }
+      },
+      "assertions": [
+        "AF-09 草稿和生效卡片独立显示。未来草稿和本地插座均不改变当前继承的供电组。"
+      ]
+    },
+    {
+      "id": "RULE-02",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "AC-06 冻结甲国东区馆区审核后，时钟为 2026-11-25T12:00:00Z。",
+        "供电继承甲国版本 120，插座使用东区版本 122。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号",
+            "contentBlocks": [
+              {
+                "id": "00000000-0000-4000-8000-000000000160",
+                "versionId": "00000000-0000-4000-8000-000000000161",
+                "type": "exhibition",
+                "title": "合成展览一",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第一份独立正文"
+                  }
+                ]
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000162",
+                "versionId": "00000000-0000-4000-8000-000000000163",
+                "type": "exhibition",
+                "title": "合成展览二",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第二份独立正文"
+                  }
+                ]
+              }
+            ]
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000101",
+                "scopeDisplayName": "测试甲国",
+                "ruleId": "00000000-0000-4000-8000-000000000110",
+                "versionId": "00000000-0000-4000-8000-000000000120",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000130",
+                  "versionId": "00000000-0000-4000-8000-000000000131",
+                  "code": "TEST-220-50",
+                  "displayName": "220 V / 50 Hz（测试）",
+                  "voltageV": 220,
+                  "frequencyHz": 50
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000140",
+                  "versionId": "00000000-0000-4000-8000-000000000141",
+                  "code": "TEST-LOCAL",
+                  "displayName": "本地插座（测试）"
+                }
+              ]
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000910",
+              "displayName": "测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "同一馆区 V117 同时采用继承供电与本地插座。两个展览块各有独立 ID、版本和正文。"
+      ]
+    },
+    {
+      "id": "RULE-03",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "AC-06 甲国供电版本 121 生效，馆区未重新发布。",
+        "时钟恰为东区插座 validUntil 2026-11-26T00:00:00Z。",
+        "甲国地理身份名称版本 912 已生效。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号",
+            "contentBlocks": [
+              {
+                "id": "00000000-0000-4000-8000-000000000160",
+                "versionId": "00000000-0000-4000-8000-000000000161",
+                "type": "exhibition",
+                "title": "合成展览一",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第一份独立正文"
+                  }
+                ]
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000162",
+                "versionId": "00000000-0000-4000-8000-000000000163",
+                "type": "exhibition",
+                "title": "合成展览二",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第二份独立正文"
+                  }
+                ]
+              }
+            ]
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000101",
+                "scopeDisplayName": "更名后的测试甲国",
+                "ruleId": "00000000-0000-4000-8000-000000000110",
+                "versionId": "00000000-0000-4000-8000-000000000121",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000133",
+                  "versionId": "00000000-0000-4000-8000-000000000132",
+                  "code": "TEST-230-50",
+                  "displayName": "230 V / 50 Hz（测试）",
+                  "voltageV": 230,
+                  "frequencyHz": 50
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "needs-review",
+              "reasonCode": "expired",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              }
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "更名后的测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "馆区版本仍为 117，供电改读版本 121。",
+        "插座仅显示待复核，无采用项也不继承甲国版本 123。",
+        "已冻结审核历史继续展示提交时的供电版本 120 和本地插座版本 122。",
+        "祖先 ID 和馆区生效版本保持稳定，甲国名称与名称版本采用现行值。"
+      ]
+    },
+    {
+      "id": "RULE-04",
+      "operation": "getEffectivePreviewRules",
+      "given": [
+        "AC-06 同 RULE-03，账号可读馆区中文与适用规则。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号",
+            "contentBlocks": [
+              {
+                "id": "00000000-0000-4000-8000-000000000160",
+                "versionId": "00000000-0000-4000-8000-000000000161",
+                "type": "exhibition",
+                "title": "合成展览一",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第一份独立正文"
+                  }
+                ]
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000162",
+                "versionId": "00000000-0000-4000-8000-000000000163",
+                "type": "exhibition",
+                "title": "合成展览二",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第二份独立正文"
+                  }
+                ]
+              }
+            ]
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000101",
+                "scopeDisplayName": "更名后的测试甲国",
+                "ruleId": "00000000-0000-4000-8000-000000000110",
+                "versionId": "00000000-0000-4000-8000-000000000121",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000133",
+                  "versionId": "00000000-0000-4000-8000-000000000132",
+                  "code": "TEST-230-50",
+                  "displayName": "230 V / 50 Hz（测试）",
+                  "voltageV": 230,
+                  "frequencyHz": 50
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "needs-review",
+              "reasonCode": "expired",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              }
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "更名后的测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "管理生效预览与匿名读端采用同一当前规则投影。"
+      ]
+    },
+    {
+      "id": "RULE-05",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "AC-06 东区已明确发布恢复继承，甲国插座版本 123 继续有效。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号",
+            "contentBlocks": [
+              {
+                "id": "00000000-0000-4000-8000-000000000160",
+                "versionId": "00000000-0000-4000-8000-000000000161",
+                "type": "exhibition",
+                "title": "合成展览一",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第一份独立正文"
+                  }
+                ]
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000162",
+                "versionId": "00000000-0000-4000-8000-000000000163",
+                "type": "exhibition",
+                "title": "合成展览二",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第二份独立正文"
+                  }
+                ]
+              }
+            ]
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000101",
+                "scopeDisplayName": "更名后的测试甲国",
+                "ruleId": "00000000-0000-4000-8000-000000000110",
+                "versionId": "00000000-0000-4000-8000-000000000121",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000133",
+                  "versionId": "00000000-0000-4000-8000-000000000132",
+                  "code": "TEST-230-50",
+                  "displayName": "230 V / 50 Hz（测试）",
+                  "voltageV": 230,
+                  "frequencyHz": 50
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000101",
+                "scopeDisplayName": "更名后的测试甲国",
+                "ruleId": "00000000-0000-4000-8000-000000000113",
+                "versionId": "00000000-0000-4000-8000-000000000123",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000142",
+                  "versionId": "00000000-0000-4000-8000-000000000143",
+                  "code": "TEST-PARENT",
+                  "displayName": "上级插座（测试）"
+                }
+              ]
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "更名后的测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "只改变插座组，其来源切换为甲国版本 123，供电版本与馆区版本均保持。"
+      ]
+    },
+    {
+      "id": "RULE-06",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "AC-06 仍在 RULE-03 的时钟，读取测试乙国馆区。",
+        "乙国规则没有发生修改，唯一供电组以乙国版本 125 生效。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000018"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000018",
+          "versionId": "00000000-0000-4000-8000-000000000118",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试乙国馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号"
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000103",
+                "scopeDisplayName": "测试乙国",
+                "ruleId": "00000000-0000-4000-8000-000000000114",
+                "versionId": "00000000-0000-4000-8000-000000000125",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000134",
+                  "versionId": "00000000-0000-4000-8000-000000000135",
+                  "code": "TEST-110-60",
+                  "displayName": "110 V / 60 Hz（测试）",
+                  "voltageV": 110,
+                  "frequencyHz": 60
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000103",
+              "nameVersionId": "00000000-0000-4000-8000-000000000913",
+              "displayName": "测试乙国"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "甲国供电变更不影响乙国，乙国未配置插座时不伪造采用项。"
+      ]
+    },
+    {
+      "id": "RULE-07",
+      "operation": "getEffectivePreviewRules",
+      "given": [
+        "账号可读馆区中文，但不能读取供电适用来源。",
+        "插座规则及标签仍获准读取。",
+        "时钟沿用 RULE-02 的东区插座有效时间。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号"
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "unavailable"
+            },
+            "power-plug": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000140",
+                  "versionId": "00000000-0000-4000-8000-000000000141",
+                  "code": "TEST-LOCAL",
+                  "displayName": "本地插座（测试）"
+                }
+              ]
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "restricted"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "未授权组仅返回 unavailable，省略辖区、版本、说明和采用项。",
+        "管理预览中的不可读父链节点仅保留受限占位符。"
+      ]
+    },
+    {
+      "id": "RULE-08",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "旅客请求扩展语种 ja，馆区只发布中文和英文。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "ja"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "PUBLISHED_LANGUAGE_UNAVAILABLE",
+          "requestId": "fixture-rule-08",
+          "availableLocales": [
+            "zh",
+            "en"
+          ]
+        }
+      },
+      "assertions": [
+        "整条详情不可用时不返回 resolvedRules。只提供既有公开语言选项。"
+      ]
+    },
+    {
+      "id": "RULE-09",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "东区插座规则已撤下，未显式恢复继承，甲国插座仍正常发布。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号"
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000101",
+                "scopeDisplayName": "更名后的测试甲国",
+                "ruleId": "00000000-0000-4000-8000-000000000110",
+                "versionId": "00000000-0000-4000-8000-000000000121",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000133",
+                  "versionId": "00000000-0000-4000-8000-000000000132",
+                  "code": "TEST-230-50",
+                  "displayName": "230 V / 50 Hz（测试）",
+                  "voltageV": 230,
+                  "frequencyHz": 50
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "needs-review",
+              "reasonCode": "withdrawn"
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "更名后的测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "撤下与过期均阻断该组回落。已撤下版本的来源和采用项没有返回。"
+      ]
+    },
+    {
+      "id": "RULE-10",
+      "operation": "listAdministrativeRules",
+      "given": [
+        "东区没有供电规则草稿，但上级供电已生效。"
+      ],
+      "request": {
+        "query": {
+          "scopeId": "00000000-0000-4000-8000-000000000102",
+          "groupCode": "power-supply"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "scopeId": "00000000-0000-4000-8000-000000000102",
+              "groupCode": "power-supply",
+              "draft": null,
+              "effective": {
+                "state": "applied",
+                "source": {
+                  "scopeId": "00000000-0000-4000-8000-000000000101",
+                  "scopeDisplayName": "测试甲国",
+                  "ruleId": "00000000-0000-4000-8000-000000000110",
+                  "versionId": "00000000-0000-4000-8000-000000000120",
+                  "mode": "inherited"
+                },
+                "items": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000130",
+                    "versionId": "00000000-0000-4000-8000-000000000131",
+                    "code": "TEST-220-50",
+                    "displayName": "220 V / 50 Hz（测试）",
+                    "voltageV": 220,
+                    "frequencyHz": 50
+                  }
+                ]
+              }
+            }
+          ],
+          "nextCursor": null
+        }
+      },
+      "assertions": [
+        "只有继承结果的规则槽仍可查询。没有虚构规则记录 ID。"
+      ]
+    },
+    {
+      "id": "RULE-11",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "东区已经生效带来源依据的「明确不适用」插座规则。甲国上级插座仍有效。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号"
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000101",
+                "scopeDisplayName": "更名后的测试甲国",
+                "ruleId": "00000000-0000-4000-8000-000000000110",
+                "versionId": "00000000-0000-4000-8000-000000000121",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000133",
+                  "versionId": "00000000-0000-4000-8000-000000000132",
+                  "code": "TEST-230-50",
+                  "displayName": "230 V / 50 Hz（测试）",
+                  "voltageV": 230,
+                  "frequencyHz": 50
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "not-applicable",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000124",
+                "mode": "local"
+              },
+              "instructions": "此组明确不适用（合成验收值）。"
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "更名后的测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "明确不适用保留授权来源及其版本，不返回插座采用项，也不继承上级版本。"
+      ]
+    },
+    {
+      "id": "RULE-12",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "馆区已额外发布日语；甲国当前供电说明缺少日语，插座组尚未配置。",
+        "两个祖先均获准公开其身份，但没有日语名称。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "ja"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "ja",
+          "availableLocales": [
+            "zh",
+            "en",
+            "ja"
+          ],
+          "displayName": "テスト会場",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "受け入れテスト用の内容"
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "needs-review",
+              "reasonCode": "missing-translation"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "missing-translation",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912"
+            },
+            {
+              "state": "missing-translation",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "详情保持日语并可读取。供电组返回缺译待复核，省略其他语种的标签和说明。",
+        "父链返回缺译状态，不返回中文或英文名称。"
+      ]
+    },
+    {
+      "id": "RULE-13",
+      "operation": "getEffectivePreviewRules",
+      "given": [
+        "RELOC-11 已保存迁移，SC-PUB-20 的待审版已冻结。",
+        "管理账号获准读取当前馆区及原父链中文。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000039",
+              "nameVersionId": "00000000-0000-4000-8000-000000000930",
+              "displayName": "测试中国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000042",
+              "nameVersionId": "00000000-0000-4000-8000-000000000931",
+              "displayName": "原属区"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "not-configured"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          }
+        }
+      },
+      "assertions": [
+        "待审期间生效管理预览仍返回旧版 202 和原父链。",
+        "SC-PUB-24 同时返回候审版 209 的目标父链，两条路径各自取值。"
+      ]
+    },
+    {
+      "id": "RULE-14",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "和 RULE-13 为同一待审状态，或 SC-PUB-21 的单侧批准被拒后。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000039",
+              "nameVersionId": "00000000-0000-4000-8000-000000000930",
+              "displayName": "测试中国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000042",
+              "nameVersionId": "00000000-0000-4000-8000-000000000931",
+              "displayName": "原属区"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "not-configured"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          }
+        }
+      },
+      "assertions": [
+        "匿名详情维持旧版 202 与原父链，没有提前串到目标区。"
+      ]
+    },
+    {
+      "id": "RULE-15",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "SC-PUB-22 已成功批准 SC-PUB-20，候选父链仍然有效。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000209",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000039",
+              "nameVersionId": "00000000-0000-4000-8000-000000000930",
+              "displayName": "测试中国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000041",
+              "nameVersionId": "00000000-0000-4000-8000-000000000932",
+              "displayName": "接收区"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "not-configured"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          }
+        }
+      },
+      "assertions": [
+        "匿名详情同时切换至生效版 209 与目标父链，与 SC-PUB-24 冻结的目标路径一致。",
+        "SC-PUB-25 的历史版 202 仍保留原父链。"
+      ]
+    },
+    {
+      "id": "RULE-16",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "已发布的根国家获准公开中文。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000039"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000039",
+          "versionId": "00000000-0000-4000-8000-000000000201",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试中国",
+          "type": "country",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "not-configured"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          }
+        }
+      },
+      "assertions": [
+        "根国家没有祖先，父链返回空数组。"
+      ]
+    },
+    {
+      "id": "RULE-17",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "馆区获准公开，直接父级仅具有当前有效的管理侧身份，祖先中的根国家已公开。",
+        "适用规则来源也不公开。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000039",
+              "nameVersionId": "00000000-0000-4000-8000-000000000930",
+              "displayName": "测试中国"
+            },
+            {
+              "state": "restricted"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "unavailable"
+            },
+            "power-plug": {
+              "state": "unavailable"
+            }
+          }
+        }
+      },
+      "assertions": [
+        "返回严格的受限占位符，不经父链或规则返回隐藏区域的身份、版本和标签。"
+      ]
+    },
+    {
+      "id": "RULE-18",
+      "operation": "getEffectivePreviewRules",
+      "given": [
+        "和 RULE-15 为同一已批准状态。",
+        "管理账号获准读取当前馆区及目标父链中文。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000209",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000039",
+              "nameVersionId": "00000000-0000-4000-8000-000000000930",
+              "displayName": "测试中国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000041",
+              "nameVersionId": "00000000-0000-4000-8000-000000000932",
+              "displayName": "接收区"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "not-configured"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          }
+        }
+      },
+      "assertions": [
+        "管理预览与匿名页面使用同一个原子切换结果。"
+      ]
+    },
+    {
+      "id": "RULE-19",
+      "operation": "getEffectivePreviewRules",
+      "given": [
+        "账号可以读取馆区中文，两个祖先的身份均不可读。",
+        "规则来源也未授权。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "restricted"
+            },
+            {
+              "state": "restricted"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "unavailable"
+            },
+            "power-plug": {
+              "state": "unavailable"
+            }
+          }
+        }
+      },
+      "assertions": [
+        "两个完全相同的受限占位符都保留，响应不暴露身份、名称和版本。"
+      ]
+    },
+    {
+      "id": "RULE-20",
+      "operation": "getPublishedNodeRules",
+      "given": [
+        "馆区与街路可公开。其直接父级的身份、名称与名称版本均受限。",
+        "供电事实已获准使用，但采用辖区身份不是可公开字段。该辖区名称的夹具值为 不可公开示例辖区。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "language": "zh"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "address": "测试中国 示例路 17 号"
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000039",
+              "nameVersionId": "00000000-0000-4000-8000-000000000930",
+              "displayName": "测试中国"
+            },
+            {
+              "state": "restricted"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "unavailable"
+            },
+            "power-plug": {
+              "state": "unavailable"
+            }
+          }
+        }
+      },
+      "forbiddenValues": [
+        "不可公开示例辖区",
+        "00000000-0000-4000-8000-000000000067",
+        "00000000-0000-4000-8000-000000000967"
+      ],
+      "assertions": [
+        "基于祖先拼接的地址只包含获准名称。",
+        "祖先占位符、规则组、链接、正文引用和地址均不返回受限名称、ID 或名称版本。",
+        "规则出处身份受限时，组仅返回 unavailable。"
+      ]
+    }
+  ],
+  "x-rejections": [
+    {
+      "id": "RULE-BAD-01",
+      "operation": "getPublishedNodeRules",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {}
+      }
+    },
+    {
+      "id": "RULE-BAD-02",
+      "operation": "getEffectivePreviewRules",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号",
+            "contentBlocks": [
+              {
+                "id": "00000000-0000-4000-8000-000000000160",
+                "versionId": "00000000-0000-4000-8000-000000000161",
+                "type": "exhibition",
+                "title": "合成展览一",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第一份独立正文"
+                  }
+                ]
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000162",
+                "versionId": "00000000-0000-4000-8000-000000000163",
+                "type": "exhibition",
+                "title": "合成展览二",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第二份独立正文"
+                  }
+                ]
+              }
+            ]
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "unavailable",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              }
+            },
+            "power-plug": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000140",
+                  "versionId": "00000000-0000-4000-8000-000000000141",
+                  "code": "TEST-LOCAL",
+                  "displayName": "本地插座（测试）"
+                }
+              ]
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "更名后的测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "RULE-BAD-03",
+      "operation": "getPublishedNodeRules",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号",
+            "contentBlocks": [
+              {
+                "id": "00000000-0000-4000-8000-000000000160",
+                "versionId": "00000000-0000-4000-8000-000000000161",
+                "type": "exhibition",
+                "title": "合成展览一",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第一份独立正文"
+                  }
+                ]
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000162",
+                "versionId": "00000000-0000-4000-8000-000000000163",
+                "type": "exhibition",
+                "title": "合成展览二",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第二份独立正文"
+                  }
+                ]
+              }
+            ]
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000140",
+                  "versionId": "00000000-0000-4000-8000-000000000141",
+                  "code": "TEST-LOCAL",
+                  "displayName": "本地插座（测试）"
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000140",
+                  "versionId": "00000000-0000-4000-8000-000000000141",
+                  "code": "TEST-LOCAL",
+                  "displayName": "本地插座（测试）"
+                }
+              ]
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "更名后的测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "RULE-BAD-04",
+      "operation": "getPublishedNodeRules",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "合成验收内容",
+            "address": "测试路 17 号",
+            "contentBlocks": [
+              {
+                "id": "00000000-0000-4000-8000-000000000160",
+                "versionId": "00000000-0000-4000-8000-000000000161",
+                "type": "exhibition",
+                "title": "合成展览一",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第一份独立正文"
+                  }
+                ]
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000162",
+                "versionId": "00000000-0000-4000-8000-000000000163",
+                "type": "exhibition",
+                "title": "合成展览二",
+                "body": [
+                  {
+                    "type": "text",
+                    "text": "第二份独立正文"
+                  }
+                ]
+              }
+            ],
+            "draftRevision": 2
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000101",
+                "scopeDisplayName": "测试甲国",
+                "ruleId": "00000000-0000-4000-8000-000000000110",
+                "versionId": "00000000-0000-4000-8000-000000000120",
+                "mode": "inherited"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000130",
+                  "versionId": "00000000-0000-4000-8000-000000000131",
+                  "code": "TEST-220-50",
+                  "displayName": "220 V / 50 Hz（测试）",
+                  "voltageV": 220,
+                  "frequencyHz": 50
+                }
+              ]
+            },
+            "power-plug": {
+              "state": "applied",
+              "source": {
+                "scopeId": "00000000-0000-4000-8000-000000000102",
+                "scopeDisplayName": "测试甲国东区",
+                "ruleId": "00000000-0000-4000-8000-000000000112",
+                "versionId": "00000000-0000-4000-8000-000000000122",
+                "mode": "local",
+                "validFrom": "2026-10-01T00:00:00Z",
+                "validUntil": "2026-11-26T00:00:00Z"
+              },
+              "items": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000140",
+                  "versionId": "00000000-0000-4000-8000-000000000141",
+                  "code": "TEST-LOCAL",
+                  "displayName": "本地插座（测试）"
+                }
+              ]
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "更名后的测试甲国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911",
+              "displayName": "测试甲国东区"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "RULE-BAD-05",
+      "operation": "listAdministrativeRules",
+      "target": "request",
+      "value": {
+        "query": {
+          "scopeId": "00000000-0000-4000-8000-000000000102",
+          "groupCode": "test-unknown"
+        }
+      }
+    },
+    {
+      "id": "RULE-BAD-06",
+      "operation": "getPublishedNodeRules",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000039",
+              "nameVersionId": "00000000-0000-4000-8000-000000000930",
+              "displayName": "测试中国"
+            },
+            {
+              "state": "restricted",
+              "id": "00000000-0000-4000-8000-000000000042"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "unavailable"
+            },
+            "power-plug": {
+              "state": "unavailable"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "RULE-BAD-07",
+      "operation": "getPublishedNodeRules",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000039",
+          "versionId": "00000000-0000-4000-8000-000000000201",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "测试中国",
+          "type": "country",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "geographicPath": [
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000039",
+              "nameVersionId": "00000000-0000-4000-8000-000000000930",
+              "displayName": "测试中国"
+            },
+            {
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000042",
+              "nameVersionId": "00000000-0000-4000-8000-000000000931",
+              "displayName": "原属区"
+            }
+          ],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "not-configured"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "RULE-BAD-08",
+      "operation": "getPublishedNodeRules",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000117",
+          "language": "ja",
+          "availableLocales": [
+            "zh",
+            "en",
+            "ja"
+          ],
+          "displayName": "テスト会場",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {
+            "summary": "受け入れテスト用の内容"
+          },
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "needs-review",
+              "reasonCode": "missing-translation"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          },
+          "geographicPath": [
+            {
+              "state": "missing-translation",
+              "id": "00000000-0000-4000-8000-000000000101",
+              "nameVersionId": "00000000-0000-4000-8000-000000000912",
+              "displayName": "测试甲国"
+            },
+            {
+              "state": "missing-translation",
+              "id": "00000000-0000-4000-8000-000000000102",
+              "nameVersionId": "00000000-0000-4000-8000-000000000911"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "RULE-BAD-09",
+      "operation": "getPublishedNodeRules",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "versionId": "00000000-0000-4000-8000-000000000202",
+          "language": "zh",
+          "availableLocales": [
+            "zh",
+            "en"
+          ],
+          "displayName": "迁移验收馆区",
+          "type": "venue",
+          "officialNames": [],
+          "displayFields": {},
+          "links": [],
+          "media": [],
+          "sources": [],
+          "resolvedRules": {
+            "power-supply": {
+              "state": "not-configured"
+            },
+            "power-plug": {
+              "state": "not-configured"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

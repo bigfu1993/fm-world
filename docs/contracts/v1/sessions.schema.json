@@ -1,0 +1,302 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/sessions.schema.json",
+  "title": "管理后台会话请求与回执",
+  "definitions": {
+    "LoginRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "username": {
+              "type": "string",
+              "minLength": 1
+            },
+            "password": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "username",
+            "password"
+          ]
+        }
+      },
+      "required": [
+        "body"
+      ]
+    },
+    "SessionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "required": []
+    },
+    "LogoutRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "headers": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/CsrfHeaders"
+        }
+      },
+      "required": [
+        "headers"
+      ]
+    },
+    "SessionResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accountId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "primaryLocale": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+        },
+        "supportedLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "authzRevision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "expiresAt": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Timestamp"
+        },
+        "csrfToken": {
+          "type": "string",
+          "minLength": 1
+        },
+        "allowedActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "accountId",
+        "primaryLocale",
+        "supportedLocales",
+        "authzRevision",
+        "expiresAt",
+        "csrfToken",
+        "allowedActions"
+      ]
+    },
+    "NoBody": {
+      "type": "null"
+    },
+    "Error": {
+      "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+    }
+  },
+  "x-operations": {
+    "createSession": {
+      "method": "POST",
+      "path": "/api/sessions",
+      "request": "#/definitions/LoginRequest",
+      "responses": {
+        "201": "#/definitions/SessionResponse",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "429": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http429Error"
+      }
+    },
+    "readSession": {
+      "method": "GET",
+      "path": "/api/sessions/current",
+      "request": "#/definitions/SessionRequest",
+      "responses": {
+        "200": "#/definitions/SessionResponse",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error"
+      }
+    },
+    "revokeSession": {
+      "method": "DELETE",
+      "path": "/api/sessions/current",
+      "request": "#/definitions/LogoutRequest",
+      "responses": {
+        "204": "#/definitions/NoBody",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error"
+      }
+    }
+  },
+  "x-examples": [
+    {
+      "id": "SC-AUTH-01",
+      "operation": "createSession",
+      "given": [
+        "使用隔离夹具账号，主语言为 en"
+      ],
+      "request": {
+        "body": {
+          "username": "operator-en",
+          "password": "fixture-only-password"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "accountId": "00000000-0000-4000-8000-000000000041",
+          "primaryLocale": "en",
+          "supportedLocales": [
+            "en",
+            "zh",
+            "ja"
+          ],
+          "authzRevision": 4,
+          "expiresAt": "2030-01-01T22:00:00Z",
+          "csrfToken": "example-csrf-token",
+          "allowedActions": [
+            "records.read",
+            "translations.edit"
+          ]
+        }
+      },
+      "assertions": [
+        "服务设置当前环境对应的会话 Cookie",
+        "前端使用主语言 en，不读取浏览器持久登录信息"
+      ]
+    },
+    {
+      "id": "SC-AUTH-02",
+      "operation": "createSession",
+      "given": [
+        "凭据无效"
+      ],
+      "request": {
+        "body": {
+          "username": "operator-en",
+          "password": "fixture-only-password"
+        }
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "code": "INVALID_CREDENTIALS",
+          "requestId": "login-invalid"
+        }
+      },
+      "assertions": [
+        "保留登录页，清空密码，不泄露账号存在性"
+      ]
+    },
+    {
+      "id": "SC-AUTH-03",
+      "operation": "readSession",
+      "given": [
+        "浏览器具有有效会话 Cookie"
+      ],
+      "request": {},
+      "response": {
+        "status": 200,
+        "body": {
+          "accountId": "00000000-0000-4000-8000-000000000041",
+          "primaryLocale": "en",
+          "supportedLocales": [
+            "en",
+            "zh",
+            "ja"
+          ],
+          "authzRevision": 4,
+          "expiresAt": "2030-01-01T22:00:00Z",
+          "csrfToken": "example-csrf-token",
+          "allowedActions": [
+            "records.read",
+            "translations.edit"
+          ]
+        }
+      },
+      "assertions": [
+        "直接访问受保护路由时还原当前会话与主语言"
+      ]
+    },
+    {
+      "id": "SC-AUTH-04",
+      "operation": "readSession",
+      "given": [
+        "Cookie 已撤销或会话已过期"
+      ],
+      "request": {},
+      "response": {
+        "status": 401,
+        "body": {
+          "code": "SESSION_INVALID",
+          "requestId": "session-invalid"
+        }
+      },
+      "assertions": [
+        "关闭受限视图，重定向到登录"
+      ]
+    },
+    {
+      "id": "SC-AUTH-05",
+      "operation": "revokeSession",
+      "given": [
+        "当前会话和 CSRF 匹配"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "example-csrf-token"
+        }
+      },
+      "response": {
+        "status": 204,
+        "body": null
+      },
+      "assertions": [
+        "响应无消息体，清除本环境的会话 Cookie",
+        "同一会话重读返回 SC-AUTH-04 的状态和错误码"
+      ]
+    }
+  ],
+  "x-rejections": [
+    {
+      "id": "SC-AUTH-R01",
+      "operation": "revokeSession",
+      "target": "request",
+      "value": {
+        "headers": {}
+      }
+    },
+    {
+      "id": "SC-AUTH-R02",
+      "operation": "createSession",
+      "target": "response",
+      "value": {
+        "status": 201,
+        "body": {
+          "accountId": "00000000-0000-4000-8000-000000000041",
+          "primaryLocale": "en",
+          "supportedLocales": [
+            "en",
+            "zh",
+            "ja"
+          ],
+          "authzRevision": 4,
+          "expiresAt": "2030-01-01T22:00:00Z",
+          "csrfToken": "example-csrf-token",
+          "allowedActions": [
+            "records.read",
+            "translations.edit"
+          ],
+          "password": "fixture-only-password"
+        }
+      }
+    }
+  ]
+}

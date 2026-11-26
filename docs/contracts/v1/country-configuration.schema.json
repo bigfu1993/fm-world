@@ -1,0 +1,1466 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/country-configuration.schema.json",
+  "title": "国家草稿、配置核验和下级辖区录入",
+  "description": "M2 从空地理库创建国家，配置保存在国家草稿。独立核验后才转成可依赖的配置版本，原有公开状态不变。",
+  "definitions": {
+    "AreaLevelCode": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "AreaLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "allowedParentCodes"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "not": {
+            "const": "country"
+          }
+        },
+        "allowedParentCodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AreaLevelCode"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "DraftAreaLevels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/AreaLevel"
+      },
+      "uniqueItems": true
+    },
+    "VerifiedAreaLevels": {
+      "$ref": "#/definitions/DraftAreaLevels"
+    },
+    "PostalCodeRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "formatCode"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "formatCode": {
+          "type": "string",
+          "enum": [
+            "free-text",
+            "six-digits",
+            "five-digits"
+          ]
+        }
+      }
+    },
+    "DraftOfficialLocales": {
+      "type": "array",
+      "items": {
+        "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+      },
+      "uniqueItems": true
+    },
+    "VerifiedOfficialLocales": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DraftOfficialLocales"
+        },
+        {
+          "minItems": 1
+        }
+      ]
+    },
+    "DraftConfigurationSources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "areaLevels",
+        "postalCodeRule",
+        "officialLocales"
+      ],
+      "properties": {
+        "areaLevels": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+          },
+          "uniqueItems": true
+        },
+        "postalCodeRule": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+          },
+          "uniqueItems": true
+        },
+        "officialLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "VerifiedConfigurationSources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "areaLevels",
+        "postalCodeRule",
+        "officialLocales"
+      ],
+      "properties": {
+        "areaLevels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VerifiedSourceReference"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "postalCodeRule": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VerifiedSourceReference"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "officialLocales": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VerifiedSourceReference"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "VerifiedConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "countryId",
+        "referenceVersionId",
+        "areaLevels",
+        "postalCodeRule",
+        "officialLocales"
+      ],
+      "properties": {
+        "countryId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "referenceVersionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "areaLevels": {
+          "$ref": "#/definitions/VerifiedAreaLevels"
+        },
+        "postalCodeRule": {
+          "$ref": "#/definitions/PostalCodeRule"
+        },
+        "officialLocales": {
+          "$ref": "#/definitions/VerifiedOfficialLocales"
+        }
+      }
+    },
+    "VerifiedCountryConfigurationSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "countryId",
+        "referenceVersionId",
+        "areaLevels",
+        "postalCodeRule",
+        "officialLocales",
+        "configurationSources"
+      ],
+      "properties": {
+        "countryId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "referenceVersionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "areaLevels": {
+          "$ref": "#/definitions/VerifiedAreaLevels"
+        },
+        "postalCodeRule": {
+          "$ref": "#/definitions/PostalCodeRule"
+        },
+        "officialLocales": {
+          "$ref": "#/definitions/VerifiedOfficialLocales"
+        },
+        "configurationSources": {
+          "$ref": "#/definitions/VerifiedConfigurationSources"
+        }
+      },
+      "description": "独立核验时冻结三组字段及每项来源采用的确切版本。GET 配置投影只读取录入所需规则。"
+    },
+    "CreateAreaRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "headers",
+        "body"
+      ],
+      "properties": {
+        "headers": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/CsrfHeaders"
+        },
+        "body": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "sourceLocale",
+                "code",
+                "areaLevel",
+                "parentId"
+              ],
+              "properties": {
+                "type": {
+                  "const": "country"
+                },
+                "sourceLocale": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+                },
+                "code": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "areaLevel": {
+                  "const": "country"
+                },
+                "parentId": {
+                  "const": null
+                },
+                "sourceIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                  },
+                  "uniqueItems": true
+                },
+                "geometryId": {
+                  "oneOf": [
+                    {
+                      "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "sourceLocale",
+                "code",
+                "areaLevel",
+                "parentId"
+              ],
+              "properties": {
+                "type": {
+                  "const": "administrative-area"
+                },
+                "sourceLocale": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+                },
+                "code": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "areaLevel": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$",
+                  "not": {
+                    "const": "country"
+                  }
+                },
+                "parentId": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                "sourceIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                  },
+                  "uniqueItems": true
+                },
+                "geometryId": {
+                  "oneOf": [
+                    {
+                      "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "CreateAreaResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "fields"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "revision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "fields": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "areaLevel",
+                "parentId"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "areaLevel": {
+                  "const": "country"
+                },
+                "parentId": {
+                  "const": null
+                },
+                "sourceIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                  },
+                  "uniqueItems": true
+                },
+                "geometryId": {
+                  "oneOf": [
+                    {
+                      "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "areaLevel",
+                "parentId"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "areaLevel": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$",
+                  "not": {
+                    "const": "country"
+                  }
+                },
+                "parentId": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                "sourceIds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                  },
+                  "uniqueItems": true
+                },
+                "geometryId": {
+                  "oneOf": [
+                    {
+                      "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ReviewRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "headers",
+        "body"
+      ],
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          }
+        },
+        "headers": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/CsrfHeaders"
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expectedDraftRevision",
+            "decision",
+            "reason"
+          ],
+          "properties": {
+            "expectedDraftRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "decision": {
+              "type": "string",
+              "enum": [
+                "approve",
+                "reject"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "ReviewResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "countryId",
+            "status",
+            "referenceVersionId"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "countryId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "status": {
+              "const": "verified"
+            },
+            "referenceVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "countryId",
+            "status",
+            "referenceVersionId"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "countryId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "status": {
+              "const": "rejected"
+            },
+            "referenceVersionId": {
+              "const": null
+            }
+          }
+        }
+      ]
+    },
+    "ReadConfigurationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          }
+        }
+      }
+    },
+    "ConfigurationNotFound": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "RECORD_NOT_FOUND",
+                "COUNTRY_CONFIGURATION_UNAVAILABLE"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "AreaNotFound": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "const": "RECORD_NOT_FOUND"
+            }
+          }
+        }
+      ]
+    },
+    "VerifiedSourceReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "referenceVersionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        }
+      },
+      "required": [
+        "id",
+        "referenceVersionId"
+      ]
+    }
+  },
+  "x-operations": {
+    "createArea": {
+      "method": "POST",
+      "path": "/api/areas",
+      "request": "#/definitions/CreateAreaRequest",
+      "responses": {
+        "201": "#/definitions/CreateAreaResponse",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "#/definitions/AreaNotFound",
+        "409": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http409Error",
+        "422": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http422Error"
+      }
+    },
+    "reviewCountryConfiguration": {
+      "method": "POST",
+      "path": "/api/areas/{id}/configuration-reviews",
+      "request": "#/definitions/ReviewRequest",
+      "responses": {
+        "201": "#/definitions/ReviewResponse",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "#/definitions/AreaNotFound",
+        "409": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http409Error",
+        "422": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http422Error"
+      }
+    },
+    "readVerifiedConfiguration": {
+      "method": "GET",
+      "path": "/api/geographic-nodes/{id}/configuration",
+      "request": "#/definitions/ReadConfigurationRequest",
+      "responses": {
+        "200": "#/definitions/VerifiedConfiguration",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "#/definitions/ConfigurationNotFound"
+      }
+    }
+  },
+  "x-examples": [
+    {
+      "id": "COUNTRY-01",
+      "operation": "createArea",
+      "given": [
+        "M2 地理库为空，账号可在根作用域新建国家。",
+        "源记录和语言目录已可用。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "type": "country",
+          "sourceLocale": "zh",
+          "code": "XQ",
+          "areaLevel": "country",
+          "parentId": null,
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000921"
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000915",
+          "revision": 0,
+          "fields": {
+            "code": "XQ",
+            "areaLevel": "country",
+            "parentId": null,
+            "sourceIds": [
+              "00000000-0000-4000-8000-000000000921"
+            ]
+          }
+        }
+      },
+      "assertions": [
+        "创建国家根且无父级，初始 draftRevision 与共享 revision 均为 0。",
+        "配置读取仍按 COUNTRY-02，不能推导已核验配置或公开版本。"
+      ]
+    },
+    {
+      "id": "COUNTRY-02",
+      "operation": "readVerifiedConfiguration",
+      "given": [
+        "COUNTRY-01 后账号可读国家，尚未核验配置。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "COUNTRY_CONFIGURATION_UNAVAILABLE",
+          "requestId": "country-02"
+        }
+      },
+      "assertions": [
+        "空库未核验状态与记录不可见分开。",
+        "不使用默认层级、邮编规则或草稿填补。"
+      ]
+    },
+    {
+      "id": "COUNTRY-03",
+      "operation": "createArea",
+      "given": [
+        "账号可在国家范围创建下级行政区，已执行 EDIT-03 但未核验。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "type": "administrative-area",
+          "sourceLocale": "zh",
+          "code": "XQ-P1",
+          "areaLevel": "province",
+          "parentId": "00000000-0000-4000-8000-000000000915",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000921"
+          ]
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "country-03",
+          "issues": [
+            {
+              "field": "areaLevel",
+              "code": "COUNTRY_CONFIGURATION_UNAVAILABLE"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "正要录子区时验证已核验配置，草稿完整也不能预先使用。",
+        "不写入下级行政区。"
+      ]
+    },
+    {
+      "id": "COUNTRY-04",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "已执行 EDIT-03，国家聚合草稿修订为 1。",
+        "账号在该国家具备 records.read 与 catalog.review，三组来源均已核验。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 1,
+          "decision": "approve",
+          "reason": "层级、邮编与官方语言来源完整"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000930",
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "status": "verified",
+          "referenceVersionId": "00000000-0000-4000-8000-000000000931"
+        }
+      },
+      "assertions": [
+        "以同一事务锁定国家草稿修订，冻结完整配置和有效来源依据。",
+        "更新核验配置指针，国家公开版本保持原状态。"
+      ]
+    },
+    {
+      "id": "COUNTRY-05",
+      "operation": "readVerifiedConfiguration",
+      "given": [
+        "COUNTRY-04 核验完成，尚未完成 M4 发布。",
+        "账号可读该国家。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "referenceVersionId": "00000000-0000-4000-8000-000000000931",
+          "areaLevels": [
+            {
+              "code": "province",
+              "allowedParentCodes": [
+                "country"
+              ]
+            },
+            {
+              "code": "city",
+              "allowedParentCodes": [
+                "province"
+              ]
+            }
+          ],
+          "postalCodeRule": {
+            "required": true,
+            "formatCode": "six-digits"
+          },
+          "officialLocales": [
+            "zh",
+            "en"
+          ]
+        }
+      },
+      "assertions": [
+        "M2 配置读取立即使用该核验版本。",
+        "配置读模型含三组规则，不隐式发布国家。"
+      ]
+    },
+    {
+      "id": "COUNTRY-06",
+      "operation": "createArea",
+      "given": [
+        "COUNTRY-05 核验配置允许 province 从属于 country。",
+        "账号有该国家下级行政区录入权限。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "type": "administrative-area",
+          "sourceLocale": "zh",
+          "code": "XQ-P1",
+          "areaLevel": "province",
+          "parentId": "00000000-0000-4000-8000-000000000915",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000921"
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000916",
+          "revision": 0,
+          "fields": {
+            "code": "XQ-P1",
+            "areaLevel": "province",
+            "parentId": "00000000-0000-4000-8000-000000000915",
+            "sourceIds": [
+              "00000000-0000-4000-8000-000000000921"
+            ]
+          }
+        }
+      },
+      "assertions": [
+        "依据核验配置建立下级记录，保留该国家目录归属。",
+        "不要求国家或下级行政区已公开。"
+      ]
+    },
+    {
+      "id": "COUNTRY-07",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "国家已有 COUNTRY-04 核验版本，新草稿聚合修订为 2。",
+        "当前账号在该国家具备 records.read 与 catalog.review。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 2,
+          "decision": "reject",
+          "reason": "新邮编格式的依据不足"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000932",
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "status": "rejected",
+          "referenceVersionId": null
+        }
+      },
+      "assertions": [
+        "只新增驳回记录，既有核验版本保持有效。",
+        "国家草稿可以继续修改，之后重新核验。"
+      ]
+    },
+    {
+      "id": "COUNTRY-08",
+      "operation": "readVerifiedConfiguration",
+      "given": [
+        "COUNTRY-07 驳回之后，账号仅能读取 COUNTRY-06 创建的下级辖区。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000916"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "referenceVersionId": "00000000-0000-4000-8000-000000000931",
+          "areaLevels": [
+            {
+              "code": "province",
+              "allowedParentCodes": [
+                "country"
+              ]
+            },
+            {
+              "code": "city",
+              "allowedParentCodes": [
+                "province"
+              ]
+            }
+          ],
+          "postalCodeRule": {
+            "required": true,
+            "formatCode": "six-digits"
+          },
+          "officialLocales": [
+            "zh",
+            "en"
+          ]
+        }
+      },
+      "assertions": [
+        "从可读下级辖区解析所属国家，按既有核验版本返回录入所需配置。",
+        "输出不包含国家名称、不可读父链与证据内容。"
+      ]
+    },
+    {
+      "id": "COUNTRY-09",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "另一操作者保存新配置，当前 draftRevision 已变为 3。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 2,
+          "decision": "approve",
+          "reason": "按旧草稿核验"
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "country-09"
+        }
+      },
+      "assertions": [
+        "按最新聚合草稿修订校验，既有核验版保持。",
+        "刷新草稿后才可重新作出决定。"
+      ]
+    },
+    {
+      "id": "COUNTRY-10",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "目标国家当前草稿修订为 3，但邮编格式的来源为空。",
+        "核验者在国家范围有所需权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 3,
+          "decision": "approve",
+          "reason": "核验当前草稿"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "country-10",
+          "issues": [
+            {
+              "field": "configurationSources.postalCodeRule",
+              "code": "SOURCE_REQUIRED"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "草稿允许来源尚待录入，通过核验要求三组来源齐全。",
+        "不产生新的核验配置版本。"
+      ]
+    },
+    {
+      "id": "COUNTRY-11",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "账号可读国家并编辑配置，但没有该国家的 catalog.review。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 3,
+          "decision": "approve",
+          "reason": "尝试核验"
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "country-11"
+        }
+      },
+      "assertions": [
+        "普通编辑权限不能代替核验权限。",
+        "不修改配置核验指针。"
+      ]
+    },
+    {
+      "id": "COUNTRY-12",
+      "operation": "readVerifiedConfiguration",
+      "given": [
+        "目标辖区对当前会话不可读。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000916"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "RECORD_NOT_FOUND",
+          "requestId": "country-12"
+        }
+      },
+      "assertions": [
+        "不可读对象不披露是否已有核验配置。"
+      ]
+    },
+    {
+      "id": "COUNTRY-13",
+      "operation": "createArea",
+      "given": [
+        "已核验规则允许 city 以 province 为父级。",
+        "请求的直接父级为国家根。"
+      ],
+      "request": {
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "type": "administrative-area",
+          "sourceLocale": "zh",
+          "code": "XQ-C1",
+          "areaLevel": "city",
+          "parentId": "00000000-0000-4000-8000-000000000915",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000921"
+          ]
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "country-13",
+          "issues": [
+            {
+              "field": "parentId",
+              "code": "INVALID_PARENT_LEVEL"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "满足已核验配置后仍校验父级类型。",
+        "不创建层级不合法的记录。"
+      ]
+    },
+    {
+      "id": "COUNTRY-14",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "目标 ID 指向 COUNTRY-06 的下级行政区，审核者可以读取并核验该下级区的其他资料。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000916"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 0,
+          "decision": "approve",
+          "reason": "尝试核验下级区域"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "country-14",
+          "issues": [
+            {
+              "field": "id",
+              "code": "COUNTRY_CONFIGURATION_TARGET_REQUIRED"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "配置核验子资源只接受 country 实体。",
+        "保持所属国家的核验配置版本。"
+      ]
+    },
+    {
+      "id": "COUNTRY-15",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "国家已有 COUNTRY-04 的核验版本。最新草稿修订为 3，配置移除了 province 层级。",
+        "COUNTRY-06 建立的下级行政区仍使用 province。核验者具备所需权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 3,
+          "decision": "approve",
+          "reason": "核验层级调整草稿"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "country-15",
+          "issues": [
+            {
+              "field": "areaLevels",
+              "code": "AREA_LEVEL_IN_USE"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "调整会使现有父子关系不合法，拒绝推进核验指针。",
+        "不披露未经授权的受影响对象 ID，并保留 COUNTRY-05 的核验版本。"
+      ]
+    },
+    {
+      "id": "COUNTRY-16",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "继 COUNTRY-04 之后，国家草稿修订为 4。新的邮编规则取 five-digits，配置的其他内容保持不变，三组来源都可引用。",
+        "馆区已有邮编 210000，归属层级仍符合草稿。操作者有权核验该国家。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 4,
+          "decision": "approve",
+          "reason": "邮编规则的新来源已核验"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000933",
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "status": "verified",
+          "referenceVersionId": "00000000-0000-4000-8000-000000000934"
+        }
+      },
+      "assertions": [
+        "核验指针切换到新版本，COUNTRY-17 读取新规则。",
+        "保留馆区已有邮编，之后编辑邮编按新规则校验。",
+        "国家公开版本不变。"
+      ]
+    },
+    {
+      "id": "COUNTRY-17",
+      "operation": "readVerifiedConfiguration",
+      "given": [
+        "COUNTRY-16 已核验最新草稿，账号可读取国家。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "referenceVersionId": "00000000-0000-4000-8000-000000000934",
+          "areaLevels": [
+            {
+              "code": "province",
+              "allowedParentCodes": [
+                "country"
+              ]
+            },
+            {
+              "code": "city",
+              "allowedParentCodes": [
+                "province"
+              ]
+            }
+          ],
+          "postalCodeRule": {
+            "required": true,
+            "formatCode": "five-digits"
+          },
+          "officialLocales": [
+            "zh",
+            "en"
+          ]
+        }
+      },
+      "assertions": [
+        "解析当前已核验配置版本，返回新邮编规则。",
+        "旧核验版本仍可按历史依据审计。"
+      ]
+    },
+    {
+      "id": "COUNTRY-18",
+      "operation": "reviewCountryConfiguration",
+      "given": [
+        "两个具备权限的核验人读到同一草稿修订 1。",
+        "先到的 COUNTRY-04 已提交，国家草稿内容和修订号未变化。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "expectedDraftRevision": 1,
+          "decision": "reject",
+          "reason": "另一核验人尝试驳回原修订"
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "country-configuration-already-decided"
+        }
+      },
+      "assertions": [
+        "锁内发现同一国家同一草稿修订已有决定，拒绝再次核验。",
+        "COUNTRY-05 所读配置版本仍有效，只存在一个核验决定和一个对应配置版本。"
+      ]
+    },
+    {
+      "id": "COUNTRY-19",
+      "operation": "readVerifiedConfiguration",
+      "given": [
+        "合成国家有已核验配置和明确的来源，产品地理树采用国家级直挂地点，不开放下属行政区层级。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "referenceVersionId": "00000000-0000-4000-8000-000000000931",
+          "areaLevels": [],
+          "postalCodeRule": {
+            "required": true,
+            "formatCode": "six-digits"
+          },
+          "officialLocales": [
+            "zh",
+            "en"
+          ]
+        }
+      },
+      "assertions": [
+        "空层级数组是合法已核验配置。",
+        "行政区页面没有可选子层级，权限允许时仍可在该国家直挂馆区。"
+      ]
+    }
+  ],
+  "x-rejections": [
+    {
+      "id": "COUNTRY-X01",
+      "operation": "createArea",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "type": "country",
+          "sourceLocale": "zh",
+          "code": "XQ",
+          "areaLevel": "country",
+          "parentId": "00000000-0000-4000-8000-000000000916",
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000921"
+          ]
+        }
+      }
+    },
+    {
+      "id": "COUNTRY-X02",
+      "operation": "createArea",
+      "target": "request",
+      "value": {
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "type": "administrative-area",
+          "sourceLocale": "zh",
+          "code": "XQ-P1",
+          "areaLevel": "province",
+          "parentId": null,
+          "sourceIds": [
+            "00000000-0000-4000-8000-000000000921"
+          ]
+        }
+      }
+    },
+    {
+      "id": "COUNTRY-X03",
+      "operation": "reviewCountryConfiguration",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-country-configuration-token"
+        },
+        "body": {
+          "decision": "approve",
+          "reason": "缺少草稿修订"
+        }
+      }
+    },
+    {
+      "id": "COUNTRY-X04",
+      "operation": "reviewCountryConfiguration",
+      "target": "response",
+      "value": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000930",
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "status": "verified",
+          "referenceVersionId": null
+        }
+      }
+    },
+    {
+      "id": "COUNTRY-X05",
+      "operation": "reviewCountryConfiguration",
+      "target": "response",
+      "value": {
+        "status": 201,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000930",
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "status": "rejected",
+          "referenceVersionId": "00000000-0000-4000-8000-000000000931"
+        }
+      }
+    },
+    {
+      "id": "COUNTRY-X06",
+      "operation": "readVerifiedConfiguration",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "countryId": "00000000-0000-4000-8000-000000000915",
+          "referenceVersionId": "00000000-0000-4000-8000-000000000931",
+          "areaLevels": [
+            {
+              "code": "province",
+              "allowedParentCodes": [
+                "country"
+              ]
+            },
+            {
+              "code": "city",
+              "allowedParentCodes": [
+                "province"
+              ]
+            }
+          ],
+          "postalCodeRule": {
+            "required": true,
+            "formatCode": "six-digits"
+          },
+          "officialLocales": []
+        }
+      }
+    },
+    {
+      "id": "COUNTRY-X07",
+      "operation": "readVerifiedConfiguration",
+      "target": "response",
+      "value": {
+        "status": 404,
+        "body": {
+          "code": "COUNTRY_CONFIGURATION_UNAVAILABLE",
+          "requestId": "bad-config",
+          "issues": [
+            {
+              "field": "configurationSources.postalCodeRule",
+              "code": "SOURCE_REQUIRED",
+              "referenceId": "00000000-0000-4000-8000-000000000922"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

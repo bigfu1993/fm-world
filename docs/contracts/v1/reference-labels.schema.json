@@ -1,0 +1,420 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/reference-labels.schema.json",
+  "title": "管理端按编辑语种读取引用标签",
+  "definitions": {
+    "Request": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "locale": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            }
+          },
+          "required": [
+            "locale"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "query"
+      ]
+    },
+    "Response": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "locale": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+        },
+        "draftRevision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "referenceLabels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReferenceLabel"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "locale",
+        "draftRevision",
+        "referenceLabels"
+      ]
+    },
+    "ReferenceLabel": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+            },
+            "position": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "state": {
+              "const": "available"
+            },
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "referenceVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1
+            },
+            "displayName": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "field",
+            "position",
+            "state",
+            "id",
+            "displayName"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+            },
+            "position": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "state": {
+              "const": "missing-translation"
+            },
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "referenceVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "field",
+            "position",
+            "state",
+            "id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+            },
+            "position": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "state": {
+              "const": "unavailable"
+            },
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "referenceVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "field",
+            "position",
+            "state",
+            "id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+            },
+            "position": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "state": {
+              "const": "restricted"
+            }
+          },
+          "required": [
+            "field",
+            "position",
+            "state"
+          ]
+        }
+      ]
+    },
+    "Error": {
+      "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+    }
+  },
+  "x-operations": {
+    "readReferenceLabels": {
+      "method": "GET",
+      "path": "/api/records/{id}/reference-labels",
+      "request": "#/definitions/Request",
+      "responses": {
+        "200": "#/definitions/Response",
+        "400": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http400Error",
+        "401": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http401Error",
+        "403": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http403Error",
+        "404": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Http404Error"
+      }
+    }
+  },
+  "x-examples": [
+    {
+      "id": "SC-REF-01",
+      "operation": "readReferenceLabels",
+      "given": [
+        "账号主语言为 en，当前记录可按 ja 阅读",
+        "站点有日文，入口缺日文，已选择的一个史料版本已撤销，另一个史料无权读"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "locale": "ja"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "locale": "ja",
+          "draftRevision": 3,
+          "referenceLabels": [
+            {
+              "field": "stopId",
+              "position": 0,
+              "state": "available",
+              "id": "00000000-0000-4000-8000-000000000018",
+              "displayName": "見本駅"
+            },
+            {
+              "field": "entranceId",
+              "position": 0,
+              "state": "missing-translation",
+              "id": "00000000-0000-4000-8000-000000000019",
+              "code": "GATE-1"
+            },
+            {
+              "field": "historicalRecordRefs",
+              "position": 0,
+              "state": "unavailable",
+              "id": "00000000-0000-4000-8000-000000000020",
+              "referenceVersionId": "00000000-0000-4000-8000-000000000021",
+              "code": "HISTORY-1"
+            },
+            {
+              "field": "historicalRecordRefs",
+              "position": 1,
+              "state": "restricted"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "界面按 en 渲染，正文选择器显示日文站名",
+        "缺译只显示获准编码，撤销版本不显示名称，不改选较新史料版本",
+        "无权项不出现 ID、版本、编码或其它语种正文",
+        "响应的 draftRevision 与当前编辑器快照不一致时，前端重读草稿后再使用标签"
+      ]
+    },
+    {
+      "id": "SC-REF-02",
+      "operation": "readReferenceLabels",
+      "given": [
+        "同一会话已失去 ja 读取授权"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "locale": "ja"
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "reference-ja-denied"
+        }
+      },
+      "assertions": [
+        "清除对应语种的标签，口径与语言面板授权一致"
+      ]
+    },
+    {
+      "id": "SC-REF-03",
+      "operation": "readReferenceLabels",
+      "given": [
+        "当前会话不可读取目标对象"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "locale": "ja"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "RECORD_NOT_FOUND",
+          "requestId": "reference-object-hidden"
+        }
+      },
+      "assertions": [
+        "响应不暴露该对象是否存在，无任何关联信息"
+      ]
+    },
+    {
+      "id": "SC-REF-04",
+      "operation": "readReferenceLabels",
+      "given": [
+        "当前会话已过期"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {
+          "locale": "ja"
+        }
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "code": "SESSION_INVALID",
+          "requestId": "reference-session"
+        }
+      },
+      "assertions": [
+        "不返回受限数据，前端按会话失效处理"
+      ]
+    }
+  ],
+  "x-rejections": [
+    {
+      "id": "SC-REF-R01",
+      "operation": "readReferenceLabels",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "query": {}
+      }
+    },
+    {
+      "id": "SC-REF-R02",
+      "operation": "readReferenceLabels",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "locale": "ja",
+          "draftRevision": 3,
+          "referenceLabels": [
+            {
+              "field": "entranceId",
+              "position": 0,
+              "state": "restricted",
+              "id": "00000000-0000-4000-8000-000000000019",
+              "displayName": "样本门"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "SC-REF-R03",
+      "operation": "readReferenceLabels",
+      "target": "response",
+      "value": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "locale": "ja",
+          "draftRevision": 3,
+          "referenceLabels": [
+            {
+              "field": "entranceId",
+              "position": 0,
+              "state": "missing-translation",
+              "id": "00000000-0000-4000-8000-000000000019",
+              "displayName": "Gate One"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "SC-REF-R04",
+      "operation": "readReferenceLabels",
+      "target": "response",
+      "value": {
+        "status": 404,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "reference-ja-denied"
+        }
+      }
+    }
+  ]
+}

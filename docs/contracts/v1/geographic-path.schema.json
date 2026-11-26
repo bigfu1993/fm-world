@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/geographic-path.schema.json",
+  "title": "地理父链投影",
+  "definitions": {
+    "GeographicPath": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GeographicPathSegment"
+      },
+      "description": "按从根到直接父级的顺序返回祖先，不含目标本身。根节点或不适用地理路径的目录对象返回空数组。名称和名称版本来自对应读取视图，权限裁剪保留父链顺序。 多个不可读祖先可以产生相同的受限占位符。"
+    },
+    "GeographicPathSegment": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "nameVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "displayName": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "state",
+            "id",
+            "nameVersionId",
+            "displayName"
+          ],
+          "description": "请求语种的获准名称。名称版本表示对应地理身份的名称版本。"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "missing-translation"
+            },
+            "id": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "nameVersionId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "state",
+            "id",
+            "nameVersionId"
+          ],
+          "description": "祖先身份获准读取，但没有请求语种的名称。仅在允许时附稳定编码。"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "restricted"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "description": "祖先不可见时仅保留其位置，不提供身份、名称、版本或翻译状态。"
+        }
+      ]
+    }
+  }
+}

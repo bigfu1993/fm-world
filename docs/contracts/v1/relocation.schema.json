@@ -1,0 +1,1552 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fm-world.test/contracts/v1/relocation.schema.json",
+  "title": "行政区和地点的普通编辑与归属迁移",
+  "description": "同一资源 PATCH 用互斥请求形状区分普通编辑与单归属键迁移。200 回显本次获准写入的字段。发布与审批使用各自的操作。",
+  "definitions": {
+    "Path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        }
+      }
+    },
+    "AreaRelocationFields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parentId"
+      ],
+      "properties": {
+        "parentId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        }
+      }
+    },
+    "PlaceRelocationFields": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "areaId"
+          ],
+          "properties": {
+            "areaId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "parentPlaceId"
+          ],
+          "properties": {
+            "parentPlaceId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            }
+          }
+        }
+      ]
+    },
+    "Malformed": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "const": "MALFORMED_REQUEST"
+            }
+          }
+        }
+      ]
+    },
+    "SessionInvalid": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "const": "SESSION_INVALID"
+            }
+          }
+        }
+      ]
+    },
+    "Forbidden": {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "requestId"
+              ],
+              "properties": {
+                "code": {
+                  "const": "ACTION_FORBIDDEN"
+                },
+                "requestId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "requestId"
+              ],
+              "properties": {
+                "code": {
+                  "const": "CSRF_INVALID"
+                },
+                "requestId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "NotFound": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "requestId"
+          ],
+          "properties": {
+            "code": {
+              "const": "RECORD_NOT_FOUND"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "Conflict": {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+            },
+            {
+              "properties": {
+                "code": {
+                  "const": "REVISION_CONFLICT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+            },
+            {
+              "properties": {
+                "code": {
+                  "const": "RELOCATION_BLOCKED"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "InvalidRelocation": {
+      "allOf": [
+        {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Error"
+        },
+        {
+          "properties": {
+            "code": {
+              "const": "VALIDATION_FAILED"
+            }
+          }
+        }
+      ]
+    },
+    "OfficialName": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "locale",
+            "sourceId",
+            "value"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "name",
+                "address",
+                "signage"
+              ]
+            },
+            "locale": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            },
+            "sourceId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "locale",
+            "sourceId",
+            "nameRef"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "name",
+                "address",
+                "signage"
+              ]
+            },
+            "locale": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+            },
+            "sourceId": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            "nameRef": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "recordId",
+                "locale",
+                "field"
+              ],
+              "properties": {
+                "recordId": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+                },
+                "locale": {
+                  "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Locale"
+                },
+                "field": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ExactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "referenceVersionId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "referenceVersionId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        }
+      }
+    },
+    "AreaEditFields": {
+      "description": "普通字段分支。配置字段只能用于实际类型为 country 的记录，areaLevel 更新按已有父子关系及已核验配置验证。",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+          },
+          "uniqueItems": true
+        },
+        "officialNames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OfficialName"
+          }
+        },
+        "areaLevel": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "not": {
+            "const": "country"
+          }
+        },
+        "geometryId": {
+          "oneOf": [
+            {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "areaLevels": {
+          "$ref": "https://fm-world.test/contracts/v1/country-configuration.schema.json#/definitions/DraftAreaLevels"
+        },
+        "postalCodeRule": {
+          "$ref": "https://fm-world.test/contracts/v1/country-configuration.schema.json#/definitions/PostalCodeRule"
+        },
+        "officialLocales": {
+          "$ref": "https://fm-world.test/contracts/v1/country-configuration.schema.json#/definitions/DraftOfficialLocales"
+        },
+        "configurationSources": {
+          "$ref": "https://fm-world.test/contracts/v1/country-configuration.schema.json#/definitions/DraftConfigurationSources"
+        }
+      },
+      "minProperties": 1
+    },
+    "PlaceEditFields": {
+      "description": "普通字段分支。服务端按目标实际类型校验可编辑字段。经纬度成对更新或成对清空，迁移字段从此分支排除。",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+          },
+          "uniqueItems": true
+        },
+        "officialNames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OfficialName"
+          }
+        },
+        "organizationId": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "entranceIds": {
+          "type": "array",
+          "items": {
+            "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+          },
+          "uniqueItems": true
+        },
+        "contentRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExactReference"
+          },
+          "uniqueItems": true
+        },
+        "streetNumber": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "postalCode": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "latitude": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "longitude": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "minProperties": 1,
+      "if": {
+        "anyOf": [
+          {
+            "required": [
+              "latitude"
+            ]
+          },
+          {
+            "required": [
+              "longitude"
+            ]
+          }
+        ]
+      },
+      "then": {
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "oneOf": [
+          {
+            "properties": {
+              "latitude": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              }
+            }
+          },
+          {
+            "properties": {
+              "latitude": {
+                "type": "null"
+              },
+              "longitude": {
+                "type": "null"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "AreaPatchFields": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/AreaEditFields"
+        },
+        {
+          "$ref": "#/definitions/AreaRelocationFields"
+        }
+      ]
+    },
+    "AreaPatchRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "headers",
+        "body"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/Path"
+        },
+        "headers": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/CsrfHeaders"
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expectedRevision",
+            "fields"
+          ],
+          "properties": {
+            "expectedRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "fields": {
+              "$ref": "#/definitions/AreaPatchFields"
+            }
+          }
+        }
+      }
+    },
+    "AreaPatchResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "fields"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "revision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "fields": {
+          "$ref": "#/definitions/AreaPatchFields"
+        }
+      }
+    },
+    "PlacePatchFields": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/PlaceEditFields"
+        },
+        {
+          "$ref": "#/definitions/PlaceRelocationFields"
+        }
+      ]
+    },
+    "PlacePatchRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "headers",
+        "body"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/Path"
+        },
+        "headers": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/CsrfHeaders"
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expectedRevision",
+            "fields"
+          ],
+          "properties": {
+            "expectedRevision": {
+              "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+            },
+            "fields": {
+              "$ref": "#/definitions/PlacePatchFields"
+            }
+          }
+        }
+      }
+    },
+    "PlacePatchResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "fields"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Id"
+        },
+        "revision": {
+          "$ref": "https://fm-world.test/contracts/v1/common.schema.json#/definitions/Revision"
+        },
+        "fields": {
+          "$ref": "#/definitions/PlacePatchFields"
+        }
+      }
+    }
+  },
+  "x-operations": {
+    "patchArea": {
+      "method": "PATCH",
+      "path": "/api/areas/{id}",
+      "request": "#/definitions/AreaPatchRequest",
+      "responses": {
+        "200": "#/definitions/AreaPatchResponse",
+        "400": "#/definitions/Malformed",
+        "401": "#/definitions/SessionInvalid",
+        "403": "#/definitions/Forbidden",
+        "404": "#/definitions/NotFound",
+        "409": "#/definitions/Conflict",
+        "422": "#/definitions/InvalidRelocation"
+      }
+    },
+    "patchPlace": {
+      "method": "PATCH",
+      "path": "/api/places/{id}",
+      "request": "#/definitions/PlacePatchRequest",
+      "responses": {
+        "200": "#/definitions/PlacePatchResponse",
+        "400": "#/definitions/Malformed",
+        "401": "#/definitions/SessionInvalid",
+        "403": "#/definitions/Forbidden",
+        "404": "#/definitions/NotFound",
+        "409": "#/definitions/Conflict",
+        "422": "#/definitions/InvalidRelocation"
+      }
+    }
+  },
+  "x-examples": [
+    {
+      "id": "RELOC-01",
+      "operation": "patchArea",
+      "given": [
+        "已发布行政区 00000000-0000-4000-8000-000000000040 当前记录修订为 7，生效版本 00000000-0000-4000-8000-000000000801 的正式上级为 00000000-0000-4000-8000-000000000042。",
+        "目标 00000000-0000-4000-8000-000000000041 与现辖区属同一国家，父级类型合法，无待处理的生效后代或必需引用影响。",
+        "当前账号在移出、移入两侧分别有 records.read 和 records.edit。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "parentId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000040",
+          "revision": 8,
+          "fields": {
+            "parentId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "assertions": [
+        "读取草稿时，仍使用 00000000-0000-4000-8000-000000000042 判定权限，双侧有权的操作者看见拟上级 00000000-0000-4000-8000-000000000041。",
+        "审批前公开搜索、父链和生效预览仍沿 00000000-0000-4000-8000-000000000042。仅有目标侧权限的运营账号仍无法读取草稿。",
+        "只读源侧的账号仍可查看旧范围内的记录。草稿响应省略其无权读取的拟归属 ID 和详情，现行归属保持可见。",
+        "同一待审版本保持冻结的源、目标和路径。双侧发布权限及影响均通过时，正式归属与版本 00000000-0000-4000-8000-000000000802 同一事务生效。",
+        "批准后公开父链和授权切换至 00000000-0000-4000-8000-000000000041。仅有 00000000-0000-4000-8000-000000000042 的账号无法读取当前记录。",
+        "历史版本 00000000-0000-4000-8000-000000000801 继续显示原父链，仅当前侧和历史侧都有读取及请求语种权限的账号可见。"
+      ]
+    },
+    {
+      "id": "RELOC-02",
+      "operation": "patchArea",
+      "given": [
+        "行政区仍位于 00000000-0000-4000-8000-000000000042，操作者可读并可编辑源侧记录。",
+        "操作者可读目标辖区，但在目标侧没有 records.edit。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "parentId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "reloc-02"
+        }
+      },
+      "assertions": [
+        "响应只给统一无权错误。不更新草稿、修订、公开状态或待审申请。"
+      ]
+    },
+    {
+      "id": "RELOC-03",
+      "operation": "patchArea",
+      "given": [
+        "操作者只在移入侧有授权，可以查看目标辖区，源侧记录对其不可见。",
+        "操作者已知源侧稳定 ID。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "parentId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "RECORD_NOT_FOUND",
+          "requestId": "reloc-03"
+        }
+      },
+      "assertions": [
+        "响应不确认源侧记录是否存在。拟目标归属不会授予源侧记录可见权。"
+      ]
+    },
+    {
+      "id": "RELOC-04",
+      "operation": "patchPlace",
+      "given": [
+        "馆区 00000000-0000-4000-8000-000000000017 正式归属 00000000-0000-4000-8000-000000000042，修订为 12。操作者可读取并编辑源侧。",
+        "目标不可见。即使能猜出目标 ID，仍按不可见处理。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "code": "RECORD_NOT_FOUND",
+          "requestId": "reloc-04"
+        }
+      },
+      "assertions": [
+        "响应不返回目标 ID、名称或存在状态。馆区不发生迁移。"
+      ]
+    },
+    {
+      "id": "RELOC-05",
+      "operation": "patchPlace",
+      "given": [
+        "馆区 00000000-0000-4000-8000-000000000017 在 00000000-0000-4000-8000-000000000042 有生效版。目的辖区 00000000-0000-4000-8000-000000000051 与源侧分属不同国家。",
+        "操作者具备双侧权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000051"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "RELOCATION_BLOCKED",
+          "requestId": "reloc-05"
+        }
+      },
+      "assertions": [
+        "馆区仍对原国家生效。关闭旧公开入口并处理发布依赖后才允许重新提交跨国归属。"
+      ]
+    },
+    {
+      "id": "RELOC-06",
+      "operation": "patchPlace",
+      "given": [
+        "操作者具备双侧权限。打开编辑后，另一个请求已将馆区记录修订从 12 更新到 13。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "reloc-06"
+        }
+      },
+      "assertions": [
+        "重新读取草稿修订和可见关联，不覆盖其它操作者的更新。"
+      ]
+    },
+    {
+      "id": "RELOC-07",
+      "operation": "patchArea",
+      "given": [
+        "操作者具备双侧权限。拟目标属于当前行政区的后代。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "parentId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "reloc-07",
+          "issues": [
+            {
+              "field": "parentId",
+              "code": "GEOGRAPHIC_CYCLE"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "不改动父链和修订。输入控件按字段定位到父级选择器。"
+      ]
+    },
+    {
+      "id": "RELOC-08",
+      "operation": "patchArea",
+      "given": [
+        "操作者具备双侧权限，目标属同一国家，但源侧子树含生效后代或仍有受影响的必需引用。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "parentId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "RELOCATION_BLOCKED",
+          "requestId": "reloc-08"
+        }
+      },
+      "assertions": [
+        "维持原父链。清理受影响的发布子树和必需引用后才重新提交。"
+      ]
+    },
+    {
+      "id": "RELOC-09",
+      "operation": "patchPlace",
+      "given": [
+        "馆区 00000000-0000-4000-8000-000000000017 已通过正常流程撤下，当前无生效版且无待处理必需引用。正式授权仍沿此前的 00000000-0000-4000-8000-000000000042。",
+        "操作者具备双侧权限，目标辖区类型合法。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 13,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000051"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "revision": 14,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000051"
+          }
+        }
+      },
+      "assertions": [
+        "保存拟迁往 00000000-0000-4000-8000-000000000051 的草稿，公开接口继续不可用。普通撤下未改变授权归属。",
+        "从旧辖区移出和向新辖区发布需要两侧发布权限。"
+      ]
+    },
+    {
+      "id": "RELOC-10",
+      "operation": "patchPlace",
+      "given": [
+        "未发布的馆内入口 00000000-0000-4000-8000-000000000019 拟改为归属馆区 00000000-0000-4000-8000-000000000060。操作者具备双侧权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000019"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 0,
+          "fields": {
+            "parentPlaceId": "00000000-0000-4000-8000-000000000060"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000019",
+          "revision": 1,
+          "fields": {
+            "parentPlaceId": "00000000-0000-4000-8000-000000000060"
+          }
+        }
+      },
+      "assertions": [
+        "保存仅使用物理馆区关联键。跨馆区服务入口关联未被改写。",
+        "通过正式发布后才对外展示迁移结果。"
+      ]
+    },
+    {
+      "id": "RELOC-11",
+      "operation": "patchPlace",
+      "given": [
+        "操作者在移出和移入侧都可读且可编辑，馆区的记录修订为 12。",
+        "候审申请的审批账号目前持双侧 publication.review 权限。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "revision": 13,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      },
+      "assertions": [
+        "保存草稿后仍沿源侧管理。",
+        "提交发布时在事务中冻结两侧授权作用域及候选父链，随后在审批前撤掉审批人的目标侧 publication.review。",
+        "审批取得锁后重查权限。审批人仍有读取权但缺目标侧审批权时返回 ACTION_FORBIDDEN，申请保持待审且不切换正式归属。失去可见权时用统一不可见错误。",
+        "恢复双侧授权后，仍需按最新版本和依赖条件重新审批。"
+      ]
+    },
+    {
+      "id": "EDIT-01",
+      "operation": "patchArea",
+      "given": [
+        "有行政区现归属的 records.read 与 records.edit。共享修订为 7。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "code": "AREA-NEW"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000040",
+          "revision": 8,
+          "fields": {
+            "code": "AREA-NEW"
+          }
+        }
+      },
+      "assertions": [
+        "普通字段可写入，共享修订推进。",
+        "父链未变，不检查移入侧权限。"
+      ]
+    },
+    {
+      "id": "EDIT-02",
+      "operation": "patchPlace",
+      "given": [
+        "馆区当前修订为 12，当前国家的已核验邮编规则接受六位数字。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "postalCode": "210000"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "revision": 13,
+          "fields": {
+            "postalCode": "210000"
+          }
+        }
+      },
+      "assertions": [
+        "同一路由接受普通邮编编辑。",
+        "仅保存邮编，不修改当前或生效的行政归属。"
+      ]
+    },
+    {
+      "id": "EDIT-03",
+      "operation": "patchArea",
+      "given": [
+        "执行 COUNTRY-01 后国家根已创建，当前共享修订与聚合草稿修订均为 0。",
+        "配置来源已登记并可引用，当前账号可写国家草稿。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 0,
+          "fields": {
+            "areaLevels": [
+              {
+                "code": "province",
+                "allowedParentCodes": [
+                  "country"
+                ]
+              },
+              {
+                "code": "city",
+                "allowedParentCodes": [
+                  "province"
+                ]
+              }
+            ],
+            "postalCodeRule": {
+              "required": true,
+              "formatCode": "six-digits"
+            },
+            "officialLocales": [
+              "zh",
+              "en"
+            ],
+            "configurationSources": {
+              "areaLevels": [
+                "00000000-0000-4000-8000-000000000921"
+              ],
+              "postalCodeRule": [
+                "00000000-0000-4000-8000-000000000922"
+              ],
+              "officialLocales": [
+                "00000000-0000-4000-8000-000000000923"
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000915",
+          "revision": 1,
+          "fields": {
+            "areaLevels": [
+              {
+                "code": "province",
+                "allowedParentCodes": [
+                  "country"
+                ]
+              },
+              {
+                "code": "city",
+                "allowedParentCodes": [
+                  "province"
+                ]
+              }
+            ],
+            "postalCodeRule": {
+              "required": true,
+              "formatCode": "six-digits"
+            },
+            "officialLocales": [
+              "zh",
+              "en"
+            ],
+            "configurationSources": {
+              "areaLevels": [
+                "00000000-0000-4000-8000-000000000921"
+              ],
+              "postalCodeRule": [
+                "00000000-0000-4000-8000-000000000922"
+              ],
+              "officialLocales": [
+                "00000000-0000-4000-8000-000000000923"
+              ]
+            }
+          }
+        }
+      },
+      "assertions": [
+        "完整配置进入国家草稿，draftRevision 推进至 1，配置尚不可用于录入子区。",
+        "保存本身不产生核验版本，不改变国家公开状态。"
+      ]
+    },
+    {
+      "id": "EDIT-04",
+      "operation": "patchPlace",
+      "given": [
+        "馆区共享修订已由他人更新为 13。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "postalCode": "210000"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "code": "REVISION_CONFLICT",
+          "requestId": "edit-04"
+        }
+      },
+      "assertions": [
+        "拒绝过期的普通 PATCH，邮编和父链均保持不变。"
+      ]
+    },
+    {
+      "id": "EDIT-05",
+      "operation": "patchPlace",
+      "given": [
+        "已知目标的实际类型为 interior-point。该类型不维护邮编。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000060"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 4,
+          "fields": {
+            "postalCode": "210000"
+          }
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "edit-05",
+          "issues": [
+            {
+              "field": "postalCode",
+              "code": "FIELD_NOT_EDITABLE_FOR_TYPE"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "字段可通过地点普通形状，服务端按目标类型拒绝。",
+        "不修改所属馆区。"
+      ]
+    },
+    {
+      "id": "EDIT-06",
+      "operation": "patchArea",
+      "given": [
+        "已知目标为下级行政区。目标可读写，但国家配置归其所属国家持有。"
+      ],
+      "request": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "officialLocales": [
+              "zh"
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "code": "VALIDATION_FAILED",
+          "requestId": "edit-06",
+          "issues": [
+            {
+              "field": "officialLocales",
+              "code": "FIELD_NOT_EDITABLE_FOR_TYPE"
+            }
+          ]
+        }
+      },
+      "assertions": [
+        "下级行政区不能用普通分支写入国家配置。",
+        "所属国家的草稿和已核验配置保持不变。"
+      ]
+    }
+  ],
+  "x-rejections": [
+    {
+      "id": "RELOC-X01",
+      "operation": "patchArea",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "parentId": null
+          }
+        }
+      }
+    },
+    {
+      "id": "RELOC-X02",
+      "operation": "patchPlace",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000041",
+            "parentPlaceId": "00000000-0000-4000-8000-000000000060"
+          }
+        }
+      }
+    },
+    {
+      "id": "RELOC-X03",
+      "operation": "patchArea",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "fields": {
+            "parentId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      }
+    },
+    {
+      "id": "RELOC-X04",
+      "operation": "patchPlace",
+      "target": "response",
+      "value": {
+        "status": 404,
+        "body": {
+          "code": "RECORD_NOT_FOUND",
+          "requestId": "reloc-x04",
+          "issues": [
+            {
+              "field": "areaId",
+              "code": "RECORD_NOT_FOUND",
+              "referenceId": "00000000-0000-4000-8000-000000000041"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "RELOC-X05",
+      "operation": "patchArea",
+      "target": "response",
+      "value": {
+        "status": 403,
+        "body": {
+          "code": "ACTION_FORBIDDEN",
+          "requestId": "reloc-x05",
+          "scopeId": "00000000-0000-4000-8000-000000000041"
+        }
+      }
+    },
+    {
+      "id": "RELOC-X06",
+      "operation": "patchPlace",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000041"
+          }
+        }
+      }
+    },
+    {
+      "id": "RELOC-X07",
+      "operation": "patchPlace",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "areaId": "00000000-0000-4000-8000-000000000041",
+            "postalCode": "123456"
+          }
+        }
+      }
+    },
+    {
+      "id": "EDIT-X01",
+      "operation": "patchArea",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {}
+        }
+      }
+    },
+    {
+      "id": "EDIT-X02",
+      "operation": "patchArea",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000040"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 7,
+          "fields": {
+            "code": "AREA-NEW",
+            "parentId": "00000000-0000-4000-8000-000000000915"
+          }
+        }
+      }
+    },
+    {
+      "id": "EDIT-X03",
+      "operation": "patchPlace",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "noSuchField": "unknown"
+          }
+        }
+      }
+    },
+    {
+      "id": "EDIT-X04",
+      "operation": "patchPlace",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "latitude": 32.1
+          }
+        }
+      }
+    },
+    {
+      "id": "EDIT-X05",
+      "operation": "patchPlace",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000017"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 12,
+          "fields": {
+            "latitude": 32.1,
+            "longitude": null
+          }
+        }
+      }
+    },
+    {
+      "id": "EDIT-X06",
+      "operation": "patchArea",
+      "target": "request",
+      "value": {
+        "path": {
+          "id": "00000000-0000-4000-8000-000000000915"
+        },
+        "headers": {
+          "x-csrf-token": "fixture-relocation-token"
+        },
+        "body": {
+          "expectedRevision": 0,
+          "fields": {
+            "configurationSources": {
+              "areaLevels": []
+            }
+          }
+        }
+      }
+    }
+  ]
+}
